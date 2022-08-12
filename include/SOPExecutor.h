@@ -1,7 +1,8 @@
-
 //
 // Created by lwilkinson on 5/25/22.
 //
+
+#pragma once
 
 #include <assert.h>
 #include <mkl.h>
@@ -20,25 +21,6 @@ namespace sop {
 
 using std::vector;
 using Config = TileConfig;
-
-enum PackingStrategy {
-  PREPACK,
-  PARTIAL_PACKING,
-  NO_PACKING
-};
-
-template<enum PackingStrategy _C, enum PackingStrategy _B>
-struct PackingDesc {
-  const static PackingStrategy C_PACKING_STRATEGY = _C;
-  const static PackingStrategy B_PACKING_STRATEGY = _B;
-};
-
-template<>
-struct PackingDesc<NO_PACKING, NO_PACKING> {
-  const static PackingStrategy C_PACKING_STRATEGY = NO_PACKING;
-  const static PackingStrategy B_PACKING_STRATEGY = NO_PACKING;
-};
-
 
 template <typename F, typename ... Ts>
 void report_time(bool report, const std::string& name, F&& f, Ts&&...args)
@@ -59,31 +41,26 @@ void report_time(bool report, const std::string& name, F&& f, Ts&&...args)
   }
 }
 
-
-template <typename KernelDesc, typename PackingDesc>
+template <typename KernelDesc>
 struct SOPExecutor {
   using Scalar = typename KernelDesc::Scalar;
-  using RegT = typename KernelDesc::RegTile;
+  using RegTile = typename KernelDesc::RegTile;
   using TileDims = typename KernelDesc::TileDims;
   using VecType = typename KernelDesc::VecType;
   using Executor = typename KernelDesc::Executor;
   using CSRPtr = typename KernelDesc::CSRStorageTypes::Ptr;
-  using T = typename KernelDesc::RegTile;
-  using _PackedTile = PackedTile<KernelDesc>;
+  using PackedTile = sop::PackedTile<KernelDesc>;
 
-  const static PackingStrategy C_PACKING_STRATEGY
-      = PackingDesc::C_PACKING_STRATEGY;
-  const static PackingStrategy B_PACKING_STRATEGY
-      = PackingDesc::B_PACKING_STRATEGY;
+  const static PackingStrategy C_PACKING = KernelDesc::PackingDesc::C_PACKING;
+  const static PackingStrategy B_PACKING = KernelDesc::PackingDesc::B_PACKING;
 
-  const vector<vector<_PackedTile>>& tiles;
+  const vector<vector<PackedTile>>& tiles;
   const Scalar* __restrict__ B;
   Scalar* __restrict__ C;
 
   Scalar* __restrict__ C_packed = nullptr;
   Scalar* __restrict__ C_packed_partial_global = nullptr;
   Scalar* __restrict__ B_packed = nullptr;
-
 
   int M, K, N;
   int batch_size;
@@ -108,7 +85,7 @@ struct SOPExecutor {
 
   SOPExecutor(
       int M, int K, int N,
-      const vector<vector<_PackedTile>>& tiles,
+      const vector<vector<PackedTile>>& tiles,
       const Scalar* __restrict__ B,
       Scalar* __restrict__ C,
       int batch_size,
@@ -129,183 +106,206 @@ struct SOPExecutor {
     final_N_r_loop_rem = N_r_rem;
     final_N_r_rem_mask = Executor::create_mask(N_r_rem);
 
-    if (C_PACKING_STRATEGY == PREPACK) {
-      C_packed = new (std::align_val_t(4096)) Scalar[td.M_padded * td.N_padded]();
+    if (C_PACKING == PREPACK) {
+      C_packed =
+          new (std::align_val_t(4096)) Scalar[td.M_padded * td.N_padded]();
     }
 
-    if (C_PACKING_STRATEGY == PARTIAL_PACKING) {
+    if (C_PACKING == PARTIAL_PACKING) {
       C_packed_partial_global =
           new (std::align_val_t(4096)) Scalar[td.M_padded * td.N_padded];
     }
 
-    if (B_PACKING_STRATEGY == PREPACK || B_PACKING_STRATEGY == PARTIAL_PACKING) {
-      B_packed = new (std::align_val_t(4096)) Scalar[td.K_padded * td.N_padded];
+    if (B_PACKING == PREPACK || B_PACKING == PARTIAL_PACKING) {
+      B_packed =
+          new (std::align_val_t(4096)) Scalar[td.K_padded * td.N_padded];
     }
   }
 
   ~SOPExecutor() {
     // Clean-up!
-    if (C_PACKING_STRATEGY == PREPACK) {
+    if (C_PACKING == PREPACK) {
       ::operator delete[](C_packed, std::align_val_t(4096));
     }
 
-    if (C_PACKING_STRATEGY == PARTIAL_PACKING) {
+    if (C_PACKING == PARTIAL_PACKING) {
       ::operator delete[](C_packed_partial_global, std::align_val_t(4096));
     }
 
-    if (B_PACKING_STRATEGY == PREPACK || B_PACKING_STRATEGY == PARTIAL_PACKING) {
+    if (B_PACKING == PREPACK || B_PACKING == PARTIAL_PACKING) {
       ::operator delete[](B_packed, std::align_val_t(4096));
     }
   }
 
-  _ai void inner_N_c_loop_full(int iii, int jjj,
-                               const _PackedTile& pt,
-                               Scalar* __restrict__ C_packed) {
+  /******************************************
+   *    Patial C Packed
+   ******************************************/
+
+  void _inner_M_c_loop_partial_packed_c(int iii, int jjj,
+                               const PackedTile& pt,
+                               Scalar* __restrict__ C_packed,
+                               const bool partial_N_c) {
+
+    int _c_N_r = (partial_N_c) ? final_N_c_loop_N_r_count : c_N_r;
+
     // M_r loop
     for (int pi = 0; pi < pt.sop.num_panels; pi++) {
-      const int o_M_r = pi * M_r * N_c;
+      int tj = 0, _jj = 0;
+      const auto panel_desc = pt.sop.panel_descs[pi];
 
-      for (int tj = 0; tj < c_N_r; tj++) { // N_r loop
-        const int jj = (tj * N_r) + jjj;
-        const int o_N_r = (tj * N_r) * M_r;
+      uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
+      float* __restrict__     values = panel_desc.values;
+      int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+      int                     num_patterns = panel_desc.num_patterns;
+      int                     num_col_indices = panel_desc.num_col_indices;
 
-        if (C_PACKING_STRATEGY == PARTIAL_PACKING) {
-          Executor::panel_executor_packed_C_max_acc(
-            N,
-            pt.sop.panel_descs[pi],
-            B + jj,
-            C_packed + jjj * M_c + (pi * M_r) * N_c +
-                (tj * N_r) * M_r,
-            pt.load_c
-          );
-        } else {
-          Executor::panel_executor_max_acc(
-            M, K, N,
-            pt.sop.panel_descs[pi],
-            B + jj,
-            C + jj + (pi * M_r + iii) * N,
-            pt.load_c
-          );
-        }
+      for (; tj < _c_N_r; tj++, _jj += N_r) { // N_r loop
+        Executor::_panel_executor_packed_C_max_acc(
+          M, K, N,
+          pattern_counts, col_indices, values, num_col_indices,
+          B + jjj + _jj,
+          C_packed + jjj * M_c + (pi * M_r) * N_c + _jj * M_r,
+          pt.load_c
+        );
+      }
+
+      if (partial_N_c && partial_N_r_loop) {
+        Executor::_panel_executor_masked_packed_C_max_acc(
+          final_N_r_loop_rem,
+          M, K, N,
+          pattern_counts, col_indices, values, num_col_indices,
+          B + jjj + _jj,
+          C_packed + jjj * M_c + (pi * M_r) * N_c + (tj * N_r) * M_r,
+          final_N_r_rem_mask,
+          pt.load_c
+        );
       }
     }
   }
 
+  void _execute_row_panel_partial_packed_C(int tii) {
+    using std::min;
 
-  _ai void inner_N_c_loop_partial(int iii, int jjj,
-                                  const _PackedTile& pt,
-                                  Scalar* __restrict__ C_packed) {
+    ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
+    int Nb_full = partial_N_c_loop ? Nb - 1 : Nb;
+    const int iii = tii * M_c;
+
+    Scalar* __restrict__ C_packed_partial =
+        C_packed_partial_global + iii * N_padded;
+
+    // K_c loop
+    for (int tkk = 0; tkk < Kb; tkk++) {
+      const PackedTile& pt = tiles[tii][tkk];
+
+      int tjj = 0, jjj = 0;
+      for (; tjj < Nb_full; tjj++, jjj += N_c) {
+        _inner_M_c_loop_partial_packed_c(iii, jjj, pt, C_packed_partial, false);
+      }
+
+      if (partial_N_c_loop) {
+        _inner_M_c_loop_partial_packed_c(iii, jjj, pt, C_packed_partial, true);
+      }
+    }
+
+    report_time(report_packing_time, "Unpack C",
+      unpack_C_partial_M_c<Scalar, TileDims>,
+        min(M - iii, M_c), C + iii * N, C_packed_partial, td);
+  }
+
+  /******************************************
+   *    Not Packed
+   ******************************************/
+
+  void _inner_M_c_loop(int iii, int jjj,
+                      const PackedTile& pt,
+                      const bool partial_N_c) {
+
+    int _c_N_r = (partial_N_c) ? final_N_c_loop_N_r_count : c_N_r;
+
     // M_r loop
     for (int pi = 0; pi < pt.sop.num_panels; pi++) {
-      const int o_M_r = pi * M_r * N_c;
+      int tj = 0, jj = jjj;
+      const auto panel_desc = pt.sop.panel_descs[pi];
 
-      int tj = 0;
-      for (; tj < final_N_c_loop_N_r_count; tj++) { // N_r loop
-        const int jj = (tj * N_r) + jjj;
-        const int o_N_r = (tj * N_r) * M_r;
+      uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
+      float* __restrict__     values = panel_desc.values;
+      int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+      int                     num_patterns = panel_desc.num_patterns;
+      int                     num_col_indices = panel_desc.num_col_indices;
 
-        if (C_PACKING_STRATEGY == PARTIAL_PACKING) {
-          Executor::panel_executor_packed_C_max_acc(
-            N,
-            pt.sop.panel_descs[pi],
-            B + jj,
-            C_packed + jjj * M_c + (pi * M_r) * N_c + (tj * N_r) * M_r,
-            pt.load_c
-          );
-        } else {
-          Executor::panel_executor_max_acc(
-            M, K, N,
-            pt.sop.panel_descs[pi],
-            B + jj,
-            C + jj + (pi * M_r + iii) * N,
-            pt.load_c
-          );
-        }
+      for (; tj < _c_N_r; tj++, jj += N_r) { // N_r loop
+        Executor::_panel_executor_max_acc(
+          M, K, N,
+          pattern_counts, col_indices, values, num_col_indices,
+          B + jj,
+          C + jj + (pi * M_r + iii) * N,
+          pt.load_c
+        );
       }
 
-      if (partial_N_r_loop) {
-        const int jj = (tj * N_r) + jjj;
-        const int o_N_r = (tj * N_r) * M_r;
-
-        if (C_PACKING_STRATEGY == PARTIAL_PACKING) {
-          Executor::panel_executor_masked_packed_C_max_acc(
-            final_N_r_loop_rem,
-            N,
-            pt.sop.panel_descs[pi],
-            B + jj,
-            C_packed + jjj * M_c + (pi * M_r) * N_c + (tj * N_r) * M_r,
-            final_N_r_rem_mask,
-            pt.load_c);
-        } else {
-          Executor::panel_executor_masked_max_acc(
-            M, K, N,
-            pt.sop.panel_descs[pi],
-            B + jj,
-            C + jj + (pi * M_r + iii) * N,
-            final_N_r_rem_mask,
-            pt.load_c);
-        }
+      if (partial_N_c && partial_N_r_loop) {
+        Executor::_panel_executor_masked_max_acc(
+          final_N_r_loop_rem,
+          M, K, N,
+          pattern_counts, col_indices, values, num_col_indices,
+          B + jj,
+          C + jj + (pi * M_r + iii) * N,
+          final_N_r_rem_mask,
+          pt.load_c
+        );
       }
+    }
+  }
+
+  void _execute_row_panel(int tii) {
+    using std::min;
+
+    ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
+    int Nb_full = partial_N_c_loop ? Nb - 1 : Nb;
+    const int iii = tii * M_c;
+
+    // K_c loop
+    for (int tkk = 0; tkk < Kb; tkk++) {
+      const PackedTile& pt = tiles[tii][tkk];
+
+      int tjj = 0, jjj = 0;
+      for (; tjj < Nb_full; tjj++, jjj += N_c) {
+        _inner_M_c_loop(iii, jjj, pt, false);
+      }
+
+      if (partial_N_c_loop) {
+        _inner_M_c_loop(iii, jjj, pt, true);
+      }
+    }
+  }
+
+  /******************************************
+   *    Outer Loop
+   ******************************************/
+
+  _ai void execute_row_panel(int tii) {
+    using std::min;
+
+    if (C_PACKING == PARTIAL_PACKING) {
+      _execute_row_panel_partial_packed_C(tii);
+    } else {
+      _execute_row_panel(tii);
     }
   }
 
   void operator()() {
-    using std::min;
-    ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
-
-    if (N % config.n_tile && C_PACKING_STRATEGY == NO_PACKING) {
-      std::cerr << "TODO: fix cleanup code " << N;
-      std::cerr << " " << config.n_tile << std::endl;
-      exit(-1);
-    }
-
-    if (C_PACKING_STRATEGY == PREPACK) {
-      report_time(report_packing_time, "Packed C",
-        pack_C<Scalar, M_r, N_r>,
-          C, C_packed, M_c, N_c, M, K, N);
-    }
-
-    if (C_PACKING_STRATEGY == PARTIAL_PACKING) {
-
-    }
-
-    int Nb_full = partial_N_c_loop ? Nb - 1 : Nb;
+//    if (N % config.n_tile && C_PACKING == NO_PACKING) {
+//      std::cerr << "TODO: fix cleanup code " << N;
+//      std::cerr << " " << config.n_tile << std::endl;
+//      exit(-1);
+//    }
 
     // TODO: Reimplement B packing
-    static_assert(B_PACKING_STRATEGY == NO_PACKING);
+    static_assert(B_PACKING == NO_PACKING);
 
-    // Parallel M_c's loop
     #pragma omp parallel for schedule(static)
-    for (int tii = 0; tii < Mb; tii++) {
-      const int iii = tii * M_c;
-      Scalar* __restrict__ C_packed_partial =
-          C_packed_partial_global + iii * N_padded;
-
-      // K_c loop
-      for (int tkk = 0; tkk < Kb; tkk++) {
-        const _PackedTile& pt = tiles[tii][tkk];
-
-        int tjj = 0, jjj = 0;
-        for (; tjj < Nb_full; tjj++, jjj += N_c) {
-          inner_N_c_loop_full(iii, jjj, pt, C_packed_partial);
-        }
-
-        if (partial_N_c_loop) {
-          inner_N_c_loop_partial(iii, jjj, pt, C_packed_partial);
-        }
-      }
-
-      if (C_PACKING_STRATEGY == PARTIAL_PACKING) {
-        report_time(report_packing_time, "Unpack C",
-            unpack_C_partial_M_c<Scalar, TileDims>,
-                std::min(M - iii, M_c), C + iii * N, C_packed_partial, td);
-      }
-    }
-
-    if (C_PACKING_STRATEGY == PREPACK) {
-      report_time(report_packing_time, "Unpack C",
-          unpack_C<Scalar, M_r, N_r>,
-              C, C_packed, M_c, N_c, M, K, N);
+    for (int tii = 0; tii < td.Mb; tii++) {
+      execute_row_panel(tii);
     }
 
     report_packing_time = false;

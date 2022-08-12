@@ -62,12 +62,12 @@ def gen_executor_body(scalar, reg_width_bits, acc_dims, max_acc_width, supported
         else:
             load_intrin = partial(intrin, "loadu")
             c_load = lambda i, k: load_intrin(f'C_temp + {k} * {reg_width_ele}',
-                                              mask=mask if k == acc_dims[1] - 1 else None)
+                                              mask=None if k < acc_dims[1]-1 else mask)
         for i in range(acc_dims[0]):
             for k in range(acc_dims[1]):
                 lines += [f'  cVec{i}{k} = {c_load(i, k)};']
             if not packed_C:
-                lines += [f'  C_temp += n;']
+                lines += [f'  C_temp += N;']
 
         lines += ['} else {']
         for i in range(acc_dims[0]):
@@ -84,8 +84,8 @@ def gen_executor_body(scalar, reg_width_bits, acc_dims, max_acc_width, supported
             c_store = lambda i, k: store_intrin(f'C + {i * max_acc_width + k} * {reg_width_ele}', f'cVec{i}{k}')
         else:
             store_intrin = partial(intrin, "storeu")
-            c_store = lambda i, k: store_intrin(f'C + {i} * n + {k} * {reg_width_ele}', f'cVec{i}{k}',
-                                                mask=mask if k == acc_dims[1] - 1 else None)
+            c_store = lambda i, k: store_intrin(f'C + {i} * N + {k} * {reg_width_ele}', f'cVec{i}{k}',
+                                                mask=None if k < acc_dims[1]-1 else mask)
 
         return [f'{c_store(i, k)};'
                 for i in range(acc_dims[0])
@@ -104,7 +104,7 @@ def gen_executor_body(scalar, reg_width_bits, acc_dims, max_acc_width, supported
         else:
             load_intrin = partial(intrin, "loadu")
 
-        b_load = lambda k: load_intrin(f'B_curr + {k} * {reg_width_ele}', mask=mask if k == acc_dims[1] - 1 else None)
+        b_load = lambda k: load_intrin(f'B_curr + {k} * {reg_width_ele}', mask=None if k < acc_dims[1]-1 else mask)
 
         for k in range(acc_dims[1]):
             count_loop += f'{m_reg} bVec{k} = {b_load(k)};'
@@ -114,7 +114,7 @@ def gen_executor_body(scalar, reg_width_bits, acc_dims, max_acc_width, supported
             # for k in range(acc_dims[1]):
             #     count_loop += f'__builtin_prefetch(((uint8_t*) B_curr) + {k * 64}, 0, 3);'
         else:
-            count_loop += f'B_curr = (*col_indices_curr) * n + B; col_indices_curr++;'
+            count_loop += f'B_curr = (*col_indices_curr) * N + B; col_indices_curr++;'
 
         pat_tmp = pat
         idx = 0
@@ -153,7 +153,7 @@ def gen_executor_body(scalar, reg_width_bits, acc_dims, max_acc_width, supported
     if packed_B:
         body += f'const {scalar} *__restrict__ B_curr = col_indices[0] * (N_r) + B;'
     else:
-        body += f'const {scalar} *__restrict__ B_curr = col_indices[0] * n + B;'
+        body += f'const {scalar} *__restrict__ B_curr = col_indices[0] * N + B;'
 
     body += 'uint32_t * col_indices_curr = col_indices + 1;'
 
@@ -272,7 +272,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
 
                 sop_panel_executor = f'''
     __ALWAYS_INLINE static void _panel_executor_{acc_width_str}(
-        int m, int k, int n,
+        int M, int K, int N,
         int* __restrict__            pattern_counts,
         uint32_t* __restrict__       col_indices,
         {scalar}* __restrict__       values,
@@ -285,7 +285,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
     }}\n\n
 
     __ALWAYS_INLINE static void panel_executor_{acc_width_str}(
-        int m, int k, int n,
+        int M, int K, int N,
         const PanelUsingCounts& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
@@ -298,42 +298,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
         int                     num_col_indices = panel_desc.num_col_indices;
       
         _panel_executor_{acc_width_str}(
-            m, k, n, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
-        );
-    }}
-    '''
-
-                sop_panel_executor_masked = f'''
-    __ALWAYS_INLINE static void _panel_executor_masked_{acc_width_str}(
-        int m, int k, int n,
-        int* __restrict__            pattern_counts,
-        uint32_t* __restrict__       col_indices,
-        {scalar}* __restrict__       values,
-        int                          num_col_indices,
-        const {scalar} *__restrict__ B,
-        {scalar} *__restrict__ C,
-        Mask last_reg_mask,
-        const bool load_c)
-    {{\n{gen_executor_body(scalar, vec_width, [acc_dims[0], acc_width], max_acc_width, supported_patterns,
-                           packed_C=False, packed_B=False, masked=True).emit(6)}
-    }}\n\n
-    
-    __ALWAYS_INLINE static void panel_executor_masked_{acc_width_str}(
-        int m, int k, int n,
-        const PanelUsingCounts& panel_desc,
-        const {scalar} *__restrict__ B,
-        {scalar} *__restrict__ C,
-        Mask last_reg_mask,
-        const bool load_c) {{
-    
-        uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
-        float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
-        int                     num_patterns = panel_desc.num_patterns;
-        int                     num_col_indices = panel_desc.num_col_indices;
-      
-        _panel_executor_masked_{acc_width_str}(
-            m, k, n, pattern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c
+            M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }}
     '''
@@ -374,7 +339,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
                 sop_panel_executor_packed_C = f'''
     #ifdef ENABLE_PACKED_C_KERNELS
     __ALWAYS_INLINE static void _panel_executor_packed_C_{acc_width_str}(
-        uint32_t n,
+        int M, int K, int N,
         int* __restrict__            pattern_counts,
         uint32_t* __restrict__       col_indices,
         {scalar}* __restrict__       values,
@@ -387,7 +352,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
     }}\n\n
     
     __ALWAYS_INLINE static void panel_executor_packed_C_{acc_width_str}(
-        uint32_t n,
+        int M, int K, int N,
         const PanelUsingCounts& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
@@ -400,20 +365,88 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
         int                     num_col_indices = panel_desc.num_col_indices;
       
         _panel_executor_packed_C_{acc_width_str}(
-            n, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
+            M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }}
     #endif
     '''
                 f.write(sop_panel_executor)
-                f.write(sop_panel_executor_masked)
                 f.write(sop_panel_executor_packed)
                 f.write(sop_panel_executor_packed_C)
 
             sop_panel_executor_packed_masked_C = f'''
     #ifdef ENABLE_PACKED_C_KERNELS
+    __ALWAYS_INLINE static void _panel_executor_masked_1(
+        int M, int K, int N,
+        int* __restrict__            pattern_counts,
+        uint32_t* __restrict__       col_indices,
+        {scalar}* __restrict__       values,
+        int                          num_col_indices,
+        const {scalar} *__restrict__ B,
+        {scalar} *__restrict__       C,
+        Mask last_reg_mask,
+        const bool load_c)
+    {{\n{gen_executor_body(scalar, vec_width, [acc_dims[0], 1], max_acc_width, supported_patterns,
+                           packed_C=False, packed_B=False, masked=True).emit(6)}
+    }}\n\n
+    
+    static void _panel_executor_masked_max_acc(
+        int N_rem,
+        int M, int K, int N,
+        int* __restrict__            pattern_counts,
+        uint32_t* __restrict__       col_indices,
+        {scalar}* __restrict__       values,
+        int                          num_col_indices,
+        const {scalar} *__restrict__ B,
+        {scalar} *__restrict__       C,
+        Mask last_reg_mask,
+        const bool load_c) {{
+
+        int _j = 0;
+        for (; _j < N_rem - {reg_width_ele-1}; _j += {reg_width_ele}) {{
+            _panel_executor_1(
+                M, K, N,
+                pattern_counts, col_indices, values, num_col_indices,
+                B + _j,
+                C + _j,
+                load_c);
+        }}
+        
+        _panel_executor_masked_1(
+            M, K, N,
+            pattern_counts, col_indices, values, num_col_indices,
+            B + _j,
+            C + _j,
+            last_reg_mask, load_c);
+    }}
+    
+    static void panel_executor_masked_max_acc(
+        int N_rem,
+        int M, int K, int N,
+        const PanelUsingCounts& panel_desc,
+        const {scalar} *__restrict__ B,
+        {scalar} *__restrict__ C,
+        Mask last_reg_mask,
+        const bool load_c) {{
+
+        uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
+        float* __restrict__     values = panel_desc.values;
+        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int                     num_patterns = panel_desc.num_patterns;
+        int                     num_col_indices = panel_desc.num_col_indices;
+     
+        _panel_executor_masked_max_acc(
+            N_rem, M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
+    }}
+    
+    #endif
+    '''
+            f.write(sop_panel_executor_packed_masked_C)
+
+            sop_panel_executor_packed_masked_C = f'''
+    #ifdef ENABLE_PACKED_C_KERNELS
     __ALWAYS_INLINE static void _panel_executor_masked_packed_C_1(
-        uint32_t n,
+        int M, int K, int N,
         int* __restrict__            pattern_counts,
         uint32_t* __restrict__       col_indices,
         {scalar}* __restrict__       values,
@@ -426,46 +459,63 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
                            packed_C=True, packed_B=False, masked=True).emit(6)}
     }}\n\n
     
-    static void panel_executor_masked_packed_C_max_acc(
-       uint32_t N_rem,
-       uint32_t N,
-       const PanelUsingCounts& panel_desc,
-       const {scalar} *__restrict__ B,
-       {scalar} *__restrict__ C,
-       Mask last_reg_mask,
-       const bool load_c) {{
+    static void _panel_executor_masked_packed_C_max_acc(
+        int N_rem,
+        int M, int K, int N,
+        int* __restrict__            pattern_counts,
+        uint32_t* __restrict__       col_indices,
+        {scalar}* __restrict__       values,
+        int                          num_col_indices,
+        const {scalar} *__restrict__ B,
+        {scalar} *__restrict__       C,
+        Mask last_reg_mask,
+        const bool load_c) {{
 
-       uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
-       float* __restrict__     values = panel_desc.values;
-       int* __restrict__       pattern_counts = panel_desc.pattern_counts;
-       int                     num_patterns = panel_desc.num_patterns;
-       int                     num_col_indices = panel_desc.num_col_indices;
-     
-       int _j = 0;
-       for (; _j < N_rem - {reg_width_ele-1}; _j += {reg_width_ele}) {{
-           _panel_executor_packed_C_1(
-               N,
-               pattern_counts, col_indices, values, num_col_indices,
-               B + _j,
-               C + _j,
-               load_c);
-       }}
-       
-       _panel_executor_masked_packed_C_1(
-           N,
-           pattern_counts, col_indices, values, num_col_indices,
-           B + _j,
-           C + _j,
-           last_reg_mask, load_c);
+        int _j = 0;
+        for (; _j < N_rem - {reg_width_ele-1}; _j += {reg_width_ele}) {{
+            _panel_executor_packed_C_1(
+                M, K, N,
+                pattern_counts, col_indices, values, num_col_indices,
+                B + _j,
+                C + _j,
+                load_c);
+        }}
+        
+        _panel_executor_masked_packed_C_1(
+            M, K, N,
+            pattern_counts, col_indices, values, num_col_indices,
+            B + _j,
+            C + _j,
+            last_reg_mask, load_c);
     }}
+    
+    static void panel_executor_masked_packed_C_max_acc(
+        int N_rem,
+        int M, int K, int N,
+        const PanelUsingCounts& panel_desc,
+        const {scalar} *__restrict__ B,
+        {scalar} *__restrict__ C,
+        Mask last_reg_mask,
+        const bool load_c) {{
+
+        uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
+        float* __restrict__     values = panel_desc.values;
+        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int                     num_patterns = panel_desc.num_patterns;
+        int                     num_col_indices = panel_desc.num_col_indices;
+     
+        _panel_executor_masked_packed_C_max_acc(
+            N_rem, M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
+    }}
+    
     #endif
     '''
             f.write(sop_panel_executor_packed_masked_C)
 
             sop_panel_executor = f'''
-    static void panel_executor_max_acc_width(
+    static void panel_executor_max_acc_width_N_c(
         int N_c,
-        int m, int k, int n,
+        int M, int K, int N,
         const PanelUsingCounts& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
@@ -479,7 +529,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
     
         for (int _j = 0; _j < N_c; _j += N_r) {{
             _panel_executor_max_acc(
-                m, k, n,
+                M, K, N,
                 pattern_counts, col_indices, values, num_col_indices,
                 B + _j,
                 C + _j,
@@ -489,9 +539,9 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
             f.write(sop_panel_executor)
 
             sop_panel_executor = f'''
-    static void panel_executor_cleanup(
+    static void panel_executor_cleanup_N_c(
         int N_c_rem,
-        int m, int k, int n,
+        int M, int K, int N,
         const PanelUsingCounts& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
@@ -508,9 +558,9 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
         int end_of_partial_blocks = ((N_c_rem - end_of_full_blocks) / N_r) * N_r;
         
         if (end_of_full_blocks) {{
-            panel_executor_max_acc_width(
+            panel_executor_max_acc_width_N_c(
                 end_of_full_blocks,
-                m, k, n,
+                M, K, N,
                 panel_desc,
                 B, C,
                 load_c);
@@ -518,7 +568,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
 
         for (_j = end_of_full_blocks; _j < end_of_partial_blocks; _j += {reg_width_ele}) {{
             _panel_executor_1(
-                m, k, n,
+                M, K, N,
                 pattern_counts, col_indices, values, num_col_indices,
                 B + _j,
                 C + _j,
@@ -526,7 +576,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
         }}
         
         _panel_executor_masked_1(
-            m, k, n,
+            M, K, N,
             pattern_counts, col_indices, values, num_col_indices,
             B + _j,
             C + _j,

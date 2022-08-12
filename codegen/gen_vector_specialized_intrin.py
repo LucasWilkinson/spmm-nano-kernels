@@ -13,7 +13,6 @@ SUPPORTED_PATTERNS_16 = [
    0b11111111
 ]
 
-
 SUPPORTED_PATTERNS_8 = [
     1 << i for i in range(8) #3 << i for i in range(0, 8, 2)
 ] + [
