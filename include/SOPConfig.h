@@ -4,9 +4,19 @@
 
 #pragma once
 
+
+namespace sop {
+
+enum TilingStrategy {
+  CAKE_TILING,
+  MANUAL_TILING,
+};
+
 struct TileConfig {
   int m_tile = 16;
   int k_tile = 256;
   int n_tile = 64;
-  int use_cake_tiling = 0;
+  TilingStrategy tiling_strategy = CAKE_TILING;
+};
+
 };

@@ -14,6 +14,7 @@
 #include "utils/algorithmic.h"
 #include "utils/Vec.h"
 
+#include "cake_block_dims.h"
 #include "TileLocs.h"
 #include "COO.h"
 
@@ -144,6 +145,7 @@ class SOPMatMul {
  public:
   SOPMatMul(
       int m, int k,
+      int b_col_predict,
       Scalar* values,
       int* row_offsets,
       int* column_indices,
@@ -158,6 +160,23 @@ class SOPMatMul {
         sparse_merging_strategy(sparse_merging_strategy),
         execution_strategy(execution_strategy) {
     coo = new COO<Scalar>(m, k, row_offsets, column_indices, values);
+
+    if (config.tiling_strategy == CAKE_TILING) {
+      cake_cntx_t* cake_cntx = cake_query_cntx();
+
+      cake_cntx->nr = KernelDesc::N_r;
+      cake_cntx->mr = KernelDesc::M_r;
+      cache_dims_t* cache_dims = get_cache_dims_2(
+          m, b_col_predict, k, num_threads, cake_cntx, KMN,
+          nullptr, double(coo->nnz()) / (m * k), false, true);
+
+      config.m_tile = cache_dims->m_c;
+      config.k_tile = cache_dims->k_c;
+      config.n_tile = cache_dims->n_c;
+
+      free(cake_cntx);
+      free(cache_dims);
+    }
 
     inspect_and_pack();
   }
