@@ -102,7 +102,7 @@ struct SOPExecutor {
   bool partial_N_r_loop = false;
   int final_N_c_loop_N_r_count = 0;
   int final_N_r_loop_rem = 0;
-  Executor::Mask N_r_rem_mask;
+  Executor::Mask final_N_r_rem_mask;
 
   bool report_packing_time = false;
 
@@ -127,7 +127,7 @@ struct SOPExecutor {
 
     final_N_c_loop_N_r_count = N_c_rem / N_r;
     final_N_r_loop_rem = N_r_rem;
-    N_r_rem_mask = Executor::create_mask(N_r_rem);
+    final_N_r_rem_mask = Executor::create_mask(N_r_rem);
 
     if (C_PACKING_STRATEGY == PREPACK) {
       C_packed = new (std::align_val_t(4096)) Scalar[td.M_padded * td.N_padded]();
@@ -234,7 +234,7 @@ struct SOPExecutor {
             pt.sop.panel_descs[pi],
             B + jj,
             C_packed + jjj * M_c + (pi * M_r) * N_c + (tj * N_r) * M_r,
-            N_r_rem_mask,
+            final_N_r_rem_mask,
             pt.load_c);
         } else {
           Executor::panel_executor_masked_max_acc(
@@ -242,7 +242,7 @@ struct SOPExecutor {
             pt.sop.panel_descs[pi],
             B + jj,
             C + jj + (pi * M_r + iii) * N,
-            N_r_rem_mask,
+            final_N_r_rem_mask,
             pt.load_c);
         }
       }
