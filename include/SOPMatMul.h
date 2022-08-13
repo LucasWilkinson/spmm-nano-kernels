@@ -151,9 +151,9 @@ class SOPMatMul {
       int* column_indices,
       TileConfig config,
       int num_threads,
-      enum DenseTileMergingStrategy dense_merging_strategy,
-      enum SparseTileMergingStrategy sparse_merging_strategy,
-      enum ExecutionStrategy execution_strategy)
+      enum DenseTileMergingStrategy dense_merging_strategy = ROW_BASED,
+      enum SparseTileMergingStrategy sparse_merging_strategy = ALL_SOP,
+      enum ExecutionStrategy execution_strategy = TILED_SPARSE)
       : m(m), k(k), config(config),
         num_threads(num_threads),
         dense_merging_strategy(dense_merging_strategy),

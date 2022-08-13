@@ -8,11 +8,11 @@
 #include <mkl.h>
 #include <omp.h>
 #include <chrono>
+#include <vectorclass.h>
 
 #include "utils/Vec.h"
 
 #include "boost/preprocessor/repetition/repeat.hpp"
-#include "vectorclass/vectorclass.h"
 
 #include "SOPKernelDesc.h"
 #include "packing.h"

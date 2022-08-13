@@ -5,7 +5,7 @@
 #ifndef DNN_SPMM_BENCH_VEC_TYPE_UTILS_H
 #define DNN_SPMM_BENCH_VEC_TYPE_UTILS_H
 
-#include "vectorclass/vectorclass.h"
+#include "vectorclass.h"
 
 template<typename _Scalar, int vector_width>
 struct Vec { using Type = Vec8f; using Scalar = _Scalar; };
