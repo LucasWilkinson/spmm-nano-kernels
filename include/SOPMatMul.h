@@ -146,12 +146,12 @@ class SOPMatMul {
   SOPMatMul(
       int m, int k,
       int b_col_predict,
-      Scalar* values,
-      int* row_offsets,
-      int* column_indices,
+      const Scalar* values,
+      const int* row_offsets,
+      const int* column_indices,
       TileConfig config,
       int num_threads,
-      enum DenseTileMergingStrategy dense_merging_strategy = ROW_BASED,
+      enum DenseTileMergingStrategy dense_merging_strategy = ALL_SPARSE,
       enum SparseTileMergingStrategy sparse_merging_strategy = ALL_SOP,
       enum ExecutionStrategy execution_strategy = TILED_SPARSE)
       : m(m), k(k), config(config),
@@ -169,6 +169,11 @@ class SOPMatMul {
       cache_dims_t* cache_dims = get_cache_dims_2(
           m, b_col_predict, k, num_threads, cake_cntx, KMN,
           nullptr, double(coo->nnz()) / (m * k), false, true);
+
+      if (!cache_dims->m_c || !cache_dims->k_c || !cache_dims->n_c) {
+        std::cerr << "Invalid cache dimensions" << std::endl;
+        exit(-1);
+      }
 
       config.m_tile = cache_dims->m_c;
       config.k_tile = cache_dims->k_c;
@@ -203,13 +208,20 @@ class SOPMatMul {
 
   // This operator overloading enables calling
   // operator function () on objects of increment
-  void operator()(Scalar* B, Scalar* C, int b_cols) const {
+  void operator()(Scalar* C, const Scalar* B, int b_cols) const {
     SOPExecutor<KernelDesc> executor(m, k, b_cols, packed_tiles,
                                      B, C, 1, num_threads, config);
     executor();
   }
 
- private:
+  // This operator overloading enables calling
+  // operator function () on objects of increment
+  SOPExecutor<KernelDesc> create_executor(Scalar* C, const Scalar* B, int b_cols) const {
+    return SOPExecutor<KernelDesc>(m, k, b_cols, packed_tiles, B, C, 1, num_threads, config);
+  }
+
+
+private:
   SubmatrixLoc merge_locs(const std::vector<SubmatrixLoc>& tiles) {
     return std::accumulate(
         tiles.begin(),

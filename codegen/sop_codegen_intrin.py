@@ -304,7 +304,6 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
     '''
 
                 sop_panel_executor_packed = f'''
-    #ifdef ENABLE_PACKED_KERNELS
     __ALWAYS_INLINE static void _panel_executor_packed_{acc_width_str}(
         int* __restrict__            pattern_counts,
         uint32_t* __restrict__       col_indices,
@@ -333,11 +332,9 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
             pattern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }}
-    #endif
     '''
 
                 sop_panel_executor_packed_C = f'''
-    #ifdef ENABLE_PACKED_C_KERNELS
     __ALWAYS_INLINE static void _panel_executor_packed_C_{acc_width_str}(
         int M, int K, int N,
         int* __restrict__            pattern_counts,
@@ -368,14 +365,12 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
             M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }}
-    #endif
     '''
                 f.write(sop_panel_executor)
                 f.write(sop_panel_executor_packed)
                 f.write(sop_panel_executor_packed_C)
 
             sop_panel_executor_packed_masked_C = f'''
-    #ifdef ENABLE_PACKED_C_KERNELS
     __ALWAYS_INLINE static void _panel_executor_masked_1(
         int M, int K, int N,
         int* __restrict__            pattern_counts,
@@ -438,13 +433,10 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
         _panel_executor_masked_max_acc(
             N_rem, M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
     }}
-    
-    #endif
     '''
             f.write(sop_panel_executor_packed_masked_C)
 
             sop_panel_executor_packed_masked_C = f'''
-    #ifdef ENABLE_PACKED_C_KERNELS
     __ALWAYS_INLINE static void _panel_executor_masked_packed_C_1(
         int M, int K, int N,
         int* __restrict__            pattern_counts,
@@ -507,8 +499,6 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
         _panel_executor_masked_packed_C_max_acc(
             N_rem, M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
     }}
-    
-    #endif
     '''
             f.write(sop_panel_executor_packed_masked_C)
 

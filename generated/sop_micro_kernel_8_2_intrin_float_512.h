@@ -611,7 +611,6 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
         );
     }
     
-    #ifdef ENABLE_PACKED_KERNELS
     __ALWAYS_INLINE static void _panel_executor_packed_max_acc(
         int* __restrict__            pattern_counts,
         uint32_t* __restrict__       col_indices,
@@ -1085,9 +1084,7 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
             pattern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
-    #endif
     
-    #ifdef ENABLE_PACKED_C_KERNELS
     __ALWAYS_INLINE static void _panel_executor_packed_C_max_acc(
         int M, int K, int N,
         int* __restrict__            pattern_counts,
@@ -1563,7 +1560,6 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
             M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
-    #endif
     
     __ALWAYS_INLINE static void _panel_executor_1(
         int M, int K, int N,
@@ -1942,7 +1938,6 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
         );
     }
     
-    #ifdef ENABLE_PACKED_KERNELS
     __ALWAYS_INLINE static void _panel_executor_packed_1(
         int* __restrict__            pattern_counts,
         uint32_t* __restrict__       col_indices,
@@ -2309,9 +2304,7 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
             pattern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
-    #endif
     
-    #ifdef ENABLE_PACKED_C_KERNELS
     __ALWAYS_INLINE static void _panel_executor_packed_C_1(
         int M, int K, int N,
         int* __restrict__            pattern_counts,
@@ -2680,9 +2673,7 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
             M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
-    #endif
     
-    #ifdef ENABLE_PACKED_C_KERNELS
     __ALWAYS_INLINE static void _panel_executor_masked_1(
         int M, int K, int N,
         int* __restrict__            pattern_counts,
@@ -3092,9 +3083,6 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
             N_rem, M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
     }
     
-    #endif
-    
-    #ifdef ENABLE_PACKED_C_KERNELS
     __ALWAYS_INLINE static void _panel_executor_masked_packed_C_1(
         int M, int K, int N,
         int* __restrict__            pattern_counts,
@@ -3495,8 +3483,6 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
         _panel_executor_masked_packed_C_max_acc(
             N_rem, M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
     }
-    
-    #endif
     
     static void panel_executor_max_acc_width_N_c(
         int N_c,

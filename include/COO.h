@@ -104,7 +104,7 @@ public:
     COO(CSR<_Scalar>& csr): COO(csr.r, csr.c, csr.Lp, csr.Li, csr.Lx) {}
 
     template<typename Ptr, typename Indices>
-    COO(int rows, int cols, Ptr* row_ptrs, Indices* col_inds, _Scalar* values) {
+    COO(int rows, int cols, const Ptr* row_ptrs, const Indices* col_inds, const _Scalar* values) {
         m_non_zeros.resize(0);
         m_non_zeros.reserve(row_ptrs[rows]);
 

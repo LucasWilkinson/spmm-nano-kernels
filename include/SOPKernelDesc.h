@@ -8,7 +8,6 @@
 #include "Matrix.h"
 #include "COO.h"
 
-#include <mkl.h>
 #include <vector>
 
 #include "utils/tiling.h"

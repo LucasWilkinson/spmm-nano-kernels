@@ -5,7 +5,6 @@
 #pragma once
 
 #include <assert.h>
-#include <mkl.h>
 #include <omp.h>
 #include <chrono>
 #include <vectorclass.h>
@@ -79,7 +78,7 @@ struct SOPExecutor {
   bool partial_N_r_loop = false;
   int final_N_c_loop_N_r_count = 0;
   int final_N_r_loop_rem = 0;
-  Executor::Mask final_N_r_rem_mask;
+  typename Executor::Mask final_N_r_rem_mask;
 
   bool report_packing_time = false;
 
