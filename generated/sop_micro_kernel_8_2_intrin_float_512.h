@@ -116,7 +116,7 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
     
     using Mask = __mmask16;
     static Mask create_mask(int n) { return ((1 << n) - 1); }
-    static Mask precomp_mask(int N) { return create_mask(N % N_r); }
+    static Mask precomp_mask(int N) { return create_mask(N % 16); }
 
     static const int M_r = 8;
     static const int N_r = 2 * 16;

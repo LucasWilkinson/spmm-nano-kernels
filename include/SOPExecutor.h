@@ -92,7 +92,8 @@ struct SOPExecutor {
       const Config& config
   ): M(M), K(K), N(N), tiles(tiles), B(B), C(C), batch_size(batch_size),
         num_threads(num_threads), config(config),
-        td(M, K, N, config.m_tile, config.k_tile, config.n_tile, num_threads),
+        td(M, K, N, config.m_tile, config.k_tile,
+           std::max(config.n_tile, N_r), num_threads),
         M_c(td.M_c), K_c(td.K_c), N_c(td.N_c)
   {
     int N_c_rem = (N % N_c);
@@ -103,7 +104,7 @@ struct SOPExecutor {
 
     final_N_c_loop_N_r_count = N_c_rem / N_r;
     final_N_r_loop_rem = N_r_rem;
-    final_N_r_rem_mask = Executor::create_mask(N_r_rem);
+    final_N_r_rem_mask = Executor::precomp_mask(N_r_rem);
 
     if (C_PACKING == PREPACK) {
       C_packed =

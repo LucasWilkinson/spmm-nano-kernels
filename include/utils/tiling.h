@@ -42,15 +42,14 @@ struct TileDims {
     Kb = std::ceil(K / double(K_c));
     Nb = std::ceil(N / double(N_c));
 
-    M_pad = (M % M_c);
-    K_pad = (K % K_c);
-    N_pad = (N % N_c);
-
     M_padded = Mb * M_c;
     K_padded = Kb * K_c;
     N_padded = Nb * N_c;
 
     N_padded += (N_padded % 64) ? (64 - (N_padded % 64)) : 0;
+
+    M_pad = (M_padded != M);
+    K_pad = (K_padded != K);
     N_pad = (N_padded != N);
 
     pMb = std::ceil(Mb / p);

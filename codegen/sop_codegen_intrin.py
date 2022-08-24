@@ -250,7 +250,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
             f.write('\n')
             f.write(f'    using Mask = __mmask{reg_width_ele};\n')
             f.write(f'    static Mask create_mask(int n) {{ return ((1 << n) - 1); }}\n')
-            f.write(f'    static Mask precomp_mask(int N) {{ return create_mask(N % N_r); }}\n')
+            f.write(f'    static Mask precomp_mask(int N) {{ return create_mask(N % {reg_width_ele}); }}\n')
             f.write('\n')
             f.write(f'    static const int M_r = {acc_dims[0]};\n')
             f.write(f'    static const int N_r = {acc_dims[1]} * {reg_num_ele};\n')
