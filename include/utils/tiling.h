@@ -50,6 +50,9 @@ struct TileDims {
     K_padded = Kb * K_c;
     N_padded = Nb * N_c;
 
+    N_padded += (N_padded % 64) ? (64 - (N_padded % 64)) : 0;
+    N_pad = (N_padded != N);
+
     pMb = std::ceil(Mb / p);
   }
 };

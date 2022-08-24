@@ -143,14 +143,14 @@ struct SOPExecutor {
   void _inner_M_c_loop_partial_packed_c(int iii, int jjj,
                                const PackedTile& pt,
                                Scalar* __restrict__ C_packed,
-                               const bool partial_N_c) {
+                               const bool partial_final_loop) {
 
-    int _c_N_r = (partial_N_c) ? final_N_c_loop_N_r_count : c_N_r;
+    int _c_N_r = (partial_final_loop) ? final_N_c_loop_N_r_count : c_N_r;
 
     // M_r loop
     for (int pi = 0; pi < pt.sop.num_panels; pi++) {
       int tj = 0, _jj = 0;
-      const auto panel_desc = pt.sop.panel_descs[pi];
+      const auto& panel_desc = pt.sop.panel_descs[pi];
 
       uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
       float* __restrict__     values = panel_desc.values;
@@ -168,7 +168,7 @@ struct SOPExecutor {
         );
       }
 
-      if (partial_N_c && partial_N_r_loop) {
+      if (partial_final_loop && partial_N_r_loop) {
         Executor::_panel_executor_masked_packed_C_max_acc(
           final_N_r_loop_rem,
           M, K, N,
@@ -186,7 +186,7 @@ struct SOPExecutor {
     using std::min;
 
     ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
-    int Nb_full = partial_N_c_loop ? Nb - 1 : Nb;
+    int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
     const int iii = tii * M_c;
 
     Scalar* __restrict__ C_packed_partial =
@@ -201,7 +201,7 @@ struct SOPExecutor {
         _inner_M_c_loop_partial_packed_c(iii, jjj, pt, C_packed_partial, false);
       }
 
-      if (partial_N_c_loop) {
+      if (partial_N_c_loop || partial_N_r_loop) {
         _inner_M_c_loop_partial_packed_c(iii, jjj, pt, C_packed_partial, true);
       }
     }
@@ -217,14 +217,14 @@ struct SOPExecutor {
 
   void _inner_M_c_loop(int iii, int jjj,
                       const PackedTile& pt,
-                      const bool partial_N_c) {
+                      const bool partial_final_loop) {
 
-    int _c_N_r = (partial_N_c) ? final_N_c_loop_N_r_count : c_N_r;
+    int _c_N_r = (partial_final_loop) ? final_N_c_loop_N_r_count : c_N_r;
 
     // M_r loop
     for (int pi = 0; pi < pt.sop.num_panels; pi++) {
       int tj = 0, jj = jjj;
-      const auto panel_desc = pt.sop.panel_descs[pi];
+      const auto& panel_desc = pt.sop.panel_descs[pi];
 
       uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
       float* __restrict__     values = panel_desc.values;
@@ -242,7 +242,7 @@ struct SOPExecutor {
         );
       }
 
-      if (partial_N_c && partial_N_r_loop) {
+      if (partial_final_loop && partial_N_r_loop) {
         Executor::_panel_executor_masked_max_acc(
           final_N_r_loop_rem,
           M, K, N,
@@ -260,7 +260,7 @@ struct SOPExecutor {
     using std::min;
 
     ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
-    int Nb_full = partial_N_c_loop ? Nb - 1 : Nb;
+    int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
     const int iii = tii * M_c;
 
     // K_c loop
@@ -272,7 +272,7 @@ struct SOPExecutor {
         _inner_M_c_loop(iii, jjj, pt, false);
       }
 
-      if (partial_N_c_loop) {
+      if (partial_N_c_loop || partial_N_r_loop) {
         _inner_M_c_loop(iii, jjj, pt, true);
       }
     }

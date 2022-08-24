@@ -308,7 +308,7 @@ _ai void unpack_C_partial_M_c(
       int N_c_end = jjj + N_c;
       bool partial_tile = false;
 
-      if (N_c_end > N) {
+      if (N_c_end > N || N_c_end < N_r) {
         N_c_end = N - (N_r - 1); // adjust to end of full N_r tiles
         partial_tile = true;
       }
@@ -379,6 +379,7 @@ _ai void unpack_C_partial_M_c_N_c(
         for (int _j = 0; _j < N_r; _j += VecType::size()) {
           int j = jj + _j;
 
+          std::cout << " testing " << std::endl;
           __m512 zmm = _mm512_load_ps(C_packed + offset + _i * N_r + _j);
           _mm512_stream_ps(C + (i * N) + j, zmm);
         }
@@ -418,6 +419,7 @@ _ai void unpack_C_partial(
 
               VecType vec;
               vec.load_a(C_packed + offset + _i * N_r + _j);
+              std::cout << " testing " << vec.data[0] << std::endl;
               vec.store(&C[(i * N) + j]);
             }
           }
