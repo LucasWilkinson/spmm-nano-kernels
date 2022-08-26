@@ -1,14 +1,17 @@
 #pragma once
 
-#include "SOPMicroKernelBase.h"
-#include "SOPStorage.h"
+#include "MicroKernelBase.h"
+#include "Storage.h"
 
 #include <immintrin.h>
 
 
 namespace sop {
+#define REGISTER_FACTORY_MicroKernel_float_13fd3_512_8x2(KD)\
+    sop::ExecutorFactorySpeacilized<KDFloatNoPacking, sop::MicroKernel_float_13fd3_512_8x2>\
+        KD##_MicroKernel_float_13fd3_512_8x2;
 
-template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
+struct MicroKernel_float_13fd3_512_8x2 {
 
     static const uint16_t* supported_patterns() {
         static uint16_t patterns[] = {
@@ -56,7 +59,7 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
         if (pattern == 0b11001111) return 16;
         if (pattern == 0b00111111) return 17;
         if (pattern == 0b11111111) return 18;
-        if (pattern == 0) return ZERO_PATTERN_ID; 
+        if (pattern == 0) return sop::ZERO_PATTERN_ID; 
         std::cerr << "Unable to map unsupported pattern " <<  (int) pattern << std::endl;
         exit(-1);
         return 0;
@@ -82,7 +85,7 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
         if (pattern == 16) return 0b11001111;
         if (pattern == 17) return 0b00111111;
         if (pattern == 18) return 0b11111111;
-        if (pattern == ZERO_PATTERN_ID) return 0; 
+        if (pattern == sop::ZERO_PATTERN_ID) return 0; 
         std::cerr << "Unable to unmap unsupported pattern id " << (int) pattern << std::endl;
         exit(-1);
         return 0;
@@ -108,7 +111,7 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
         if (pattern == 16) return 6;
         if (pattern == 17) return 6;
         if (pattern == 18) return 8;
-        if (pattern == ZERO_PATTERN_ID) return 0; 
+        if (pattern == sop::ZERO_PATTERN_ID) return 0; 
         std::cerr << "Unable to get pop count for pattern id " << (int) pattern << std::endl;
         exit(-1);
         return 0;
@@ -118,8 +121,12 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
     static Mask create_mask(int n) { return ((1 << n) - 1); }
     static Mask precomp_mask(int N) { return create_mask(N % 16); }
 
-    static const int M_r = 8;
-    static const int N_r = 2 * 16;
+    using Scalar = float;
+    static constexpr int M_r = 8;
+    static constexpr int N_r = 2 * 16;
+    static constexpr int N_r_reg = 2;
+    static constexpr int vec_width_bits = 512;
+    static constexpr const char* id = "13fd3";
     static int max_acc_width_in_vecs() { return 2; };
     static int max_acc_width_in_eles() { return 2 * 16; };
 
@@ -127,7 +134,7 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
     static int panel_height() { return 8; }
 
 
-    __ALWAYS_INLINE static void _panel_executor_max_acc(
+    __ALWAYS_INLINE static void _panel_executor_2(
         int M, int K, int N,
         int* __restrict__            pattern_counts,
         uint32_t* __restrict__       col_indices,
@@ -593,9 +600,9 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
 
 
 
-    __ALWAYS_INLINE static void panel_executor_max_acc(
+    __ALWAYS_INLINE static void panel_executor_2(
         int M, int K, int N,
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         const bool load_c) {
@@ -606,12 +613,12 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_max_acc(
+        _panel_executor_2(
             M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
     
-    __ALWAYS_INLINE static void _panel_executor_packed_max_acc(
+    __ALWAYS_INLINE static void _panel_executor_packed_2(
         int* __restrict__            pattern_counts,
         uint32_t* __restrict__       col_indices,
         float* __restrict__       values,
@@ -1068,8 +1075,8 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
 
 
 
-    __ALWAYS_INLINE static void panel_executor_packed_max_acc(
-        const PanelUsingCounts& panel_desc,
+    __ALWAYS_INLINE static void panel_executor_packed_2(
+        const sop::PanelUsingCounts& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         const bool load_c) {
@@ -1080,12 +1087,12 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_packed_max_acc(
+        _panel_executor_packed_2(
             pattern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
     
-    __ALWAYS_INLINE static void _panel_executor_packed_C_max_acc(
+    __ALWAYS_INLINE static void _panel_executor_packed_C_2(
         int M, int K, int N,
         int* __restrict__            pattern_counts,
         uint32_t* __restrict__       col_indices,
@@ -1543,9 +1550,9 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
 
 
     
-    __ALWAYS_INLINE static void panel_executor_packed_C_max_acc(
+    __ALWAYS_INLINE static void panel_executor_packed_C_2(
         int M, int K, int N,
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         const bool load_c) {
@@ -1556,12 +1563,12 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_packed_C_max_acc(
+        _panel_executor_packed_C_2(
             M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
     
-    __ALWAYS_INLINE static void _panel_executor_1(
+    __ALWAYS_INLINE static void _panel_executor_max_acc(
         int M, int K, int N,
         int* __restrict__            pattern_counts,
         uint32_t* __restrict__       col_indices,
@@ -1920,9 +1927,9 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
 
 
 
-    __ALWAYS_INLINE static void panel_executor_1(
+    __ALWAYS_INLINE static void panel_executor_max_acc(
         int M, int K, int N,
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         const bool load_c) {
@@ -1933,12 +1940,12 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_1(
+        _panel_executor_max_acc(
             M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
     
-    __ALWAYS_INLINE static void _panel_executor_packed_1(
+    __ALWAYS_INLINE static void _panel_executor_packed_max_acc(
         int* __restrict__            pattern_counts,
         uint32_t* __restrict__       col_indices,
         float* __restrict__       values,
@@ -2288,8 +2295,8 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
 
 
 
-    __ALWAYS_INLINE static void panel_executor_packed_1(
-        const PanelUsingCounts& panel_desc,
+    __ALWAYS_INLINE static void panel_executor_packed_max_acc(
+        const sop::PanelUsingCounts& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         const bool load_c) {
@@ -2300,12 +2307,12 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_packed_1(
+        _panel_executor_packed_max_acc(
             pattern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
     
-    __ALWAYS_INLINE static void _panel_executor_packed_C_1(
+    __ALWAYS_INLINE static void _panel_executor_packed_C_max_acc(
         int M, int K, int N,
         int* __restrict__            pattern_counts,
         uint32_t* __restrict__       col_indices,
@@ -2656,9 +2663,9 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
 
 
     
-    __ALWAYS_INLINE static void panel_executor_packed_C_1(
+    __ALWAYS_INLINE static void panel_executor_packed_C_max_acc(
         int M, int K, int N,
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         const bool load_c) {
@@ -2669,7 +2676,7 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_packed_C_1(
+        _panel_executor_packed_C_max_acc(
             M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
@@ -3034,7 +3041,7 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
 
 
     
-    static void _panel_executor_masked_max_acc(
+    __ALWAYS_INLINE static void _panel_executor_masked_max_acc(
         int N_rem,
         int M, int K, int N,
         int* __restrict__            pattern_counts,
@@ -3064,10 +3071,10 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
             last_reg_mask, load_c);
     }
     
-    static void panel_executor_masked_max_acc(
+    __ALWAYS_INLINE static void panel_executor_masked_max_acc(
         int N_rem,
         int M, int K, int N,
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         Mask last_reg_mask,
@@ -3435,7 +3442,7 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
 
 
     
-    static void _panel_executor_masked_packed_C_max_acc(
+    __ALWAYS_INLINE static void _panel_executor_masked_packed_C_max_acc(
         int N_rem,
         int M, int K, int N,
         int* __restrict__            pattern_counts,
@@ -3465,10 +3472,10 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
             last_reg_mask, load_c);
     }
     
-    static void panel_executor_masked_packed_C_max_acc(
+    __ALWAYS_INLINE static void panel_executor_masked_packed_C_max_acc(
         int N_rem,
         int M, int K, int N,
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         Mask last_reg_mask,
@@ -3484,10 +3491,10 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
             N_rem, M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
     }
     
-    static void panel_executor_max_acc_width_N_c(
+    __ALWAYS_INLINE static void panel_executor_max_acc_width_N_c(
         int N_c,
         int M, int K, int N,
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         const bool load_c)
@@ -3510,10 +3517,10 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
     }
 
 
-    static void panel_executor_cleanup_N_c(
+    __ALWAYS_INLINE static void panel_executor_cleanup_N_c(
         int N_c_rem,
         int M, int K, int N,
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         Mask mask, const bool load_c)
@@ -3558,4 +3565,4 @@ template<> struct SOPMicroKernelIntrin<float, 512, 8, 2> {
 
 };
 
-} // namespace sop
+} // sop

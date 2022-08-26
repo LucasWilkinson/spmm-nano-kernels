@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "SOPEnums.h"
-#include "SOPStorage.h"
-#include "SOPConfig.h"
-#include "SOPTile.h"
-#include "SOPExecutor.h"
-#include "SOPMatMul.h"
+#include "Enums.h"
+#include "Storage.h"
+#include "Config.h"
+#include "Tile.h"
+#include "Executor.h"
+#include "MatMul.h"

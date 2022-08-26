@@ -1,4 +1,5 @@
 import gmpy
+import hashlib
 
 from tools.codegen.codegen_utils import *
 from functools import partial
@@ -10,6 +11,18 @@ vec_type_info = {
     ("double", 512): (8, 'd', 'd'),
     ("double", 256): (4, 'd', 'd'),
 }
+
+
+def micro_kernel_id(patterns):
+    _hash = hashlib.md5(" ".join([str(p) for p in patterns]).encode("utf8")).hexdigest()
+    return _hash[-5:]
+
+
+def microkernel_typename(scalar, vec_width, acc_dims, supported_patterns, kernel_id=None):
+    if kernel_id is None:
+        kernel_id = micro_kernel_id(supported_patterns)
+
+    return f'MicroKernel_{scalar}_{kernel_id}_{vec_width}_{acc_dims[0]}x{acc_dims[1]}'
 
 
 def unroll_mapping(nnzs):
@@ -165,10 +178,17 @@ def gen_executor_body(scalar, reg_width_bits, acc_dims, max_acc_width, supported
 
     return sop_panel_executor
 
-
-def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None, output_root=None):
+def gen_for_vec_height(acc_dims, supported_patterns,
+                       output_path=None,
+                       output_root=None,
+                       namespace=None,
+                       kernel_id=None):
     vec_height = acc_dims[0]
     reg_num_ele = 16
+    namespace = namespace if namespace is not None else "sop"
+
+    if kernel_id is None:
+        kernel_id = micro_kernel_id(supported_patterns)
 
     supported_patterns = sorted(supported_patterns, key=lambda x: gmpy.popcount(x))
 
@@ -191,7 +211,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
     supported_pattern_encode = f'''
     static uint16_t encode_pattern(uint16_t pattern) {{
         {supported_patterns_encode_cases}
-        if (pattern == 0) return ZERO_PATTERN_ID; 
+        if (pattern == 0) return sop::ZERO_PATTERN_ID; 
         std::cerr << "Unable to map unsupported pattern " <<  (int) pattern << std::endl;
         exit(-1);
         return 0;
@@ -204,7 +224,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
     supported_pattern_decode = f'''
     static uint16_t decode_pattern(uint16_t pattern) {{
         {supported_patterns_decode_cases}
-        if (pattern == ZERO_PATTERN_ID) return 0; 
+        if (pattern == sop::ZERO_PATTERN_ID) return 0; 
         std::cerr << "Unable to unmap unsupported pattern id " << (int) pattern << std::endl;
         exit(-1);
         return 0;
@@ -217,7 +237,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
     pattern_nnz_count = f'''
     static uint16_t nnz_count(uint16_t pattern) {{
         {pattern_nnz_count_cases}
-        if (pattern == ZERO_PATTERN_ID) return 0; 
+        if (pattern == sop::ZERO_PATTERN_ID) return 0; 
         std::cerr << "Unable to get pop count for pattern id " << (int) pattern << std::endl;
         exit(-1);
         return 0;
@@ -227,22 +247,26 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
     import os; SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
     output_root = f'{SCRIPT_DIR}/_C/generated' if output_root is None else output_root
 
-    output_path = output_path if output_path is not None else f'{output_root}/sop_executor_{kernel_id}.h'
+    output_path = output_path if output_path is not None else f'{output_root}/microkernel_{kernel_id}.h'
 
 
     for scalar, vec_width in [('float', 512)]:
         reg_width_ele, _, _ = vec_type_info[(scalar, vec_width)]
+        micro_kernel_typename = microkernel_typename(scalar, vec_width, acc_dims, supported_patterns, kernel_id)
 
         with open(output_path.replace('.h', f'_{scalar}_{vec_width}.h'), 'w+') as f:
             f.write(f'#pragma once\n\n')
-            f.write(f'#include "SOPMicroKernelBase.h"\n')
-            f.write(f'#include "SOPStorage.h"\n')
+            f.write(f'#include "MicroKernelBase.h"\n')
+            f.write(f'#include "Storage.h"\n')
             f.write(f'\n')
             f.write(f'#include <immintrin.h>\n\n')
             f.write(f'\n')
-            f.write(f'namespace sop {{\n')
+            f.write(f'namespace {namespace} {{')
             f.write(f'\n')
-            f.write(f'template<> struct SOPMicroKernelIntrin<{scalar}, {vec_width}, {vec_height}, {acc_dims[1]}> {{\n')
+            f.write(f'#define REGISTER_FACTORY_{micro_kernel_typename}(KD)\\\n')
+            f.write(f'    sop::ExecutorFactorySpeacilized<sop::KD, {namespace}::{micro_kernel_typename}>\\\n')
+            f.write(f'        KD##_{micro_kernel_typename};\n\n')
+            f.write(f'struct {micro_kernel_typename} {{\n')
             f.write(supported_pattern_getter)
             f.write(supported_pattern_encode)
             f.write(supported_pattern_decode)
@@ -252,23 +276,23 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
             f.write(f'    static Mask create_mask(int n) {{ return ((1 << n) - 1); }}\n')
             f.write(f'    static Mask precomp_mask(int N) {{ return create_mask(N % {reg_width_ele}); }}\n')
             f.write('\n')
-            f.write(f'    static const int M_r = {acc_dims[0]};\n')
-            f.write(f'    static const int N_r = {acc_dims[1]} * {reg_num_ele};\n')
+            f.write(f'    using Scalar = {scalar};\n')
+            f.write(f'    static constexpr int M_r = {acc_dims[0]};\n')
+            f.write(f'    static constexpr int N_r = {acc_dims[1]} * {reg_num_ele};\n')
+            f.write(f'    static constexpr int N_r_reg = {acc_dims[1]};\n')
+            f.write(f'    static constexpr int vec_width_bits = {vec_width};\n')
+            f.write(f'    static constexpr const char* id = "{kernel_id}";\n')
             f.write(f'    static int max_acc_width_in_vecs() {{ return {acc_dims[1]}; }};\n')
             f.write(f'    static int max_acc_width_in_eles() {{ return {acc_dims[1]} * {reg_width_ele}; }};\n\n')
             f.write(f'    static int number_of_patterns() {{ return {len(supported_patterns)}; }}\n')
             f.write(f'    static int panel_height() {{ return {vec_height}; }}\n\n')
             f.write(f'')
 
-            if acc_dims[1] == 1:
-                acc_widths = [1]
-            else:
-                acc_widths = [acc_dims[1], 1]
-
+            acc_widths = [acc_dims[1], 1]
             max_acc_width = max(acc_widths)
 
-            for acc_width in acc_widths:
-                acc_width_str = str(acc_width) if acc_width != max_acc_width else "max_acc"
+            for i, acc_width in enumerate(acc_widths):
+                acc_width_str = str(acc_width) if i == 0 else "max_acc"
 
                 sop_panel_executor = f'''
     __ALWAYS_INLINE static void _panel_executor_{acc_width_str}(
@@ -286,7 +310,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
 
     __ALWAYS_INLINE static void panel_executor_{acc_width_str}(
         int M, int K, int N,
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         const bool load_c) {{
@@ -317,7 +341,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
     }}\n\n
 
     __ALWAYS_INLINE static void panel_executor_packed_{acc_width_str}(
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         const bool load_c) {{
@@ -348,9 +372,9 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
                            packed_C=True, packed_B=False).emit(6)}
     }}\n\n
     
-    __ALWAYS_INLINE static void panel_executor_packed_C_{acc_width_str}(
+    static void panel_executor_packed_C_{acc_width_str}(
         int M, int K, int N,
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         const bool load_c) {{
@@ -385,7 +409,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
                            packed_C=False, packed_B=False, masked=True).emit(6)}
     }}\n\n
     
-    static void _panel_executor_masked_max_acc(
+    __ALWAYS_INLINE static void _panel_executor_masked_max_acc(
         int N_rem,
         int M, int K, int N,
         int* __restrict__            pattern_counts,
@@ -415,10 +439,10 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
             last_reg_mask, load_c);
     }}
     
-    static void panel_executor_masked_max_acc(
+     static void panel_executor_masked_max_acc(
         int N_rem,
         int M, int K, int N,
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         Mask last_reg_mask,
@@ -484,7 +508,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
     static void panel_executor_masked_packed_C_max_acc(
         int N_rem,
         int M, int K, int N,
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         Mask last_reg_mask,
@@ -503,10 +527,10 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
             f.write(sop_panel_executor_packed_masked_C)
 
             sop_panel_executor = f'''
-    static void panel_executor_max_acc_width_N_c(
+    __ALWAYS_INLINE static void panel_executor_max_acc_width_N_c(
         int N_c,
         int M, int K, int N,
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         const bool load_c)
@@ -532,7 +556,7 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
     static void panel_executor_cleanup_N_c(
         int N_c_rem,
         int M, int K, int N,
-        const PanelUsingCounts& panel_desc,
+        const sop::PanelUsingCounts& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         Mask mask, const bool load_c)
@@ -574,7 +598,6 @@ def gen_for_vec_height(kernel_id, acc_dims, supported_patterns, output_path=None
     }}\n\n'''
             f.write(sop_panel_executor)
             f.write(f'\n}};\n\n')
-
-            f.write(f'}} // namespace sop\n')
+            f.write(f'}} // {namespace}\n')
 
 

@@ -100,4 +100,11 @@ cache_dims_t* get_cache_dims_2(int M, int N, int K, int p,
                              char* argv[], float density,
                              bool mc_must_divide_M = true,
                              bool nc_must_divide_N = true);
+
+cache_dims_t* get_cache_dims_3(int M, int N, int K, int p,
+                               cake_cntx_t* cake_cntx, enum sched sch,
+                               char* argv[], float density,
+                               bool mc_must_divide_M = true,
+                               bool nc_must_divide_N = true);
+
 cake_cntx_t* cake_query_cntx();

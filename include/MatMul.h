@@ -18,11 +18,12 @@
 #include "TileLocs.h"
 #include "COO.h"
 
-#include "SOPEnums.h"
-#include "SOPStorage.h"
-#include "SOPConfig.h"
-#include "SOPTile.h"
-#include "SOPExecutor.h"
+#include "Enums.h"
+#include "Storage.h"
+#include "Config.h"
+#include "Tile.h"
+#include "Executor.h"
+#include "ExecutorFactory.h"
 
 //#define PACK_B
 using std::vector;
@@ -34,7 +35,6 @@ class SOPMatMul {
   using Scalar = typename KernelDesc::Scalar;
 
   using VecType = typename KernelDesc::VecType;
-  using Executor = typename KernelDesc::Executor;
 
   using CSRPtr = typename KernelDesc::CSRStorageTypes::Ptr;
   using CSRIndex = typename KernelDesc::CSRStorageTypes::Index;
@@ -59,6 +59,11 @@ class SOPMatMul {
   int total_num_tiles = 0;
   int num_threads = 0;
   int m = 0, k = 0;
+
+  std::string executor_id;
+  std::string mapping_id;
+
+  ExecutorFactory<KernelDesc>* executor_factory;
 
   Shape matrix_tiled_shape;
   Shape tile_shape;
@@ -91,6 +96,9 @@ class SOPMatMul {
   vector<vector<int>> row_panels_per_thread;
   vector<vector<MergedTile>> tiles_to_pack; // Post-scheduling, Pre-Packing
   vector<vector<_PackedTile>> packed_tiles;
+
+  vector<int> row_swizzle;
+  vector<int> panel_swizzle;
 
   COO<Scalar>* coo = nullptr;
   void* linear_buffer = nullptr;
@@ -149,24 +157,30 @@ class SOPMatMul {
       const Scalar* values,
       const int* row_offsets,
       const int* column_indices,
-      TileConfig config,
+      TileConfig _config,
       int num_threads,
+      std::string executor_id,
       enum DenseTileMergingStrategy dense_merging_strategy = ALL_SPARSE,
       enum SparseTileMergingStrategy sparse_merging_strategy = ALL_SOP,
       enum ExecutionStrategy execution_strategy = TILED_SPARSE)
-      : m(m), k(k), config(config),
+      : m(m), k(k), config(_config),
         num_threads(num_threads),
+        executor_id(executor_id),
+        executor_factory(ExecutorFactory<KernelDesc>::factories[executor_id]),
         dense_merging_strategy(dense_merging_strategy),
         sparse_merging_strategy(sparse_merging_strategy),
         execution_strategy(execution_strategy) {
     coo = new COO<Scalar>(m, k, row_offsets, column_indices, values);
 
-    if (config.tiling_strategy == CAKE_TILING) {
+    if (config.tiling_strategy == CAKE_TILING
+        || config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
       cake_cntx_t* cake_cntx = cake_query_cntx();
 
       cake_cntx->nr = KernelDesc::N_r;
       cake_cntx->mr = KernelDesc::M_r;
-      cache_dims_t* cache_dims = get_cache_dims_2(
+      cake_cntx->ncores = num_threads;
+
+      cache_dims_t* cache_dims = get_cache_dims_3(
           m, b_col_predict, k, num_threads, cake_cntx, KMN,
           nullptr, double(coo->nnz()) / (m * k), false, true);
 
@@ -179,11 +193,39 @@ class SOPMatMul {
       config.k_tile = cache_dims->k_c;
       config.n_tile = cache_dims->n_c;
 
+      if (config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
+        static const int tlb_entries = 64;
+        static const int tlb_entries_target = 64;
+        static const int page_size = 4096;
+
+        int tlb_entries_used = (b_col_predict * config.k_tile) / page_size;
+
+        //std::cout << "TLB entries: " << config.k_tile << " " << tlb_entries_used << std::endl;
+
+        if (tlb_entries_used > tlb_entries_target) {
+          int new_k_tile = (tlb_entries_target * page_size) / b_col_predict;
+          int diff = config.k_tile - new_k_tile;
+          config.k_tile = new_k_tile;
+
+          // Generous realloc to N-tile
+          //const int N_r = KernelDesc::N_r;
+          //config.n_tile += ((diff + N_r - 1) / N_r) * N_r;
+        }
+
+        tlb_entries_used = (b_col_predict * config.k_tile) / page_size;
+        //std::cout << "Updated TLB entries: " << config.k_tile << " " << tlb_entries_used << std::endl;
+      }
+
       free(cake_cntx);
       free(cache_dims);
     }
 
     inspect_and_pack();
+  }
+
+  TileConfig get_config() const {
+    //std::cout << "Config: " << config.m_tile << " " << config.k_tile << " " << config.n_tile << std::endl;
+    return config;
   }
 
   //  void log_extra_info(cpp_testbed::csv_row_t& row) override {
@@ -209,15 +251,16 @@ class SOPMatMul {
   // This operator overloading enables calling
   // operator function () on objects of increment
   void operator()(Scalar* C, const Scalar* B, int b_cols) const {
-    SOPExecutor<KernelDesc> executor(m, k, b_cols, packed_tiles,
-                                     B, C, 1, num_threads, config);
-    executor();
+    struct Executor* executor = create_executor(C, B, b_cols) ;
+    (*executor)();
+    delete executor;
   }
 
   // This operator overloading enables calling
   // operator function () on objects of increment
-  SOPExecutor<KernelDesc> create_executor(Scalar* C, const Scalar* B, int b_cols) const {
-    return SOPExecutor<KernelDesc>(m, k, b_cols, packed_tiles, B, C, 1, num_threads, config);
+  struct Executor* create_executor(Scalar* C, const Scalar* B, int b_cols) const {
+    return executor_factory->create_specialized_executor(
+            m, k, b_cols, packed_tiles, B, C, 1, num_threads, config);
   }
 
 
@@ -295,32 +338,62 @@ private:
 
       // If the tile belongs to a single row panel,
       //    i.e. does not overlap multiple
-      if (tile.ti.size() == 1) {
-        int row_panel_id = tile.ti.start;
-        panel_indices[row_panel_id].push_back(t);
-
-        // TODO: update cost model
-        switch (tile.type) {
-          case SPARSE_CSR:
-            cost_per_panel[row_panel_id] +=
-                2.0 * nnz_in_tile.at(tile.ti.start, tile.tj.start);
-            break;
-          case SPARSE_SOP:
-            cost_per_panel[row_panel_id] +=
-                1.5 * nnz_in_tile.at(tile.ti.start, tile.tj.start);
-            break;
-          case DENSE:
-            cost_per_panel[row_panel_id] +=
-                1.0 * tile.num_tiles() * tile_shape.area();
-            break;
-          default:
-            std::cerr << "No scheduling cost model for tile type " << tile.type
-                      << std::endl;
-            exit(-1);
-        }
-        // If tile does not belong to a single row panel just schedule it
-        //    sequentially for now
+      if (tile.ti.size() != 1) {
+        std::cerr << "For the packed implmentation we currently do not "
+                     "support tiles merged across row panels";
+        exit(-1);
       }
+
+      int row_panel_id = tile.ti.start;
+      panel_indices[row_panel_id].push_back(t);
+
+      // TODO: update cost model
+      switch (tile.type) {
+        case SPARSE_CSR:
+          cost_per_panel[row_panel_id] +=
+              2.0 * nnz_in_tile.at(tile.ti.start, tile.tj.start);
+          break;
+        case SPARSE_SOP:
+          cost_per_panel[row_panel_id] +=
+              1.5 * nnz_in_tile.at(tile.ti.start, tile.tj.start);
+          break;
+        case DENSE:
+          cost_per_panel[row_panel_id] +=
+              1.0 * tile.num_tiles() * tile_shape.area();
+          break;
+        default:
+          std::cerr << "No scheduling cost model for tile type " << tile.type
+                    << std::endl;
+          exit(-1);
+      }
+    }
+
+    panel_swizzle.resize(num_threads);
+
+    // Sort by cost per panel
+    auto sorted_panels = argsort(cost_per_panel);
+
+    // Alternate from scheduling most expensive panels to cheapest panels in an attempt load balance
+    int curr_idx_from_top = 0, curr_idx_from_bot = sorted_panels.size() - 1;
+
+    // Roundrobin scheduling, alternating scheduling from top and bottom
+    while (curr_idx_from_top <= curr_idx_from_bot) {
+      // Schedule from top
+      for (int thrd_id = 0; thrd_id < num_threads; thrd_id++, curr_idx_from_top++) {
+        if (curr_idx_from_top > curr_idx_from_bot) break;
+        panel_swizzle[thrd_id] = curr_idx_from_top;
+      }
+
+      // Schedule from bottom
+      for (int thrd_id = 0; thrd_id < num_threads; thrd_id++, curr_idx_from_bot--) {
+        if (curr_idx_from_top > curr_idx_from_bot) break;
+        panel_swizzle[thrd_id] = curr_idx_from_bot;
+      }
+    }
+
+    std::cout << "Panel schedule: " << std::endl;
+    for (const auto& cost : cost_per_panel) {
+      std::cout << cost << std::endl;
     }
 
     for (auto& _panel_indices : panel_indices) {
@@ -413,7 +486,7 @@ private:
     packed_tiles.resize(tiles_to_pack.size());
 
 // Pack Parallel Tiles
-#pragma parallel for num_threads(16) collapse(2)
+    #pragma parallel for num_threads(16) collapse(2)
     for (int i = 0; i < tiles_to_pack.size(); i++) {
       packed_tiles[i].resize(tiles_to_pack[i].size());
       for (int j = 0; j < tiles_to_pack[i].size(); j++) {

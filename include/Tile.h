@@ -12,8 +12,8 @@
 #include "utils/misc.h"
 
 #include "COO.h"
-#include "SOPStorage.h"
-#include "SOPMicroKernelBase.h"
+#include "Storage.h"
+#include "MicroKernelBase.h"
 
 using std::vector;
 using std::array;

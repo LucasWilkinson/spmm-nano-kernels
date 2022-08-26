@@ -299,37 +299,32 @@ _ai void unpack_C_partial_M_c(
   ALIAS_TILE_DIMS(TileDims, td);
   using VecType = typename Vec<Scalar, 512>::Type;
 
-  for (int jjj = 0; jjj < N; jjj += N_c) {
-    for (int ii = 0; ii < rows_to_unpack; ii += M_r) {
-      int ooo = 0
-          + jjj * M_c
-          + ii  * N_c;
+  for (int ii = 0; ii < rows_to_unpack; ii += M_r) {
+    int _i_end = std::min(rows_to_unpack - ii, M_r);
+    for (int _i = 0, i = ii; _i < _i_end; i++, _i++) {
+      for (int jjj = 0; jjj < N; jjj += N_c) {
+        int N_c_end = jjj + N_c;
+        bool partial_tile = false;
+        if (N_c_end > N || N_c_end < N_r) {
+          N_c_end = N - (N_r - 1); // adjust to end of full N_r tiles
+          partial_tile = true;
+        }
 
-      int N_c_end = jjj + N_c;
-      bool partial_tile = false;
+        int ooo = 0 + jjj * M_c + ii * N_c;
 
-      if (N_c_end > N || N_c_end < N_r) {
-        N_c_end = N - (N_r - 1); // adjust to end of full N_r tiles
-        partial_tile = true;
-      }
-
-      int jj = jjj, _jj = 0;
-      int _i_end = std::min(rows_to_unpack - ii, M_r);
-
-      // Full N_r
-      for (; jj < N_c_end; jj += N_r, _jj += N_r) {
-        for (int _i = 0, i = ii; _i < _i_end; i++, _i++) {
-          #pragma unroll
+        // Full N_r
+        int jj = jjj, _jj = 0;
+        for (; jj < N_c_end; jj += N_r, _jj += N_r) {
+          #pragma unroll 4
           for (int _j = 0; _j < N_r; _j += VecType::size()) {
             int offset = ooo + (_jj * M_r) + (_i * N_r) + _j;
-            VecType v; v.load_a(C_packed + offset);
+            VecType v;
+            v.load_a(C_packed + offset);
             v.store(C + (i * N) + jj + _j);
           }
         }
-      }
 
-      if (partial_tile) {
-        for (int _i = 0, i = ii; _i < _i_end; i++, _i++) {
+        if (partial_tile) {
           // Full Vecs
           int _j = 0;
           int oo = ooo + (_jj * M_r) + (_i * N_r);

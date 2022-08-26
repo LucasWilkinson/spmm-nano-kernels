@@ -29,9 +29,9 @@ SUPPORTED_PATTERNS_4 = [
 ]
 
 import os; SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-gen_for_vec_height('', [8, 2], SUPPORTED_PATTERNS_8,
-                   output_path=f'{SCRIPT_DIR}/../generated/sop_micro_kernel_8_2_intrin.h')
-gen_for_vec_height('', [4, 4], SUPPORTED_PATTERNS_4,
-                   output_path=f'{SCRIPT_DIR}/../generated/sop_micro_kernel_4_4_intrin.h')
+gen_for_vec_height([8, 2], SUPPORTED_PATTERNS_8,
+                   output_root=f'{SCRIPT_DIR}/../generated/')
+gen_for_vec_height([4, 4], SUPPORTED_PATTERNS_4,
+                   output_root=f'{SCRIPT_DIR}/../generated/')
 
 

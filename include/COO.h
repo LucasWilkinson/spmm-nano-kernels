@@ -26,6 +26,9 @@ public:
         _Scalar value;
     };
 
+    // TODO: Clean this up
+    template <typename MicroKernelDesc> class PanelPacker;
+
 private:
     bool m_sorted_csr_style = false;
 

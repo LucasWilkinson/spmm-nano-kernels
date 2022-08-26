@@ -5,6 +5,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -82,3 +83,9 @@ void zero(T * array, int numel) {
     // Scalar loop
     for (; i < numel; i++) { array[i] = 0; }
 }
+
+//
+//  File system utils
+//
+
+std::string resolve_path(std::string file, const std::vector<std::string>& search_dirs);

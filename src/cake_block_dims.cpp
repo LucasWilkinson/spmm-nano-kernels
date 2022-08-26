@@ -635,15 +635,25 @@ cache_dims_t* get_cache_dims_2(int M, int N, int K, int p,
   // and to allow for double buffering of partial results in L3
 
   {
-    double p = max_threads;
-    double a = p + 3*density*p*cake_cntx->alpha_n + p*p*cake_cntx->alpha_n;
-    double b = 0.0;
+    double a = p * 3*density*p*cake_cntx->alpha_n + p*p*cake_cntx->alpha_n;
+    double b = 0;
     double c = -double(cake_cntx->L3) / (2* sizeof(float));
 
     mc_L3 = (int)(-b + sqrt(b * b - 4.f * a * c) / (2.f * a));
     mc_L3 -= (mc_L3 % cake_cntx->mr);
   }
 
+  //std::cout << "mc_L2: " << mc_L2 << "mc_L3: " << mc_L3 << std::endl;
+
+//  printf("sparsity-aware tiling\n");
+//  double a_coeff = (density/cake_cntx->mr) * ((int) ceil(density * cake_cntx->mr)) ;
+//  printf("a_coeff %f (%f, %d)\n", a_coeff, density/cake_cntx->mr, (int) ceil(density * cake_cntx->mr));
+//
+//  mc_L3 = (int) sqrt((((double) cake_cntx->L3) / (sizeof(float)))
+//                    / (max_threads * (a_coeff + cake_cntx->alpha_n + cake_cntx->alpha_n*max_threads)));
+//  mc_L3 -= (mc_L3 % cake_cntx->mr);
+
+  //std::cout << max_threads << std::endl;
 
   mc_ret = mc_L3;
   if(M < p*cake_cntx->mr) {
@@ -660,11 +670,11 @@ cache_dims_t* get_cache_dims_2(int M, int N, int K, int p,
   }
 
   // spMM is always K-first so using nc_ret from KMN
-//  nc_ret = (int) (cake_cntx->alpha_n*p*mc_ret);
-//  nc_ret -= (nc_ret % cake_cntx->nr);
-//  nc_ret = nc_ret == 0 ? cake_cntx->nr : nc_ret;
+  nc_ret = (int) (cake_cntx->alpha_n*p*mc_ret);
+  nc_ret -= (nc_ret % cake_cntx->nr);
+  nc_ret = nc_ret == 0 ? cake_cntx->nr : nc_ret;
 
-  nc_ret = 128;
+  //nc_ret = 128;
 
   blk_ret->m_c = mc_L3 < M ? mc_L3 : cake_cntx->mr;
   blk_ret->k_c = mc_L2 < K ? mc_L2 : K;
@@ -714,6 +724,148 @@ cache_dims_t* get_cache_dims_2(int M, int N, int K, int p,
 
   blk_ret->m_c = blk_ret->m_c*p > M ? std::ceil(M / p) : blk_ret->m_c;
   blk_ret->n_c = blk_ret->n_c > N ? N : blk_ret->n_c;
+
+  blk_ret->m_c  = std::max(blk_ret->m_c / cake_cntx->mr, 1) * cake_cntx->mr;
+
+  return blk_ret;
+}
+
+
+cache_dims_t* get_cache_dims_3(int M, int N, int K, int p,
+                               cake_cntx_t* cake_cntx, enum sched sch,
+                               char* argv[], float density,
+                               bool mc_must_divide_M,
+                               bool nc_must_divide_N) {
+
+  int mc, mc_ret, nc_ret, a, mc_L2 = 0, mc_L3 = 0, kc_L2 = 0, kc_L3 = 0;
+  int max_threads = cake_cntx->ncores; // 2-way hyperthreaded
+  int mn_lcm = lcm(cake_cntx->mr, cake_cntx->nr);
+
+  cache_dims_t* blk_ret = (cache_dims_t*) malloc(sizeof(cache_dims_t));
+
+  //  // set schedule to MEMA-derived optimal value or user-defined
+  //  blk_ret->sch = (sch == NA ?
+  //                            derive_schedule(M, N, K, p, mc_ret, cake_cntx) :
+  //                            sch);
+  //
+  blk_ret->sch = KMN;
+
+  // solve for optimal mc,kc based on L2 size
+  // L2_size >= 2*(mc*2*kc + 2*kc*nr) + 2*(mc*nr)     (solve for x = m_c = beta*k_c)
+  //    The A mc*kc tile needs to fit into L2 but we can conservatively estimate
+  //    this as (nnz * 3 * sizeof(float/int)) = (mc * kc *density * 3 * sizeof(float/int)),
+  //    the B mc*nr tile is dense so se can leave that as is
+  double beta = 1.;
+
+  {
+    double a = (3. / beta) * density;
+    double b = ((1. + beta) / beta) * cake_cntx->nr;
+    double c = -double(cake_cntx->L2) / 2*(sizeof(float));
+
+    int x = (int)(-b + sqrt(b * b - 4.f * a * c) / (2.f * a));
+    mc_L2 = x - (x % cake_cntx->mr);
+    kc_L2 = (int)(x * beta);
+  }
+
+
+  // solve for the optimal block size m_c and k_c based on the L3 size
+  // L3_size >= 2*(A tile + B tile) + 2*(C tile)
+  // L3_size >= 2*(p*mc*kc + alpha*p*mc*kc) + 2*(p*mc*alpha*p*mc)     (solve for x = m_c = beta*k_c)
+  //    The A mc*kc tile needs to fit into L2 but we can conservatively estimate
+  //    this as (nnz * 3 * sizeof(float/int)) = (mc * nr *density * 3 * sizeof(float/int)),
+  //    the B mc*nr tile is dense so se can leave that as is
+  {
+    double a = (p*3*density / beta) *(1 + cake_cntx->alpha_n) + p*p*cake_cntx->alpha_n;
+    double b = 0;
+    double c = -double(cake_cntx->L3) / (2* sizeof(float));
+
+    int x = (int)(-b + sqrt(b * b - 4.f * a * c) / (2.f * a));
+    mc_L3 = x - (x % cake_cntx->mr);
+    kc_L3 = (int)(x * beta);
+  }
+
+  //  printf("sparsity-aware tiling\n");
+  //  double a_coeff = (density/cake_cntx->mr) * ((int) ceil(density * cake_cntx->mr)) ;
+  //  printf("a_coeff %f (%f, %d)\n", a_coeff, density/cake_cntx->mr, (int) ceil(density * cake_cntx->mr));
+  //
+  //  mc_L3 = (int) sqrt((((double) cake_cntx->L3) / (sizeof(float)))
+  //                    / (max_threads * (a_coeff + cake_cntx->alpha_n + cake_cntx->alpha_n*max_threads)));
+  //  mc_L3 -= (mc_L3 % cake_cntx->mr);
+
+  //std::cout << max_threads << std::endl;
+
+  mc_ret = mc_L3;
+  if(M < p*cake_cntx->mr) {
+    mc_ret = cake_cntx->mr;
+  } else if(M < p*mc_ret) {
+
+    a = (M / p);
+    if(a < cake_cntx->mr) {
+      mc_ret = cake_cntx->mr;
+    } else {
+      a += (cake_cntx->mr - (a % cake_cntx->mr));
+      mc_ret = a;
+    }
+  }
+
+
+  // spMM is always K-first so using nc_ret from KMN
+  nc_ret = (int) (cake_cntx->alpha_n*p*mc_ret);
+  nc_ret -= (nc_ret % cake_cntx->nr);
+  nc_ret = nc_ret == 0 ? cake_cntx->nr : nc_ret;
+
+  //nc_ret = 128;
+
+  blk_ret->m_c = mc_L3 < M ? mc_L3 : M;
+  blk_ret->k_c = kc_L2 < K ? kc_L2 : K;
+  blk_ret->n_c = nc_ret;
+
+  //  switch(blk_ret->sch) {
+  //    case KMN: {
+  //      nc_ret = (int)(cake_cntx->alpha_n * p * mc_ret);
+  //      nc_ret -= (nc_ret % cake_cntx->nr);
+  //      nc_ret = nc_ret == 0 ? cake_cntx->nr : nc_ret;
+  //      break;
+  //    }
+  //
+  //    case MKN: {
+  //      nc_ret = (int)(cake_cntx->alpha_n * p * mc_ret);
+  //      nc_ret -= (nc_ret % cake_cntx->nr);
+  //      nc_ret = nc_ret == 0 ? cake_cntx->nr : nc_ret;
+  //      break;
+  //    }
+  //
+  //    case NKM: {
+  //      nc_ret = (int)mc_ret;
+  //      nc_ret -= (nc_ret % cake_cntx->nr);
+  //      nc_ret = nc_ret == 0 ? cake_cntx->nr : nc_ret;
+  //
+  //      mc_ret = (int)(cake_cntx->alpha_n * mc_ret);
+  //      mc_ret -= (mc_ret % cake_cntx->mr);
+  //      mc_ret = mc_ret == 0 ? cake_cntx->mr : mc_ret;
+  //      break;
+  //    }
+  //  }
+
+  if (mc_must_divide_M) {
+    while (M % blk_ret->m_c) {
+      blk_ret->m_c--;
+    }
+  }
+
+  if (nc_must_divide_N) {
+    while (N % blk_ret->n_c) {
+      blk_ret->n_c--;
+    }
+  }
+
+  blk_ret->n_c  = std::max(blk_ret->n_c / cake_cntx->nr, 1) * cake_cntx->nr;
+  blk_ret->m_c  = std::max(blk_ret->m_c / cake_cntx->mr, 1) * cake_cntx->mr;
+
+  blk_ret->m_c = blk_ret->m_c*p > M ? std::ceil(M / p) : blk_ret->m_c;
+  blk_ret->n_c = blk_ret->n_c > N ? N : blk_ret->n_c;
+
+  blk_ret->m_c  = std::max(blk_ret->m_c / cake_cntx->mr, 1) * cake_cntx->mr;
 
   return blk_ret;
 }

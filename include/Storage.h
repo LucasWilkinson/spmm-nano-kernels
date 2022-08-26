@@ -4,13 +4,19 @@
 
 #pragma once
 
+#include <iostream>
+#include <cstring>
+
 #include "utils/tiling.h"
 #include "utils/shape.h"
 
-#include "SOPEnums.h"
-
+#include "Enums.h"
 
 namespace sop {
+
+using Pattern = uint16_t;
+using NanoKernel = uint16_t;
+using NanoKernelMapping = std::vector<std::vector<NanoKernel>>;
 
 struct PanelUsingCounts {
   float* values         = nullptr;
@@ -57,11 +63,10 @@ struct PanelUsingCodelets {
   }
 };
 
-template <typename KernelDesc>
+template <typename Scalar>
 struct PackedTile {
-  using Scalar = typename KernelDesc::Scalar;
-  using CSRPtr = typename KernelDesc::CSRStorageTypes::Ptr;
-  using CSRIndex = typename KernelDesc::CSRStorageTypes::Index;
+  using CSRPtr = int;
+  using CSRIndex = int;
 
   TileType type;
   SubmatrixLoc loc;

@@ -13,13 +13,20 @@
 
 #include "boost/preprocessor/repetition/repeat.hpp"
 
-#include "SOPKernelDesc.h"
+#include "Config.h"
+#include "KernelDesc.h"
+#include "MicroKernelDesc.h"
 #include "packing.h"
 
 namespace sop {
 
 using std::vector;
-using Config = TileConfig;
+
+struct Executor {
+  virtual ~Executor() = 0;
+  virtual void execute_row_panel(int tii) = 0;
+  virtual void operator()() = 0;
+};
 
 template <typename F, typename ... Ts>
 void report_time(bool report, const std::string& name, F&& f, Ts&&...args)
@@ -40,15 +47,19 @@ void report_time(bool report, const std::string& name, F&& f, Ts&&...args)
   }
 }
 
-template <typename KernelDesc>
-struct SOPExecutor {
+template <typename KernelDesc, typename MicroKernelDesc>
+struct ExecutorSpecialized: Executor {
   using Scalar = typename KernelDesc::Scalar;
-  using RegTile = typename KernelDesc::RegTile;
-  using TileDims = typename KernelDesc::TileDims;
-  using VecType = typename KernelDesc::VecType;
-  using Executor = typename KernelDesc::Executor;
   using CSRPtr = typename KernelDesc::CSRStorageTypes::Ptr;
-  using PackedTile = sop::PackedTile<KernelDesc>;
+
+  using RegTile = typename MicroKernelDesc::RegTile;
+  using TileDims = typename MicroKernelDesc::TileDims;
+  using VecType = typename MicroKernelDesc::VecType;
+  using MicroKernel = typename MicroKernelDesc::MicroKernel;
+
+  static_assert(std::is_same<Scalar, typename MicroKernel::Scalar>::value,
+              "Scalar type mismatch");
+  using PackedTile = sop::PackedTile<Scalar>;
 
   const static PackingStrategy C_PACKING = KernelDesc::PackingDesc::C_PACKING;
   const static PackingStrategy B_PACKING = KernelDesc::PackingDesc::B_PACKING;
@@ -65,7 +76,7 @@ struct SOPExecutor {
   int batch_size;
   int num_threads;
 
-  const Config& config;
+  const TileConfig& config;
   const TileDims td;
 
   int M_c, K_c, N_c;
@@ -78,18 +89,18 @@ struct SOPExecutor {
   bool partial_N_r_loop = false;
   int final_N_c_loop_N_r_count = 0;
   int final_N_r_loop_rem = 0;
-  typename Executor::Mask final_N_r_rem_mask;
+  typename MicroKernel::Mask final_N_r_rem_mask;
 
   bool report_packing_time = false;
 
-  SOPExecutor(
-      int M, int K, int N,
-      const vector<vector<PackedTile>>& tiles,
-      const Scalar* __restrict__ B,
-      Scalar* __restrict__ C,
-      int batch_size,
-      int num_threads,
-      const Config& config
+  ExecutorSpecialized(
+    int M, int K, int N,
+    const vector<vector<PackedTile>>& tiles,
+    const Scalar* __restrict__ B,
+    Scalar* __restrict__ C,
+    int batch_size,
+    int num_threads,
+    const TileConfig& config
   ): M(M), K(K), N(N), tiles(tiles), B(B), C(C), batch_size(batch_size),
         num_threads(num_threads), config(config),
         td(M, K, N, config.m_tile, config.k_tile,
@@ -104,7 +115,7 @@ struct SOPExecutor {
 
     final_N_c_loop_N_r_count = N_c_rem / N_r;
     final_N_r_loop_rem = N_r_rem;
-    final_N_r_rem_mask = Executor::precomp_mask(N_r_rem);
+    final_N_r_rem_mask = MicroKernel::precomp_mask(N_r_rem);
 
     if (C_PACKING == PREPACK) {
       C_packed =
@@ -122,7 +133,7 @@ struct SOPExecutor {
     }
   }
 
-  ~SOPExecutor() {
+  ~ExecutorSpecialized() {
     // Clean-up!
     if (C_PACKING == PREPACK) {
       ::operator delete[](C_packed, std::align_val_t(4096));
@@ -160,7 +171,7 @@ struct SOPExecutor {
       int                     num_col_indices = panel_desc.num_col_indices;
 
       for (; tj < _c_N_r; tj++, _jj += N_r) { // N_r loop
-        Executor::_panel_executor_packed_C_max_acc(
+        MicroKernel::_panel_executor_packed_C_max_acc(
           M, K, N,
           pattern_counts, col_indices, values, num_col_indices,
           B + jjj + _jj,
@@ -170,7 +181,7 @@ struct SOPExecutor {
       }
 
       if (partial_final_loop && partial_N_r_loop) {
-        Executor::_panel_executor_masked_packed_C_max_acc(
+        MicroKernel::_panel_executor_masked_packed_C_max_acc(
           final_N_r_loop_rem,
           M, K, N,
           pattern_counts, col_indices, values, num_col_indices,
@@ -183,7 +194,39 @@ struct SOPExecutor {
     }
   }
 
-  void _execute_row_panel_partial_packed_C(int tii) {
+  void _execute_row_panel_partial_packed_C_KN(int tii) {
+    using std::min;
+
+    ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
+    int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
+    const int iii = tii * M_c;
+
+    Scalar* __restrict__ C_packed_partial =
+        C_packed_partial_global + iii * N_padded;
+
+     // K_c loop
+    int tjj = 0, jjj = 0;
+    for (; tjj < Nb_full; tjj++, jjj += N_c) {
+      for (int tkk = 0; tkk < Kb; tkk++) {
+        _inner_M_c_loop_partial_packed_c(
+            iii, jjj, tiles[tii][tkk], C_packed_partial, false);
+      }
+    }
+
+    if (partial_N_c_loop || partial_N_r_loop) {
+      for (int tkk = 0; tkk < Kb; tkk++) {
+        _inner_M_c_loop_partial_packed_c(
+            iii, jjj, tiles[tii][tkk], C_packed_partial, true);
+      }
+    }
+
+    //report_time(report_packing_time, "Unpack C",
+    unpack_C_partial_M_c<Scalar, TileDims>(
+        min(M - iii, M_c), C + iii * N, C_packed_partial, td);
+  }
+
+
+  void _execute_row_panel_partial_packed_C_NK(int tii) {
     using std::min;
 
     ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
@@ -195,20 +238,20 @@ struct SOPExecutor {
 
     // K_c loop
     for (int tkk = 0; tkk < Kb; tkk++) {
-      const PackedTile& pt = tiles[tii][tkk];
-
       int tjj = 0, jjj = 0;
       for (; tjj < Nb_full; tjj++, jjj += N_c) {
-        _inner_M_c_loop_partial_packed_c(iii, jjj, pt, C_packed_partial, false);
+          _inner_M_c_loop_partial_packed_c(
+              iii, jjj, tiles[tii][tkk], C_packed_partial, false);
       }
 
       if (partial_N_c_loop || partial_N_r_loop) {
-        _inner_M_c_loop_partial_packed_c(iii, jjj, pt, C_packed_partial, true);
+        _inner_M_c_loop_partial_packed_c(
+            iii, jjj, tiles[tii][tkk], C_packed_partial, true);
       }
     }
 
-    report_time(report_packing_time, "Unpack C",
-      unpack_C_partial_M_c<Scalar, TileDims>,
+    //report_time(report_packing_time, "Unpack C",
+    unpack_C_partial_M_c<Scalar, TileDims>(
         min(M - iii, M_c), C + iii * N, C_packed_partial, td);
   }
 
@@ -234,7 +277,7 @@ struct SOPExecutor {
       int                     num_col_indices = panel_desc.num_col_indices;
 
       for (; tj < _c_N_r; tj++, jj += N_r) { // N_r loop
-        Executor::_panel_executor_max_acc(
+        MicroKernel::_panel_executor_max_acc(
           M, K, N,
           pattern_counts, col_indices, values, num_col_indices,
           B + jj,
@@ -244,7 +287,7 @@ struct SOPExecutor {
       }
 
       if (partial_final_loop && partial_N_r_loop) {
-        Executor::_panel_executor_masked_max_acc(
+        MicroKernel::_panel_executor_masked_max_acc(
           final_N_r_loop_rem,
           M, K, N,
           pattern_counts, col_indices, values, num_col_indices,
@@ -257,7 +300,7 @@ struct SOPExecutor {
     }
   }
 
-  void _execute_row_panel(int tii) {
+  void _execute_row_panel_NK(int tii) {
     using std::min;
 
     ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
@@ -266,15 +309,35 @@ struct SOPExecutor {
 
     // K_c loop
     for (int tkk = 0; tkk < Kb; tkk++) {
-      const PackedTile& pt = tiles[tii][tkk];
-
       int tjj = 0, jjj = 0;
       for (; tjj < Nb_full; tjj++, jjj += N_c) {
-        _inner_M_c_loop(iii, jjj, pt, false);
+        _inner_M_c_loop(iii, jjj, tiles[tii][tkk], false);
       }
 
       if (partial_N_c_loop || partial_N_r_loop) {
-        _inner_M_c_loop(iii, jjj, pt, true);
+        _inner_M_c_loop(iii, jjj, tiles[tii][tkk], true);
+      }
+    }
+  }
+
+  void _execute_row_panel_KN(int tii) {
+    using std::min;
+
+    ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
+    int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
+    const int iii = tii * M_c;
+
+    // K_c loop
+    int tjj = 0, jjj = 0;
+    for (; tjj < Nb_full; tjj++, jjj += N_c) {
+      for (int tkk = 0; tkk < Kb; tkk++) {
+        _inner_M_c_loop(iii, jjj, tiles[tii][tkk], false);
+      }
+    }
+
+    if (partial_N_c_loop || partial_N_r_loop) {
+      for (int tkk = 0; tkk < Kb; tkk++) {
+        _inner_M_c_loop(iii, jjj, tiles[tii][tkk], true);
       }
     }
   }
@@ -283,13 +346,21 @@ struct SOPExecutor {
    *    Outer Loop
    ******************************************/
 
-  _ai void execute_row_panel(int tii) {
+  void execute_row_panel(int tii) {
     using std::min;
 
     if (C_PACKING == PARTIAL_PACKING) {
-      _execute_row_panel_partial_packed_C(tii);
+      if (KernelDesc::Sched == KNM) {
+        _execute_row_panel_partial_packed_C_KN(tii);
+      } else {
+        _execute_row_panel_partial_packed_C_NK(tii);
+      }
     } else {
-      _execute_row_panel(tii);
+      if (KernelDesc::Sched == KNM) {
+        _execute_row_panel_KN(tii);
+      } else {
+        _execute_row_panel_NK(tii);
+      }
     }
   }
 

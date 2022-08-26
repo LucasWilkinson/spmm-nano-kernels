@@ -10,6 +10,11 @@ namespace sop {
 //   Enumerations
 //
 
+enum Schedule {
+  NKM,
+  KNM
+};
+
 enum TileType {
   SPARSE_CSR,
   SPARSE_SOP,
