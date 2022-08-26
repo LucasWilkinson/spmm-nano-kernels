@@ -23,7 +23,8 @@ namespace sop {
 using std::vector;
 
 struct Executor {
-  virtual ~Executor() = 0;
+  Executor() = default;
+  virtual ~Executor() = default;
   virtual void execute_row_panel(int tii) = 0;
   virtual void operator()() = 0;
 };
@@ -166,12 +167,11 @@ struct ExecutorSpecialized: Executor {
 
       uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
       float* __restrict__     values = panel_desc.values;
-      int* __restrict__       pattern_counts = panel_desc.pattern_counts;
-      int                     num_patterns = panel_desc.num_patterns;
+      int* __restrict__       pattern_counts = panel_desc.nkern_counts;
       int                     num_col_indices = panel_desc.num_col_indices;
 
       for (; tj < _c_N_r; tj++, _jj += N_r) { // N_r loop
-        MicroKernel::_panel_executor_packed_C_max_acc(
+        MicroKernel::_microkernel_packed_C_max_acc(
           M, K, N,
           pattern_counts, col_indices, values, num_col_indices,
           B + jjj + _jj,
@@ -181,7 +181,7 @@ struct ExecutorSpecialized: Executor {
       }
 
       if (partial_final_loop && partial_N_r_loop) {
-        MicroKernel::_panel_executor_masked_packed_C_max_acc(
+        MicroKernel::_microkernel_masked_packed_C_max_acc(
           final_N_r_loop_rem,
           M, K, N,
           pattern_counts, col_indices, values, num_col_indices,
@@ -272,12 +272,11 @@ struct ExecutorSpecialized: Executor {
 
       uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
       float* __restrict__     values = panel_desc.values;
-      int* __restrict__       pattern_counts = panel_desc.pattern_counts;
-      int                     num_patterns = panel_desc.num_patterns;
+      int* __restrict__       pattern_counts = panel_desc.nkern_counts;
       int                     num_col_indices = panel_desc.num_col_indices;
 
       for (; tj < _c_N_r; tj++, jj += N_r) { // N_r loop
-        MicroKernel::_panel_executor_max_acc(
+        MicroKernel::_microkernel_max_acc(
           M, K, N,
           pattern_counts, col_indices, values, num_col_indices,
           B + jj,
@@ -287,7 +286,7 @@ struct ExecutorSpecialized: Executor {
       }
 
       if (partial_final_loop && partial_N_r_loop) {
-        MicroKernel::_panel_executor_masked_max_acc(
+        MicroKernel::_microkernel_masked_max_acc(
           final_N_r_loop_rem,
           M, K, N,
           pattern_counts, col_indices, values, num_col_indices,

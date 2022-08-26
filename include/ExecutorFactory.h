@@ -18,9 +18,10 @@ class ExecutorFactory {
   using Scalar = typename _KernelDesc::Scalar;
 
 public:
-  static inline std::unordered_map<std::string, ExecutorFactory*> factories;
+  const int M_r;
+  const int N_r;
 
-  ExecutorFactory() = default;
+  ExecutorFactory(int M_r = 0, int N_r = 0): M_r(M_r), N_r(N_r) {}
   virtual ~ExecutorFactory() = default;
 
   virtual Executor* create_specialized_executor(
@@ -31,27 +32,31 @@ public:
       int batch_size,
       int num_threads,
       const TileConfig& config
-  ) = 0;
+  ) { return nullptr; };
+
+  // Hack for now to enforce initialization order, only works within
+  //   one translation unit.
+  static std::unordered_map<std::string, ExecutorFactory*>& get_factories() {
+    static std::unordered_map<std::string, ExecutorFactory*> factories;
+    return factories;
+  }
+
+  static ExecutorFactory* get_factory(const std::string& name) {
+    return get_factories()[name];
+  }
+
+  static void register_factory(const std::string& name, ExecutorFactory* factory) {
+    get_factories()[name] = factory;
+  }
 };
 
 template <typename _KernelDesc, typename _MircoKernel>
-class ExecutorFactorySpeacilized:
-    public ExecutorFactory<_KernelDesc> {
+class ExecutorFactorySpeacilized: public ExecutorFactory<_KernelDesc> {
 
   using Scalar = typename _MircoKernel::Scalar;
   std::string id;
 
  public:
-  ExecutorFactorySpeacilized(): id(_MircoKernel::id) {
-    std::cout << "Registering executor factory for " << id << " " << typeid(_KernelDesc).name() << std::endl;
-    ExecutorFactory<_KernelDesc>::factories[id] = this;
-    std::cout << "Done Registering executor factory for " << id << " " << typeid(_KernelDesc).name() << std::endl;
-  };
-  virtual ~ExecutorFactorySpeacilized() {
-    std::cout << "UnRegistering executor factory for " << id << " " << typeid(_KernelDesc).name() << std::endl;
-    ExecutorFactory<_KernelDesc>::factories[id] = nullptr;
-  };
-
   Executor* create_specialized_executor(
     int M, int K, int N,
     const vector<vector<PackedTile<Scalar>>>& tiles,
@@ -60,7 +65,7 @@ class ExecutorFactorySpeacilized:
     int batch_size,
     int num_threads,
     const TileConfig& config
-  ) {
+  ) override {
     return new ExecutorSpecialized<_KernelDesc, MicroKernelDesc<_MircoKernel>>(
       M, K, N, tiles, B, C, batch_size, num_threads, config);
   }

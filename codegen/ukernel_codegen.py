@@ -1,5 +1,7 @@
 import gmpy
 import hashlib
+import os
+import json
 
 from tools.codegen.codegen_utils import *
 from functools import partial
@@ -13,16 +15,21 @@ vec_type_info = {
 }
 
 
-def micro_kernel_id(patterns):
-    _hash = hashlib.md5(" ".join([str(p) for p in patterns]).encode("utf8")).hexdigest()
+def factory_name(microkernel_id):
+    return f'executor_factory_{microkernel_id}'
+
+
+def nanokernel_hash(nanokernels):
+    _hash = hashlib.md5(" ".join([str(p) for p in nanokernels]).encode("utf8")).hexdigest()
     return _hash[-5:]
 
+def microkernel_id(vec_width, acc_dims, nanokernels):
+    _hash = hashlib.md5(" ".join([str(p) for p in nanokernels]).encode("utf8")).hexdigest()
+    return f'{nanokernel_hash(nanokernels)}_{vec_width}_{acc_dims[0]}x{acc_dims[1]}'
 
-def microkernel_typename(scalar, vec_width, acc_dims, supported_patterns, kernel_id=None):
-    if kernel_id is None:
-        kernel_id = micro_kernel_id(supported_patterns)
 
-    return f'MicroKernel_{scalar}_{kernel_id}_{vec_width}_{acc_dims[0]}x{acc_dims[1]}'
+def microkernel_typename(scalar, vec_width, acc_dims, nanokernels):
+    return f'MicroKernel_{scalar}_{microkernel_id(vec_width, acc_dims, nanokernels)}'
 
 
 def unroll_mapping(nnzs):
@@ -107,7 +114,7 @@ def gen_executor_body(scalar, reg_width_bits, acc_dims, max_acc_width, supported
     def gen_pattern_case(acc_dims, id, pat):
         case_body = Block()
 
-        count_loop = ForLoop(f'int pat_count = pattern_counts[{id}]', 'pat_count > 0', 'pat_count--',
+        count_loop = ForLoop(f'int pat_count = nkern_counts[{id}]', 'pat_count > 0', 'pat_count--',
                              unroll=unroll_mapping(gmpy.popcount(pat)))
         count_loop += f'{m_reg} aVec;'
 
@@ -149,7 +156,7 @@ def gen_executor_body(scalar, reg_width_bits, acc_dims, max_acc_width, supported
     sop_panel_executor = Block()
     # sop_panel_executor += f'uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;'
     # sop_panel_executor += f'float* __restrict__     values = panel_desc.values;'
-    # sop_panel_executor += f'int* __restrict__       pattern_counts = panel_desc.pattern_counts;'
+    # sop_panel_executor += f'int* __restrict__       nkern_counts = panel_desc.nkern_counts;'
     # sop_panel_executor += f'int                     num_patterns = panel_desc.num_patterns;'
     # sop_panel_executor += f'int                     num_col_indices = panel_desc.num_col_indices;'
     sop_panel_executor += ''
@@ -178,25 +185,33 @@ def gen_executor_body(scalar, reg_width_bits, acc_dims, max_acc_width, supported
 
     return sop_panel_executor
 
-def gen_for_vec_height(acc_dims, supported_patterns,
-                       output_path=None,
-                       output_root=None,
-                       namespace=None,
-                       kernel_id=None):
+def ukernel_codegen(acc_dims, nanokernels,
+                    vec_configs = [('float', 512)],
+                    build_factories_for=None,
+                    output_path=None,
+                    output_root=None,
+                    namespace=None):
     vec_height = acc_dims[0]
-    reg_num_ele = 16
     namespace = namespace if namespace is not None else "sop"
 
-    if kernel_id is None:
-        kernel_id = micro_kernel_id(supported_patterns)
+    assert output_path is None or output_root is None
+    assert build_factories_for is None or output_path is None
 
-    supported_patterns = sorted(supported_patterns, key=lambda x: gmpy.popcount(x))
+    nanokernel_hash_ = nanokernel_hash(nanokernels)
+
+    micro_kernel_typename_names = [
+        microkernel_typename(scalar, vec_width, acc_dims, nanokernels)
+        for scalar, vec_width in vec_configs
+    ]
+
+
+    supported_patterns = sorted(nanokernels, key=lambda x: gmpy.popcount(x))
 
     # Utility functions
     supported_patterns_list = ",\n            ".join([f'0b{x:08b}' for x in supported_patterns])
 
     supported_pattern_getter = f'''
-    static const uint16_t* supported_patterns() {{
+    static const uint16_t* supported_nkern_patterns() {{
         static uint16_t patterns[] = {{
             {supported_patterns_list}
         }};
@@ -206,39 +221,39 @@ def gen_for_vec_height(acc_dims, supported_patterns,
     '''
 
     supported_patterns_encode_cases = "\n        ".join([
-        f'if (pattern == 0b{x:08b}) return {i};' for i, x in enumerate(supported_patterns)])
+        f'if (nkern_code == 0b{x:08b}) return {i};' for i, x in enumerate(supported_patterns)])
 
     supported_pattern_encode = f'''
-    static uint16_t encode_pattern(uint16_t pattern) {{
+    static uint16_t encode_nkern_pattern(uint16_t nkern_pat) {{
         {supported_patterns_encode_cases}
-        if (pattern == 0) return sop::ZERO_PATTERN_ID; 
-        std::cerr << "Unable to map unsupported pattern " <<  (int) pattern << std::endl;
+        if (nkern_pat == 0) return sop::ZERO_PATTERN_ID; 
+        std::cerr << "Unable to map unsupported nanokernel pattern " <<  (int) nkern_pat << std::endl;
         exit(-1);
         return 0;
     }}
     '''
 
     supported_patterns_decode_cases = "\n        ".join([
-        f'if (pattern == {i}) return 0b{x:08b};' for i, x in enumerate(supported_patterns)])
+        f'if (nkern_code == {i}) return 0b{x:08b};' for i, x in enumerate(supported_patterns)])
 
     supported_pattern_decode = f'''
-    static uint16_t decode_pattern(uint16_t pattern) {{
+    static uint16_t decode_nkern_pattern(uint16_t nkern_pat) {{
         {supported_patterns_decode_cases}
-        if (pattern == sop::ZERO_PATTERN_ID) return 0; 
-        std::cerr << "Unable to unmap unsupported pattern id " << (int) pattern << std::endl;
+        if (nkern_pat == sop::ZERO_PATTERN_ID) return 0; 
+        std::cerr << "Unable to unmap unsupported nanokernel pattern id " << (int) nkern_pat << std::endl;
         exit(-1);
         return 0;
     }}
     '''
 
     pattern_nnz_count_cases = "\n        ".join([
-        f'if (pattern == {i}) return {gmpy.popcount(x)};' for i, x in enumerate(supported_patterns)])
+        f'if (nkern_code == {i}) return {gmpy.popcount(x)};' for i, x in enumerate(supported_patterns)])
 
     pattern_nnz_count = f'''
-    static uint16_t nnz_count(uint16_t pattern) {{
+    static uint16_t nnz_count_for_nkern_code(uint16_t nkern_code) {{
         {pattern_nnz_count_cases}
-        if (pattern == sop::ZERO_PATTERN_ID) return 0; 
-        std::cerr << "Unable to get pop count for pattern id " << (int) pattern << std::endl;
+        if (nkern_code == sop::ZERO_PATTERN_ID) return 0; 
+        std::cerr << "Unable to get pop count for nanokernel code " << (int) nkern_code << std::endl;
         exit(-1);
         return 0;
     }}
@@ -247,14 +262,49 @@ def gen_for_vec_height(acc_dims, supported_patterns,
     import os; SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
     output_root = f'{SCRIPT_DIR}/_C/generated' if output_root is None else output_root
 
-    output_path = output_path if output_path is not None else f'{output_root}/microkernel_{kernel_id}.h'
+    def ukern_header_path(microkernel_typename):
+        return f'{output_root}/{microkernel_typename}.h'
+
+    if build_factories_for is not None:
+        factory_output_root = f'{output_root}/factories/{nanokernel_hash_}/'
+        os.makedirs(factory_output_root, exist_ok=True)
+
+        print(f'Created output directory {output_root}')
+
+        for (scalar, vec_width), micro_kernel_typename in zip(vec_configs, micro_kernel_typename_names):
+            microkernel_id_ = microkernel_id(vec_width, acc_dims, nanokernels)
+
+            for kernel_desc in build_factories_for:
+                header = ukern_header_path(micro_kernel_typename).split('/')[-1]
+                factory_desc_json = json.dumps({
+                    "id": microkernel_id_,
+                    "func": factory_name(microkernel_id_),
+                    "kernel_desc": kernel_desc,
+                    "M_r": acc_dims[0],
+                    "N_r": acc_dims[1],
+                })
+
+                with open(factory_output_root + f'{kernel_desc}_{scalar}.cpp', 'w+') as f:
+                    f.write(f'#include "ExecutorFactory.h""\n')
+                    f.write(f'#include "KernelDesc.h"\n')
+                    f.write(f'#include "{header}"\n')
+                    f.write(f'\n')
+                    f.write(f'namespace {namespace} {{\n')
+                    f.write(f'\n')
+                    f.write(f'// factory_desc | {factory_desc_json}\n')
+                    f.write(f'ExecutorFactory<{kernel_desc}>* {factory_name(microkernel_id_)}() {{\n')
+                    f.write(f'    return new ExecutorFactorySpecialized<{kernel_desc}, {micro_kernel_typename}>('
+                            f'{acc_dims[0]}, {acc_dims[1]});\n')
+                    f.write(f'}}\n')
+                    f.write('\n')
+                    f.write(f'}} // namespace {namespace}\n')
 
 
-    for scalar, vec_width in [('float', 512)]:
+    for (scalar, vec_width), micro_kernel_typename in zip(vec_configs, micro_kernel_typename_names):
         reg_width_ele, _, _ = vec_type_info[(scalar, vec_width)]
-        micro_kernel_typename = microkernel_typename(scalar, vec_width, acc_dims, supported_patterns, kernel_id)
+        microkernel_id_ = microkernel_id(vec_width, acc_dims, nanokernels)
 
-        with open(output_path.replace('.h', f'_{scalar}_{vec_width}.h'), 'w+') as f:
+        with open(ukern_header_path(micro_kernel_typename), 'w+') as f:
             f.write(f'#pragma once\n\n')
             f.write(f'#include "MicroKernelBase.h"\n')
             f.write(f'#include "Storage.h"\n')
@@ -263,9 +313,6 @@ def gen_for_vec_height(acc_dims, supported_patterns,
             f.write(f'\n')
             f.write(f'namespace {namespace} {{')
             f.write(f'\n')
-            f.write(f'#define REGISTER_FACTORY_{micro_kernel_typename}(KD)\\\n')
-            f.write(f'    sop::ExecutorFactorySpeacilized<sop::KD, {namespace}::{micro_kernel_typename}>\\\n')
-            f.write(f'        KD##_{micro_kernel_typename};\n\n')
             f.write(f'struct {micro_kernel_typename} {{\n')
             f.write(supported_pattern_getter)
             f.write(supported_pattern_encode)
@@ -278,14 +325,13 @@ def gen_for_vec_height(acc_dims, supported_patterns,
             f.write('\n')
             f.write(f'    using Scalar = {scalar};\n')
             f.write(f'    static constexpr int M_r = {acc_dims[0]};\n')
-            f.write(f'    static constexpr int N_r = {acc_dims[1]} * {reg_num_ele};\n')
+            f.write(f'    static constexpr int N_r = {acc_dims[1]} * {reg_width_ele};\n')
             f.write(f'    static constexpr int N_r_reg = {acc_dims[1]};\n')
             f.write(f'    static constexpr int vec_width_bits = {vec_width};\n')
-            f.write(f'    static constexpr const char* id = "{kernel_id}";\n')
+            f.write(f'    static constexpr const char* id = "{microkernel_id_}";\n')
             f.write(f'    static int max_acc_width_in_vecs() {{ return {acc_dims[1]}; }};\n')
             f.write(f'    static int max_acc_width_in_eles() {{ return {acc_dims[1]} * {reg_width_ele}; }};\n\n')
-            f.write(f'    static int number_of_patterns() {{ return {len(supported_patterns)}; }}\n')
-            f.write(f'    static int panel_height() {{ return {vec_height}; }}\n\n')
+            f.write(f'    static int num_nkern_patterns() {{ return {len(nanokernels)}; }}\n')
             f.write(f'')
 
             acc_widths = [acc_dims[1], 1]
@@ -295,98 +341,98 @@ def gen_for_vec_height(acc_dims, supported_patterns,
                 acc_width_str = str(acc_width) if i == 0 else "max_acc"
 
                 sop_panel_executor = f'''
-    __ALWAYS_INLINE static void _panel_executor_{acc_width_str}(
+    __ALWAYS_INLINE static void _microkernel_{acc_width_str}(
         int M, int K, int N,
-        int* __restrict__            pattern_counts,
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         {scalar}* __restrict__       values,
         int                          num_col_indices,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         const bool load_c)
-    {{\n{gen_executor_body(scalar, vec_width, [acc_dims[0], acc_width], max_acc_width, supported_patterns, 
+    {{\n{gen_executor_body(scalar, vec_width, [acc_dims[0], acc_width], max_acc_width, nanokernels, 
                            packed_C=False, packed_B=False).emit(6)}
     }}\n\n
 
-    __ALWAYS_INLINE static void panel_executor_{acc_width_str}(
+    __ALWAYS_INLINE static void microkernel_{acc_width_str}(
         int M, int K, int N,
-        const sop::PanelUsingCounts& panel_desc,
+        const sop::MicroKernelPackedData& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         const bool load_c) {{
     
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
         float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_{acc_width_str}(
-            M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
+        _microkernel_{acc_width_str}(
+            M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }}
     '''
 
                 sop_panel_executor_packed = f'''
-    __ALWAYS_INLINE static void _panel_executor_packed_{acc_width_str}(
-        int* __restrict__            pattern_counts,
+    __ALWAYS_INLINE static void _microkernel_packed_{acc_width_str}(
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         {scalar}* __restrict__       values,
         int                          num_col_indices,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         const bool load_c)
-    {{\n{gen_executor_body(scalar, vec_width, [acc_dims[0], acc_width], max_acc_width, supported_patterns, 
+    {{\n{gen_executor_body(scalar, vec_width, [acc_dims[0], acc_width], max_acc_width, nanokernels, 
                            packed_C=True, packed_B=True).emit(6)}
     }}\n\n
 
-    __ALWAYS_INLINE static void panel_executor_packed_{acc_width_str}(
-        const sop::PanelUsingCounts& panel_desc,
+    __ALWAYS_INLINE static void microkernel_packed_{acc_width_str}(
+        const sop::& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         const bool load_c) {{
     
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
         float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_packed_{acc_width_str}(
-            pattern_counts, col_indices, values, num_col_indices, B, C, load_c
+        _microkernel_packed_{acc_width_str}(
+            nkern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }}
     '''
 
                 sop_panel_executor_packed_C = f'''
-    __ALWAYS_INLINE static void _panel_executor_packed_C_{acc_width_str}(
+    __ALWAYS_INLINE static void _microkernel_packed_C_{acc_width_str}(
         int M, int K, int N,
-        int* __restrict__            pattern_counts,
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         {scalar}* __restrict__       values,
         int                          num_col_indices,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__       C,
         const bool load_c)
-    {{\n{gen_executor_body(scalar, vec_width, [acc_dims[0], acc_width], max_acc_width, supported_patterns, 
+    {{\n{gen_executor_body(scalar, vec_width, [acc_dims[0], acc_width], max_acc_width, nanokernels, 
                            packed_C=True, packed_B=False).emit(6)}
     }}\n\n
     
-    static void panel_executor_packed_C_{acc_width_str}(
+    static void microkernel_packed_C_{acc_width_str}(
         int M, int K, int N,
-        const sop::PanelUsingCounts& panel_desc,
+        const sop::MicroKernelPackedData& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         const bool load_c) {{
     
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
         float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_packed_C_{acc_width_str}(
-            M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
+        _microkernel_packed_C_{acc_width_str}(
+            M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }}
     '''
@@ -395,9 +441,9 @@ def gen_for_vec_height(acc_dims, supported_patterns,
                 f.write(sop_panel_executor_packed_C)
 
             sop_panel_executor_packed_masked_C = f'''
-    __ALWAYS_INLINE static void _panel_executor_masked_1(
+    __ALWAYS_INLINE static void _microkernel_masked_1(
         int M, int K, int N,
-        int* __restrict__            pattern_counts,
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         {scalar}* __restrict__       values,
         int                          num_col_indices,
@@ -405,14 +451,14 @@ def gen_for_vec_height(acc_dims, supported_patterns,
         {scalar} *__restrict__       C,
         Mask last_reg_mask,
         const bool load_c)
-    {{\n{gen_executor_body(scalar, vec_width, [acc_dims[0], 1], max_acc_width, supported_patterns,
+    {{\n{gen_executor_body(scalar, vec_width, [acc_dims[0], 1], max_acc_width, nanokernels,
                            packed_C=False, packed_B=False, masked=True).emit(6)}
     }}\n\n
     
-    __ALWAYS_INLINE static void _panel_executor_masked_max_acc(
+    __ALWAYS_INLINE static void _microkernel_masked_max_acc(
         int N_rem,
         int M, int K, int N,
-        int* __restrict__            pattern_counts,
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         {scalar}* __restrict__       values,
         int                          num_col_indices,
@@ -423,26 +469,26 @@ def gen_for_vec_height(acc_dims, supported_patterns,
 
         int _j = 0;
         for (; _j < N_rem - {reg_width_ele-1}; _j += {reg_width_ele}) {{
-            _panel_executor_1(
+            _microkernel_1(
                 M, K, N,
-                pattern_counts, col_indices, values, num_col_indices,
+                nkern_counts, col_indices, values, num_col_indices,
                 B + _j,
                 C + _j,
                 load_c);
         }}
         
-        _panel_executor_masked_1(
+        _microkernel_masked_1(
             M, K, N,
-            pattern_counts, col_indices, values, num_col_indices,
+            nkern_counts, col_indices, values, num_col_indices,
             B + _j,
             C + _j,
             last_reg_mask, load_c);
     }}
     
-     static void panel_executor_masked_max_acc(
+     static void microkernel_masked_max_acc(
         int N_rem,
         int M, int K, int N,
-        const sop::PanelUsingCounts& panel_desc,
+        const sop::MicroKernelPackedData& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         Mask last_reg_mask,
@@ -450,20 +496,20 @@ def gen_for_vec_height(acc_dims, supported_patterns,
 
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
         float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
      
-        _panel_executor_masked_max_acc(
-            N_rem, M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
+        _microkernel_masked_max_acc(
+            N_rem, M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
     }}
     '''
             f.write(sop_panel_executor_packed_masked_C)
 
             sop_panel_executor_packed_masked_C = f'''
-    __ALWAYS_INLINE static void _panel_executor_masked_packed_C_1(
+    __ALWAYS_INLINE static void _microkernel_masked_packed_C_1(
         int M, int K, int N,
-        int* __restrict__            pattern_counts,
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         {scalar}* __restrict__       values,
         int                          num_col_indices,
@@ -471,14 +517,14 @@ def gen_for_vec_height(acc_dims, supported_patterns,
         {scalar} *__restrict__       C,
         Mask last_reg_mask,
         const bool load_c)
-    {{\n{gen_executor_body(scalar, vec_width, [acc_dims[0], 1], max_acc_width, supported_patterns,
+    {{\n{gen_executor_body(scalar, vec_width, [acc_dims[0], 1], max_acc_width, nanokernels,
                            packed_C=True, packed_B=False, masked=True).emit(6)}
     }}\n\n
     
-    static void _panel_executor_masked_packed_C_max_acc(
+    static void _microkernel_masked_packed_C_max_acc(
         int N_rem,
         int M, int K, int N,
-        int* __restrict__            pattern_counts,
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         {scalar}* __restrict__       values,
         int                          num_col_indices,
@@ -489,26 +535,26 @@ def gen_for_vec_height(acc_dims, supported_patterns,
 
         int _j = 0;
         for (; _j < N_rem - {reg_width_ele-1}; _j += {reg_width_ele}) {{
-            _panel_executor_packed_C_1(
+            _microkernel_packed_C_1(
                 M, K, N,
-                pattern_counts, col_indices, values, num_col_indices,
+                nkern_counts, col_indices, values, num_col_indices,
                 B + _j,
                 C + _j,
                 load_c);
         }}
         
-        _panel_executor_masked_packed_C_1(
+        _microkernel_masked_packed_C_1(
             M, K, N,
-            pattern_counts, col_indices, values, num_col_indices,
+            nkern_counts, col_indices, values, num_col_indices,
             B + _j,
             C + _j,
             last_reg_mask, load_c);
     }}
     
-    static void panel_executor_masked_packed_C_max_acc(
+    static void microkernel_masked_packed_C_max_acc(
         int N_rem,
         int M, int K, int N,
-        const sop::PanelUsingCounts& panel_desc,
+        const sop::MicroKernelPackedData& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         Mask last_reg_mask,
@@ -516,87 +562,16 @@ def gen_for_vec_height(acc_dims, supported_patterns,
 
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
         float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
      
-        _panel_executor_masked_packed_C_max_acc(
-            N_rem, M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
+        _microkernel_masked_packed_C_max_acc(
+            N_rem, M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
     }}
     '''
             f.write(sop_panel_executor_packed_masked_C)
 
-            sop_panel_executor = f'''
-    __ALWAYS_INLINE static void panel_executor_max_acc_width_N_c(
-        int N_c,
-        int M, int K, int N,
-        const sop::PanelUsingCounts& panel_desc,
-        const {scalar} *__restrict__ B,
-        {scalar} *__restrict__ C,
-        const bool load_c)
-    {{\n
-        uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
-        float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
-        int                     num_patterns = panel_desc.num_patterns;
-        int                     num_col_indices = panel_desc.num_col_indices;
-    
-        for (int _j = 0; _j < N_c; _j += N_r) {{
-            _panel_executor_max_acc(
-                M, K, N,
-                pattern_counts, col_indices, values, num_col_indices,
-                B + _j,
-                C + _j,
-                load_c);
-        }}
-    }}\n\n'''
-            f.write(sop_panel_executor)
-
-            sop_panel_executor = f'''
-    static void panel_executor_cleanup_N_c(
-        int N_c_rem,
-        int M, int K, int N,
-        const sop::PanelUsingCounts& panel_desc,
-        const {scalar} *__restrict__ B,
-        {scalar} *__restrict__ C,
-        Mask mask, const bool load_c)
-    {{\n
-        uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
-        float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
-        int                     num_patterns = panel_desc.num_patterns;
-        int                     num_col_indices = panel_desc.num_col_indices;
-    
-        int _j = 0;
-        int end_of_full_blocks = (N_c_rem / N_r) * N_r;
-        int end_of_partial_blocks = ((N_c_rem - end_of_full_blocks) / N_r) * N_r;
-        
-        if (end_of_full_blocks) {{
-            panel_executor_max_acc_width_N_c(
-                end_of_full_blocks,
-                M, K, N,
-                panel_desc,
-                B, C,
-                load_c);
-        }}
-
-        for (_j = end_of_full_blocks; _j < end_of_partial_blocks; _j += {reg_width_ele}) {{
-            _panel_executor_1(
-                M, K, N,
-                pattern_counts, col_indices, values, num_col_indices,
-                B + _j,
-                C + _j,
-                load_c);
-        }}
-        
-        _panel_executor_masked_1(
-            M, K, N,
-            pattern_counts, col_indices, values, num_col_indices,
-            B + _j,
-            C + _j,
-            mask, load_c);
-    }}\n\n'''
-            f.write(sop_panel_executor)
             f.write(f'\n}};\n\n')
             f.write(f'}} // {namespace}\n')
 

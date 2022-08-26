@@ -14,15 +14,16 @@
 #include "COO.h"
 #include "Storage.h"
 #include "MicroKernelBase.h"
+#include MicroKernelPacker.h
 
-using std::vector;
+using std::array;
 using std::array;
 using std::pair;
 
 namespace sop {
 
 template <typename Scalar, typename Executor>
-class SOPTile {
+class Tile {
   template <typename T>
   int countbits(T ch) {
     int n = 0;
@@ -390,7 +391,7 @@ class SOPTile {
 
   SOPTile(COO<Scalar>& coo_tile, int col_offset = 0)
       : m_coo_tile(coo_tile),
-        m_supported_patterns(Executor::supported_patterns()),
+        m_supported_patterns(Executor::()),
         m_num_supported_patterns(Executor::number_of_patterns()),
         m_panel_height(Executor::panel_height()),
         m_num_panels(std::ceil(coo_tile.rows() / m_panel_height)),
@@ -449,13 +450,18 @@ class SOPTile {
     auto [nnz_count, col_indices_count, num_patterns_total] =
         compute_required_storage();
 
-    return num_patterns_total * sizeof(*PanelUsingCounts::pattern_counts) +
-        col_indices_count * sizeof(*PanelUsingCounts::col_indices) +
-        nnz_count * sizeof(*PanelUsingCounts::values) + 4 * 64 * m_num_panels;
+    return num_patterns_total * sizeof(*MicroKernelPackedData::nkern_counts) +
+        col_indices_count * sizeof(*MicroKernelPackedData::col_indices) +
+        nnz_count * sizeof(*MicroKernelPackedData::values) + 4 * 64 * m_num_panels;
   }
 
-  void pack_patterns(PanelUsingCounts* panel_descs, uint8_t* buffer = nullptr) {
+  void pack_patterns(MicroKernelPackedData* panel_descs, uint8_t* buffer = nullptr) {
     for (int panel_id = 0; panel_id < m_num_panels; panel_id++) {
+
+      PanelPacker<Scalar> panel_packer(
+          m_patterns[panel_id], m_values[panel_id], m_col_indices[panel_id]);
+
+
       assert(panel_id < m_values.size());
       assert(panel_id < m_patterns.size());
       assert(panel_id < m_col_indices.size());
@@ -485,12 +491,12 @@ class SOPTile {
       }
 
       auto& panel_desc = panel_descs[panel_id];
-      panel_desc.num_patterns = m_num_supported_patterns;
+      panel_desc.nkern_counts = m_num_supported_patterns;
 
       if (buffer) {
         buffer = cacheline_align_ptr(buffer);
-        panel_desc.pattern_counts = (int*)buffer;
-        buffer += m_num_supported_patterns * sizeof(*panel_desc.pattern_counts);
+        panel_desc.nkern_counts = (int*)buffer;
+        buffer += m_num_supported_patterns * sizeof(*panel_desc.nkern_counts);
 
         buffer = cacheline_align_ptr(buffer);
         panel_desc.col_indices = (int*)buffer;
@@ -500,14 +506,14 @@ class SOPTile {
         panel_desc.values = (Scalar*)buffer;
         buffer += num_values * sizeof(*panel_desc.values);
       } else {
-        panel_desc.pattern_counts = new int[m_num_supported_patterns]();
+        panel_desc.nkern_counts = new int[m_num_supported_patterns]();
         panel_desc.col_indices = new int[permuted_col_indices.size()]();
         panel_desc.values = new Scalar[num_values]();
       }
 
       std::fill(
-          panel_desc.pattern_counts,
-          &panel_desc.pattern_counts[m_num_supported_patterns],
+          panel_desc.nkern_counts,
+          &panel_desc.nkern_counts[m_num_supported_patterns],
           0);
 
       int curr_value_offset = 0;
@@ -523,7 +529,7 @@ class SOPTile {
         assert(curr_col_indices_offset < permuted_col_indices.size());
         assert(p < permuted_col_indices.size());
 
-        panel_desc.pattern_counts[encoded_pattern]++;
+        panel_desc.nkern_counts[encoded_pattern]++;
         panel_desc.col_indices[curr_col_indices_offset++] =
             permuted_col_indices[p] + m_col_offset;
 

@@ -7,13 +7,9 @@
 
 
 namespace sop {
-#define REGISTER_FACTORY_MicroKernel_float_13fd3_512_8x2(KD)\
-    sop::ExecutorFactorySpeacilized<KDFloatNoPacking, sop::MicroKernel_float_13fd3_512_8x2>\
-        KD##_MicroKernel_float_13fd3_512_8x2;
-
 struct MicroKernel_float_13fd3_512_8x2 {
 
-    static const uint16_t* supported_patterns() {
+    static const uint16_t* supported_nkern_patterns() {
         static uint16_t patterns[] = {
             0b00000001,
             0b00000010,
@@ -39,80 +35,80 @@ struct MicroKernel_float_13fd3_512_8x2 {
         return patterns;
     }
     
-    static uint16_t encode_pattern(uint16_t pattern) {
-        if (pattern == 0b00000001) return 0;
-        if (pattern == 0b00000010) return 1;
-        if (pattern == 0b00000100) return 2;
-        if (pattern == 0b00001000) return 3;
-        if (pattern == 0b00010000) return 4;
-        if (pattern == 0b00100000) return 5;
-        if (pattern == 0b01000000) return 6;
-        if (pattern == 0b10000000) return 7;
-        if (pattern == 0b01010101) return 8;
-        if (pattern == 0b10101010) return 9;
-        if (pattern == 0b11000011) return 10;
-        if (pattern == 0b00111100) return 11;
-        if (pattern == 0b00001111) return 12;
-        if (pattern == 0b11110000) return 13;
-        if (pattern == 0b11111100) return 14;
-        if (pattern == 0b11110011) return 15;
-        if (pattern == 0b11001111) return 16;
-        if (pattern == 0b00111111) return 17;
-        if (pattern == 0b11111111) return 18;
-        if (pattern == 0) return sop::ZERO_PATTERN_ID; 
-        std::cerr << "Unable to map unsupported pattern " <<  (int) pattern << std::endl;
+    static uint16_t encode_nkern_pattern(uint16_t nkern_pat) {
+        if (nkern_code == 0b00000001) return 0;
+        if (nkern_code == 0b00000010) return 1;
+        if (nkern_code == 0b00000100) return 2;
+        if (nkern_code == 0b00001000) return 3;
+        if (nkern_code == 0b00010000) return 4;
+        if (nkern_code == 0b00100000) return 5;
+        if (nkern_code == 0b01000000) return 6;
+        if (nkern_code == 0b10000000) return 7;
+        if (nkern_code == 0b01010101) return 8;
+        if (nkern_code == 0b10101010) return 9;
+        if (nkern_code == 0b11000011) return 10;
+        if (nkern_code == 0b00111100) return 11;
+        if (nkern_code == 0b00001111) return 12;
+        if (nkern_code == 0b11110000) return 13;
+        if (nkern_code == 0b11111100) return 14;
+        if (nkern_code == 0b11110011) return 15;
+        if (nkern_code == 0b11001111) return 16;
+        if (nkern_code == 0b00111111) return 17;
+        if (nkern_code == 0b11111111) return 18;
+        if (nkern_pat == 0) return sop::ZERO_PATTERN_ID; 
+        std::cerr << "Unable to map unsupported nanokernel pattern " <<  (int) nkern_pat << std::endl;
         exit(-1);
         return 0;
     }
     
-    static uint16_t decode_pattern(uint16_t pattern) {
-        if (pattern == 0) return 0b00000001;
-        if (pattern == 1) return 0b00000010;
-        if (pattern == 2) return 0b00000100;
-        if (pattern == 3) return 0b00001000;
-        if (pattern == 4) return 0b00010000;
-        if (pattern == 5) return 0b00100000;
-        if (pattern == 6) return 0b01000000;
-        if (pattern == 7) return 0b10000000;
-        if (pattern == 8) return 0b01010101;
-        if (pattern == 9) return 0b10101010;
-        if (pattern == 10) return 0b11000011;
-        if (pattern == 11) return 0b00111100;
-        if (pattern == 12) return 0b00001111;
-        if (pattern == 13) return 0b11110000;
-        if (pattern == 14) return 0b11111100;
-        if (pattern == 15) return 0b11110011;
-        if (pattern == 16) return 0b11001111;
-        if (pattern == 17) return 0b00111111;
-        if (pattern == 18) return 0b11111111;
-        if (pattern == sop::ZERO_PATTERN_ID) return 0; 
-        std::cerr << "Unable to unmap unsupported pattern id " << (int) pattern << std::endl;
+    static uint16_t decode_nkern_pattern(uint16_t nkern_pat) {
+        if (nkern_code == 0) return 0b00000001;
+        if (nkern_code == 1) return 0b00000010;
+        if (nkern_code == 2) return 0b00000100;
+        if (nkern_code == 3) return 0b00001000;
+        if (nkern_code == 4) return 0b00010000;
+        if (nkern_code == 5) return 0b00100000;
+        if (nkern_code == 6) return 0b01000000;
+        if (nkern_code == 7) return 0b10000000;
+        if (nkern_code == 8) return 0b01010101;
+        if (nkern_code == 9) return 0b10101010;
+        if (nkern_code == 10) return 0b11000011;
+        if (nkern_code == 11) return 0b00111100;
+        if (nkern_code == 12) return 0b00001111;
+        if (nkern_code == 13) return 0b11110000;
+        if (nkern_code == 14) return 0b11111100;
+        if (nkern_code == 15) return 0b11110011;
+        if (nkern_code == 16) return 0b11001111;
+        if (nkern_code == 17) return 0b00111111;
+        if (nkern_code == 18) return 0b11111111;
+        if (nkern_pat == sop::ZERO_PATTERN_ID) return 0; 
+        std::cerr << "Unable to unmap unsupported nanokernel pattern id " << (int) nkern_pat << std::endl;
         exit(-1);
         return 0;
     }
     
-    static uint16_t nnz_count(uint16_t pattern) {
-        if (pattern == 0) return 1;
-        if (pattern == 1) return 1;
-        if (pattern == 2) return 1;
-        if (pattern == 3) return 1;
-        if (pattern == 4) return 1;
-        if (pattern == 5) return 1;
-        if (pattern == 6) return 1;
-        if (pattern == 7) return 1;
-        if (pattern == 8) return 4;
-        if (pattern == 9) return 4;
-        if (pattern == 10) return 4;
-        if (pattern == 11) return 4;
-        if (pattern == 12) return 4;
-        if (pattern == 13) return 4;
-        if (pattern == 14) return 6;
-        if (pattern == 15) return 6;
-        if (pattern == 16) return 6;
-        if (pattern == 17) return 6;
-        if (pattern == 18) return 8;
-        if (pattern == sop::ZERO_PATTERN_ID) return 0; 
-        std::cerr << "Unable to get pop count for pattern id " << (int) pattern << std::endl;
+    static uint16_t nnz_count_for_nkern_code(uint16_t nkern_code) {
+        if (nkern_code == 0) return 1;
+        if (nkern_code == 1) return 1;
+        if (nkern_code == 2) return 1;
+        if (nkern_code == 3) return 1;
+        if (nkern_code == 4) return 1;
+        if (nkern_code == 5) return 1;
+        if (nkern_code == 6) return 1;
+        if (nkern_code == 7) return 1;
+        if (nkern_code == 8) return 4;
+        if (nkern_code == 9) return 4;
+        if (nkern_code == 10) return 4;
+        if (nkern_code == 11) return 4;
+        if (nkern_code == 12) return 4;
+        if (nkern_code == 13) return 4;
+        if (nkern_code == 14) return 6;
+        if (nkern_code == 15) return 6;
+        if (nkern_code == 16) return 6;
+        if (nkern_code == 17) return 6;
+        if (nkern_code == 18) return 8;
+        if (nkern_code == sop::ZERO_PATTERN_ID) return 0; 
+        std::cerr << "Unable to get pop count for nanokernel code " << (int) nkern_code << std::endl;
         exit(-1);
         return 0;
     }
@@ -126,17 +122,15 @@ struct MicroKernel_float_13fd3_512_8x2 {
     static constexpr int N_r = 2 * 16;
     static constexpr int N_r_reg = 2;
     static constexpr int vec_width_bits = 512;
-    static constexpr const char* id = "13fd3";
+    static constexpr const char* id = "13fd3_512_8x2";
     static int max_acc_width_in_vecs() { return 2; };
     static int max_acc_width_in_eles() { return 2 * 16; };
 
-    static int number_of_patterns() { return 19; }
-    static int panel_height() { return 8; }
+    static int num_nkern_patterns() { return 19; }
 
-
-    __ALWAYS_INLINE static void _panel_executor_2(
+    __ALWAYS_INLINE static void _microkernel_2(
         int M, int K, int N,
-        int* __restrict__            pattern_counts,
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         float* __restrict__       values,
         int                          num_col_indices,
@@ -196,7 +190,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[0]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -209,7 +203,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[1]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -222,7 +216,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[2]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -235,7 +229,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[3]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -248,7 +242,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[4]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -261,7 +255,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[5]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -274,7 +268,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[6]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -287,7 +281,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[7]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -300,7 +294,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[8]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -322,7 +316,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[9]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -344,7 +338,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[10]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -366,167 +360,11 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[11]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[12]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[13]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[14]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[15]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[16]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[17]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
         aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
         cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
         cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
@@ -544,7 +382,163 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[18]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -600,26 +594,26 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
 
 
-    __ALWAYS_INLINE static void panel_executor_2(
+    __ALWAYS_INLINE static void microkernel_2(
         int M, int K, int N,
-        const sop::PanelUsingCounts& panel_desc,
+        const sop::MicroKernelPackedData& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         const bool load_c) {
     
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
         float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_2(
-            M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
+        _microkernel_2(
+            M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
     
-    __ALWAYS_INLINE static void _panel_executor_packed_2(
-        int* __restrict__            pattern_counts,
+    __ALWAYS_INLINE static void _microkernel_packed_2(
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         float* __restrict__       values,
         int                          num_col_indices,
@@ -671,7 +665,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
       const float *__restrict__ B_curr = col_indices[0] * (N_r) + B;
       uint32_t * col_indices_curr = col_indices + 1;
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[0]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
@@ -684,7 +678,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[1]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
@@ -697,7 +691,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[2]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
@@ -710,7 +704,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[3]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
@@ -723,7 +717,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[4]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
@@ -736,7 +730,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[5]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
@@ -749,7 +743,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[6]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
@@ -762,7 +756,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[7]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
@@ -775,7 +769,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[8]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
@@ -797,7 +791,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[9]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
@@ -819,7 +813,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[10]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
@@ -841,167 +835,11 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[11]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
         B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[12]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[13]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[14]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[15]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[16]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[17]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
         aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
         cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
         cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
@@ -1019,7 +857,163 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[18]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_load_ps(B_curr + 1 * 16);
@@ -1075,26 +1069,26 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
 
 
-    __ALWAYS_INLINE static void panel_executor_packed_2(
-        const sop::PanelUsingCounts& panel_desc,
+    __ALWAYS_INLINE static void microkernel_packed_2(
+        const sop::& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         const bool load_c) {
     
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
         float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_packed_2(
-            pattern_counts, col_indices, values, num_col_indices, B, C, load_c
+        _microkernel_packed_2(
+            nkern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
     
-    __ALWAYS_INLINE static void _panel_executor_packed_C_2(
+    __ALWAYS_INLINE static void _microkernel_packed_C_2(
         int M, int K, int N,
-        int* __restrict__            pattern_counts,
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         float* __restrict__       values,
         int                          num_col_indices,
@@ -1146,7 +1140,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[0]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -1159,7 +1153,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[1]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -1172,7 +1166,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[2]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -1185,7 +1179,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[3]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -1198,7 +1192,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[4]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -1211,7 +1205,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[5]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -1224,7 +1218,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[6]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -1237,7 +1231,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[7]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -1250,7 +1244,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[8]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -1272,7 +1266,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[9]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -1294,7 +1288,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[10]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -1316,167 +1310,11 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[11]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[12]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[13]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[14]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[15]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[16]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[17]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
         aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
         cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
         cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
@@ -1494,7 +1332,163 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[18]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        cVec61 = _mm512_fmadd_ps(aVec, bVec1, cVec61);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+        cVec71 = _mm512_fmadd_ps(aVec, bVec1, cVec71);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        cVec01 = _mm512_fmadd_ps(aVec, bVec1, cVec01);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        cVec11 = _mm512_fmadd_ps(aVec, bVec1, cVec11);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        cVec21 = _mm512_fmadd_ps(aVec, bVec1, cVec21);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        cVec31 = _mm512_fmadd_ps(aVec, bVec1, cVec31);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        cVec41 = _mm512_fmadd_ps(aVec, bVec1, cVec41);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        cVec51 = _mm512_fmadd_ps(aVec, bVec1, cVec51);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         __m512 bVec1 = _mm512_loadu_ps(B_curr + 1 * 16);
@@ -1550,27 +1544,27 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
 
     
-    __ALWAYS_INLINE static void panel_executor_packed_C_2(
+    static void microkernel_packed_C_2(
         int M, int K, int N,
-        const sop::PanelUsingCounts& panel_desc,
+        const sop::MicroKernelPackedData& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         const bool load_c) {
     
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
         float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_packed_C_2(
-            M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
+        _microkernel_packed_C_2(
+            M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
     
-    __ALWAYS_INLINE static void _panel_executor_max_acc(
+    __ALWAYS_INLINE static void _microkernel_max_acc(
         int M, int K, int N,
-        int* __restrict__            pattern_counts,
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         float* __restrict__       values,
         int                          num_col_indices,
@@ -1614,7 +1608,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[0]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -1625,7 +1619,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[1]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -1636,7 +1630,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[2]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -1647,7 +1641,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[3]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -1658,7 +1652,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[4]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -1669,7 +1663,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[5]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -1680,7 +1674,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[6]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -1691,7 +1685,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[7]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -1702,7 +1696,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[8]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -1719,7 +1713,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[9]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -1736,7 +1730,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[10]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -1753,128 +1747,10 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[11]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[12]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[13]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[14]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[15]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[16]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[17]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
         aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
         cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
         aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
@@ -1888,7 +1764,125 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[18]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -1927,26 +1921,26 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
 
 
-    __ALWAYS_INLINE static void panel_executor_max_acc(
+    __ALWAYS_INLINE static void microkernel_max_acc(
         int M, int K, int N,
-        const sop::PanelUsingCounts& panel_desc,
+        const sop::MicroKernelPackedData& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         const bool load_c) {
     
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
         float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_max_acc(
-            M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
+        _microkernel_max_acc(
+            M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
     
-    __ALWAYS_INLINE static void _panel_executor_packed_max_acc(
-        int* __restrict__            pattern_counts,
+    __ALWAYS_INLINE static void _microkernel_packed_max_acc(
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         float* __restrict__       values,
         int                          num_col_indices,
@@ -1982,7 +1976,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
       const float *__restrict__ B_curr = col_indices[0] * (N_r) + B;
       uint32_t * col_indices_curr = col_indices + 1;
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[0]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
@@ -1993,7 +1987,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[1]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
@@ -2004,7 +1998,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[2]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
@@ -2015,7 +2009,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[3]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
@@ -2026,7 +2020,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[4]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
@@ -2037,7 +2031,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[5]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
@@ -2048,7 +2042,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[6]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
@@ -2059,7 +2053,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[7]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
@@ -2070,7 +2064,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[8]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
@@ -2087,7 +2081,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[9]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
@@ -2104,7 +2098,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[10]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
@@ -2121,128 +2115,10 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[11]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[12]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[13]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[14]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[15]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[16]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[17]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
         aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
         cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
         aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
@@ -2256,7 +2132,125 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[18]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_load_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;
@@ -2295,26 +2289,26 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
 
 
-    __ALWAYS_INLINE static void panel_executor_packed_max_acc(
-        const sop::PanelUsingCounts& panel_desc,
+    __ALWAYS_INLINE static void microkernel_packed_max_acc(
+        const sop::& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         const bool load_c) {
     
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
         float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_packed_max_acc(
-            pattern_counts, col_indices, values, num_col_indices, B, C, load_c
+        _microkernel_packed_max_acc(
+            nkern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
     
-    __ALWAYS_INLINE static void _panel_executor_packed_C_max_acc(
+    __ALWAYS_INLINE static void _microkernel_packed_C_max_acc(
         int M, int K, int N,
-        int* __restrict__            pattern_counts,
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         float* __restrict__       values,
         int                          num_col_indices,
@@ -2350,7 +2344,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[0]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2361,7 +2355,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[1]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2372,7 +2366,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[2]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2383,7 +2377,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[3]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2394,7 +2388,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[4]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2405,7 +2399,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[5]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2416,7 +2410,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[6]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2427,7 +2421,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[7]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2438,7 +2432,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[8]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2455,7 +2449,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[9]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2472,7 +2466,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[10]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2489,128 +2483,10 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[11]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[12]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[13]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[14]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[15]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[16]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[17]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
         aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
         cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
         aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
@@ -2624,7 +2500,125 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[18]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_loadu_ps(B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2663,27 +2657,27 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
 
     
-    __ALWAYS_INLINE static void panel_executor_packed_C_max_acc(
+    static void microkernel_packed_C_max_acc(
         int M, int K, int N,
-        const sop::PanelUsingCounts& panel_desc,
+        const sop::MicroKernelPackedData& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         const bool load_c) {
     
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
         float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _panel_executor_packed_C_max_acc(
-            M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, load_c
+        _microkernel_packed_C_max_acc(
+            M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C, load_c
         );
     }
     
-    __ALWAYS_INLINE static void _panel_executor_masked_1(
+    __ALWAYS_INLINE static void _microkernel_masked_1(
         int M, int K, int N,
-        int* __restrict__            pattern_counts,
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         float* __restrict__       values,
         int                          num_col_indices,
@@ -2728,7 +2722,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[0]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2739,7 +2733,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[1]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2750,7 +2744,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[2]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2761,7 +2755,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[3]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2772,7 +2766,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[4]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2783,7 +2777,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[5]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2794,7 +2788,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[6]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2805,7 +2799,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[7]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2816,7 +2810,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[8]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2833,7 +2827,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[9]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2850,7 +2844,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[10]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -2867,128 +2861,10 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[11]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[12]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[13]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[14]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[15]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[16]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[17]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
         aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
         cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
         aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
@@ -3002,7 +2878,125 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[18]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -3041,10 +3035,10 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
 
     
-    __ALWAYS_INLINE static void _panel_executor_masked_max_acc(
+    __ALWAYS_INLINE static void _microkernel_masked_max_acc(
         int N_rem,
         int M, int K, int N,
-        int* __restrict__            pattern_counts,
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         float* __restrict__       values,
         int                          num_col_indices,
@@ -3055,26 +3049,26 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
         int _j = 0;
         for (; _j < N_rem - 15; _j += 16) {
-            _panel_executor_1(
+            _microkernel_1(
                 M, K, N,
-                pattern_counts, col_indices, values, num_col_indices,
+                nkern_counts, col_indices, values, num_col_indices,
                 B + _j,
                 C + _j,
                 load_c);
         }
         
-        _panel_executor_masked_1(
+        _microkernel_masked_1(
             M, K, N,
-            pattern_counts, col_indices, values, num_col_indices,
+            nkern_counts, col_indices, values, num_col_indices,
             B + _j,
             C + _j,
             last_reg_mask, load_c);
     }
     
-    __ALWAYS_INLINE static void panel_executor_masked_max_acc(
+     static void microkernel_masked_max_acc(
         int N_rem,
         int M, int K, int N,
-        const sop::PanelUsingCounts& panel_desc,
+        const sop::MicroKernelPackedData& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         Mask last_reg_mask,
@@ -3082,17 +3076,17 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
         float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
      
-        _panel_executor_masked_max_acc(
-            N_rem, M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
+        _microkernel_masked_max_acc(
+            N_rem, M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
     }
     
-    __ALWAYS_INLINE static void _panel_executor_masked_packed_C_1(
+    __ALWAYS_INLINE static void _microkernel_masked_packed_C_1(
         int M, int K, int N,
-        int* __restrict__            pattern_counts,
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         float* __restrict__       values,
         int                          num_col_indices,
@@ -3129,7 +3123,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[0]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -3140,7 +3134,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[1]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -3151,7 +3145,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[2]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -3162,7 +3156,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[3]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -3173,7 +3167,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[4]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -3184,7 +3178,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[5]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -3195,7 +3189,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[6]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -3206,7 +3200,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[7]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -3217,7 +3211,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[8]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -3234,7 +3228,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[9]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -3251,7 +3245,7 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[10]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -3268,128 +3262,10 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[11]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[12]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[13]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[14]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[15]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[16]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
-
-      }
-
-      
-      #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[17]; pat_count > 0; pat_count--) {
-        __m512 aVec;
-        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
-        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
         aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
         cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
         aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
@@ -3403,7 +3279,125 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
       
       #pragma GCC unroll 2
-      for(int pat_count = pattern_counts[18]; pat_count > 0; pat_count--) {
+      for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec60 = _mm512_fmadd_ps(aVec, bVec0, cVec60);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec70 = _mm512_fmadd_ps(aVec, bVec0, cVec70);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
+        __m512 aVec;
+        __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
+        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec00 = _mm512_fmadd_ps(aVec, bVec0, cVec00);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec10 = _mm512_fmadd_ps(aVec, bVec0, cVec10);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec20 = _mm512_fmadd_ps(aVec, bVec0, cVec20);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec30 = _mm512_fmadd_ps(aVec, bVec0, cVec30);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec40 = _mm512_fmadd_ps(aVec, bVec0, cVec40);
+        aVec = _mm512_set1_ps(*curr_value_ptr); curr_value_ptr++;
+        cVec50 = _mm512_fmadd_ps(aVec, bVec0, cVec50);
+
+      }
+
+      
+      #pragma GCC unroll 2
+      for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m512 aVec;
         __m512 bVec0 = _mm512_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 16);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
@@ -3442,10 +3436,10 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
 
     
-    __ALWAYS_INLINE static void _panel_executor_masked_packed_C_max_acc(
+    static void _microkernel_masked_packed_C_max_acc(
         int N_rem,
         int M, int K, int N,
-        int* __restrict__            pattern_counts,
+        int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
         float* __restrict__       values,
         int                          num_col_indices,
@@ -3456,26 +3450,26 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
         int _j = 0;
         for (; _j < N_rem - 15; _j += 16) {
-            _panel_executor_packed_C_1(
+            _microkernel_packed_C_1(
                 M, K, N,
-                pattern_counts, col_indices, values, num_col_indices,
+                nkern_counts, col_indices, values, num_col_indices,
                 B + _j,
                 C + _j,
                 load_c);
         }
         
-        _panel_executor_masked_packed_C_1(
+        _microkernel_masked_packed_C_1(
             M, K, N,
-            pattern_counts, col_indices, values, num_col_indices,
+            nkern_counts, col_indices, values, num_col_indices,
             B + _j,
             C + _j,
             last_reg_mask, load_c);
     }
     
-    __ALWAYS_INLINE static void panel_executor_masked_packed_C_max_acc(
+    static void microkernel_masked_packed_C_max_acc(
         int N_rem,
         int M, int K, int N,
-        const sop::PanelUsingCounts& panel_desc,
+        const sop::MicroKernelPackedData& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
         Mask last_reg_mask,
@@ -3483,86 +3477,14 @@ struct MicroKernel_float_13fd3_512_8x2 {
 
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
         float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
+        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
         int                     num_patterns = panel_desc.num_patterns;
         int                     num_col_indices = panel_desc.num_col_indices;
      
-        _panel_executor_masked_packed_C_max_acc(
-            N_rem, M, K, N, pattern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
+        _microkernel_masked_packed_C_max_acc(
+            N_rem, M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C, last_reg_mask, load_c);
     }
     
-    __ALWAYS_INLINE static void panel_executor_max_acc_width_N_c(
-        int N_c,
-        int M, int K, int N,
-        const sop::PanelUsingCounts& panel_desc,
-        const float *__restrict__ B,
-        float *__restrict__ C,
-        const bool load_c)
-    {
-
-        uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
-        float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
-        int                     num_patterns = panel_desc.num_patterns;
-        int                     num_col_indices = panel_desc.num_col_indices;
-    
-        for (int _j = 0; _j < N_c; _j += N_r) {
-            _panel_executor_max_acc(
-                M, K, N,
-                pattern_counts, col_indices, values, num_col_indices,
-                B + _j,
-                C + _j,
-                load_c);
-        }
-    }
-
-
-    __ALWAYS_INLINE static void panel_executor_cleanup_N_c(
-        int N_c_rem,
-        int M, int K, int N,
-        const sop::PanelUsingCounts& panel_desc,
-        const float *__restrict__ B,
-        float *__restrict__ C,
-        Mask mask, const bool load_c)
-    {
-
-        uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
-        float* __restrict__     values = panel_desc.values;
-        int* __restrict__       pattern_counts = panel_desc.pattern_counts;
-        int                     num_patterns = panel_desc.num_patterns;
-        int                     num_col_indices = panel_desc.num_col_indices;
-    
-        int _j = 0;
-        int end_of_full_blocks = (N_c_rem / N_r) * N_r;
-        int end_of_partial_blocks = ((N_c_rem - end_of_full_blocks) / N_r) * N_r;
-        
-        if (end_of_full_blocks) {
-            panel_executor_max_acc_width_N_c(
-                end_of_full_blocks,
-                M, K, N,
-                panel_desc,
-                B, C,
-                load_c);
-        }
-
-        for (_j = end_of_full_blocks; _j < end_of_partial_blocks; _j += 16) {
-            _panel_executor_1(
-                M, K, N,
-                pattern_counts, col_indices, values, num_col_indices,
-                B + _j,
-                C + _j,
-                load_c);
-        }
-        
-        _panel_executor_masked_1(
-            M, K, N,
-            pattern_counts, col_indices, values, num_col_indices,
-            B + _j,
-            C + _j,
-            mask, load_c);
-    }
-
-
 };
 
 } // sop

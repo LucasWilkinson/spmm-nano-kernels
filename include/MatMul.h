@@ -31,13 +31,11 @@ using std::vector;
 namespace sop {
 
 template <typename KernelDesc>
-class SOPMatMul {
+class MatMul {
   using Scalar = typename KernelDesc::Scalar;
 
-  using VecType = typename KernelDesc::VecType;
-
-  using CSRPtr = typename KernelDesc::CSRStorageTypes::Ptr;
-  using CSRIndex = typename KernelDesc::CSRStorageTypes::Index;
+  using CSRPtr = int;
+  using CSRIndex = int;
 
   struct MergedTile {
     enum TileType type;
@@ -90,7 +88,7 @@ class SOPMatMul {
     int dense_tiles_nnz_count = 0;
   } stats;
 
-  using _PackedTile = PackedTile<KernelDesc>;
+  using _PackedTile = PackedTile<Scalar>;
   vector<MergedTile> merged_tiles; // Pre-scheduling
 
   vector<vector<int>> row_panels_per_thread;
@@ -151,7 +149,7 @@ class SOPMatMul {
   }
 
  public:
-  SOPMatMul(
+  MatMul(
       int m, int k,
       int b_col_predict,
       const Scalar* values,
@@ -166,7 +164,7 @@ class SOPMatMul {
       : m(m), k(k), config(_config),
         num_threads(num_threads),
         executor_id(executor_id),
-        executor_factory(ExecutorFactory<KernelDesc>::factories[executor_id]),
+        executor_factory(ExecutorFactory<KernelDesc>::get_factory(executor_id)),
         dense_merging_strategy(dense_merging_strategy),
         sparse_merging_strategy(sparse_merging_strategy),
         execution_strategy(execution_strategy) {
@@ -176,8 +174,8 @@ class SOPMatMul {
         || config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
       cake_cntx_t* cake_cntx = cake_query_cntx();
 
-      cake_cntx->nr = KernelDesc::N_r;
-      cake_cntx->mr = KernelDesc::M_r;
+      cake_cntx->nr = executor_factory->N_r;
+      cake_cntx->mr = executor_factory->M_r;
       cake_cntx->ncores = num_threads;
 
       cache_dims_t* cache_dims = get_cache_dims_3(
@@ -243,7 +241,7 @@ class SOPMatMul {
   //    csv_row_insert(row, "dense_tiles_nnz_count", stats.dense_tiles_nnz_count);
   //  }
 
-  ~SOPMatMul() {
+  ~MatMul() {
     delete coo;
     free(linear_buffer);
   }
@@ -586,7 +584,7 @@ private:
     sop_tile.inspect();
 
     tile_to_pack.sop.num_panels = sop_tile.num_panels();
-    tile_to_pack.sop.panel_descs = new PanelUsingCounts[sop_tile.num_panels()];
+    tile_to_pack.sop.panel_descs = new MicroKernelPackedData[sop_tile.num_panels()];
     sop_tile.pack_patterns(tile_to_pack.sop.panel_descs);
 
     stats.sop_tiles_count++;

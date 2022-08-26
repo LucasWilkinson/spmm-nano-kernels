@@ -18,23 +18,23 @@ using Pattern = uint16_t;
 using NanoKernel = uint16_t;
 using NanoKernelMapping = std::vector<std::vector<NanoKernel>>;
 
-struct PanelUsingCounts {
-  float* values         = nullptr;
+struct MicroKernelPackedData {
+  int*   nkern_counts   = nullptr;
   int*   col_indices    = nullptr;
-  int*   pattern_counts = nullptr;
+  float* values         = nullptr;
 
   int num_nnz = 0;
-  int num_patterns = 0;
+  int num_nkern = 0;
   int num_col_indices = 0;
 
   void free() {
     delete[] values;
     delete[] col_indices;
-    delete[] pattern_counts;
+    delete[] nkern_counts;
 
     values = nullptr;
     col_indices = nullptr;
-    pattern_counts = nullptr;
+    nkern_counts = nullptr;
   }
 };
 
@@ -88,7 +88,7 @@ struct PackedTile {
 
     struct {
       int num_panels;
-      struct PanelUsingCounts* panel_descs;
+      struct MicroKernelPackedData* panel_descs;
     } sop;
   };
 
@@ -156,8 +156,8 @@ struct PackedTile {
               sizeof(sop.panel_descs[i].values) * sop.panel_descs[i].num_nnz;
           size += sizeof(sop.panel_descs[i].col_indices) *
               sop.panel_descs[i].num_col_indices;
-          size += sizeof(sop.panel_descs[i].pattern_counts) *
-              sop.panel_descs[i].num_patterns;
+          size += sizeof(sop.panel_descs[i].nkern_counts) *
+              sop.panel_descs[i].num_nkern;
         }
         return size + (2) * 64; // 3*64 for cacheline alignment
       }
@@ -220,11 +220,10 @@ struct PackedTile {
 
         buffer = cacheline_align_ptr(buffer);
         for (int i = 0; i < sop.num_panels; i++) {
-          updated_tile.sop.panel_descs[i].pattern_counts = (int*)buffer;
+          updated_tile.sop.panel_descs[i].nkern_counts = (int*)buffer;
           buffer = std::copy(
-              sop.panel_descs[i].pattern_counts,
-              &sop.panel_descs[i]
-                   .pattern_counts[sop.panel_descs[i].num_patterns],
+              sop.panel_descs[i].nkern_counts,
+              sop.panel_descs[i].nkern_counts + sop.panel_descs[i].num_nkern,
               (int*)buffer);
 
           updated_tile.sop.panel_descs[i].col_indices = (int*)buffer;
