@@ -11,10 +11,11 @@
 
 #include "Storage.h"
 
+#include <memory>
 
 namespace sop {
 
-NanoKernelMapping read_pattern_mapping(
+std::shared_ptr<NanoKernelMapping> read_pattern_mapping(
     const std::string& id,
     const std::vector<std::string>& search_dirs
 );

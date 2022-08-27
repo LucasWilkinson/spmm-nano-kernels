@@ -51,12 +51,15 @@ public:
 };
 
 template <typename _KernelDesc, typename _MircoKernel>
-class ExecutorFactorySpeacilized: public ExecutorFactory<_KernelDesc> {
+class ExecutorFactorySpecialized: public ExecutorFactory<_KernelDesc> {
 
+  using Super = ExecutorFactory<_KernelDesc>;
   using Scalar = typename _MircoKernel::Scalar;
   std::string id;
 
  public:
+  ExecutorFactorySpecialized(int M_r, int N_r): Super(M_r, N_r) {}
+
   Executor* create_specialized_executor(
     int M, int K, int N,
     const vector<vector<PackedTile<Scalar>>>& tiles,

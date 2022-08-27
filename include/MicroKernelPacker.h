@@ -6,6 +6,7 @@
 #define DNN_SPMM_BENCH_SOPPACKING_H
 
 #include "COO.h"
+#include "utils/error.h"
 #include "utils/misc.h"
 
 #include "MicroKernelBase.h"
@@ -24,8 +25,11 @@ using std::array;
 
 template<typename Scalar>
 struct MicroKernelPacker {
-  void pack(MicroKernelPackedData& panel_desc, SubmatrixLoc loc, const COO<Scalar>& coo) = 0;
-  uint8_t* repack_linear(MicroKernelPackedData& panel_desc, uint8_t* buffer, bool free=true) = 0;
+  MicroKernelPacker(int M_r): M_r(M_r) {}
+
+  const int M_r = 0;
+  virtual void pack(MicroKernelPackedData& panel_desc, SubmatrixLoc loc, const COO<Scalar>& coo) = 0;
+  virtual uint8_t* repack_coalesced(MicroKernelPackedData& panel_desc, uint8_t* buffer, bool free=true) = 0;
 };
 
 template<typename MicroKernelDesc>
@@ -33,7 +37,9 @@ struct MicroKernelPackerSpeaclized:
       public MicroKernelPacker<typename MicroKernelDesc::Scalar> {
 
   using Scalar = typename MicroKernelDesc::Scalar;
+  using Super = MicroKernelPacker<Scalar>;
   using MicroKernel = typename MicroKernelDesc::MicroKernel;
+  using NonZero = typename COO<Scalar>::NonZero;
 
   template <typename T>
   int countbits(T ch) {
@@ -46,17 +52,14 @@ struct MicroKernelPackerSpeaclized:
     return n;
   }
 
-  using NonZero = typename COO<Scalar>::NonZero;
-
-  const int M_r;
-  MicroKernelPackerSpeaclized pattern_mapping;
+  std::shared_ptr<NanoKernelMapping> m_pattern_mapping;
 
   MicroKernelPackerSpeaclized(
-      int M_r, std::shared_ptr<NanoKernelMapping> pattern_mapping):
-    M_r(M_r), pattern_mapping(pattern_mapping) { }
+    int M_r, std::shared_ptr<NanoKernelMapping> pattern_mapping):
+      Super(M_r), m_pattern_mapping(pattern_mapping) { }
 
   vector<Pattern> map_to_supported_patterns(Pattern pat) {
-    return pattern_mapping[pat];
+    return m_pattern_mapping->at(pat);
   }
 
   template <typename T>
@@ -112,10 +115,8 @@ struct MicroKernelPackerSpeaclized:
             SubmatrixLoc loc,
             const COO<Scalar>& coo) {
 
-    if (loc.rows.size() != MicroKernelDesc::M_r) {
-      std::cerr << "Error: row panel size mismatch" << std::endl;
-      exit(-1);
-    }
+    ERROR_AND_EXIT_IF(loc.rows.size() != MicroKernelDesc::M_r,
+                      "row panel size mismatch");
 
     static int MAX_NKERN_CALLS = loc.cols.size() * 2;
     static int num_cols = loc.cols.size();
@@ -137,7 +138,7 @@ struct MicroKernelPackerSpeaclized:
     for (auto iter = coo.submatrix_begin(loc.rows, loc.cols); iter != coo.submatrix_end(); ++iter) {
       auto nnz = *iter;
       nnz.row -= loc.rows.start;
-      //nnz.col -= loc.cols.start;
+      nnz.col -= loc.cols.start;
 
       assert(nnz.col < panel_patterns.size());
       assert(nnz.col < panel_values.size());
@@ -149,6 +150,7 @@ struct MicroKernelPackerSpeaclized:
       panel_col_indices[nnz.col] = nnz.col;
     }
 
+    int total_mapped_nnz = 0;
     for (int c = 0; c < num_cols; c++) {
       assert(c < panel_patterns.size());
 
@@ -171,21 +173,18 @@ struct MicroKernelPackerSpeaclized:
         mapped_nnz += countbits(mapped_patterns[i]);
       }
 
-      if (mapped_nnz < nnz) {
-        std::cerr << "Mapped patterns do not all nnz " << mapped_nnz << " "
-                  << nnz << std::endl;
-        exit(-1);
-      }
+      ERROR_AND_EXIT_IF(mapped_nnz < nnz, "mapped_nnz < nnz");
+      total_mapped_nnz += mapped_nnz;
     }
 
-    vector<uint16_t> encoded_patterns(panel_patterns.size());
+    vector<Pattern> encoded_patterns(panel_patterns.size());
 
     // Encode the patterns
     std::transform(
       panel_patterns.begin(),
       panel_patterns.end(),
       encoded_patterns.begin(),
-      [](Pattern pat) { return MicroKernel::encode_pattern(pat); });
+      [](Pattern pat) { return MicroKernel::encode_nkern_pattern(pat); });
 
     auto order = sort_encoded_patterns(encoded_patterns);
     auto permuted_values = permute(order, panel_values);
@@ -195,35 +194,39 @@ struct MicroKernelPackerSpeaclized:
     int num_col_indices = 0;
 
     for (const auto& encoded_pattern : encoded_patterns) {
-      num_values += MicroKernel::nnz_count(encoded_pattern);
+      num_values += MicroKernel::nnz_count_for_nkern_code(encoded_pattern);
       if (encoded_pattern != ZERO_PATTERN_ID) num_col_indices++;
     }
 
-    panel_desc.nkern_counts = new int[MicroKernel::num_patterns()];
+    assert(num_values == total_mapped_nnz);
+
+    panel_desc.nkern_counts = new int[MicroKernel::num_nkern_patterns()];
     panel_desc.col_indices = new int[num_col_indices];
     panel_desc.values = new Scalar[num_values];
 
     std::fill(
       panel_desc.nkern_counts,
-      panel_desc.nkern_counts + MicroKernelDesc::num_patterns(),
+      panel_desc.nkern_counts + MicroKernel::num_nkern_patterns(),
       0);
 
     int curr_value_offset = 0;
     int curr_col_indices_offset = 0;
     for (int p = 0; p < encoded_patterns.size(); p++) {
+      assert(p < permuted_values.size());
+      assert(p < permuted_col_indices.size());
+
       const auto& encoded_pattern = encoded_patterns[p];
       const auto& values = permuted_values[p];
 
-      if (encoded_pattern == ZERO_PATTERN_ID)
-        continue;
+      if (encoded_pattern == ZERO_PATTERN_ID) continue;
 
-      assert(encoded_pattern < MicroKernelDesc::num_patterns());
+      assert(encoded_pattern < MicroKernel::num_nkern_patterns());
       assert(curr_col_indices_offset < permuted_col_indices.size());
       assert(p < permuted_col_indices.size());
 
       panel_desc.nkern_counts[encoded_pattern]++;
       panel_desc.col_indices[curr_col_indices_offset++] = permuted_col_indices[p];
-      auto pattern = MicroKernelDesc::decode_pattern(encoded_pattern);
+      auto pattern = MicroKernel::decode_nkern_pattern(encoded_pattern);
 
       int row = 0;
       while (pattern) {
@@ -238,12 +241,20 @@ struct MicroKernelPackerSpeaclized:
       }
     }
 
+    ERROR_AND_EXIT_IF(curr_value_offset != num_values,
+                      "curr_value_offset != num_values");
+
+    // Reapply offset
+    for (int i = 0; i < curr_col_indices_offset; i++) {
+      panel_desc.col_indices[i] += loc.cols.start;
+    }
+
     panel_desc.num_col_indices = curr_col_indices_offset;
     panel_desc.num_nnz = curr_value_offset;
-    panel_desc.num_nkern = MicroKernelDesc::num_patterns();
+    panel_desc.num_nkern = MicroKernel::num_nkern_patterns();
   }
 
-  uint8_t* repack_linear(
+  uint8_t* repack_coalesced(
       MicroKernelPackedData& panel_desc,
       uint8_t* buffer,
       bool free = true

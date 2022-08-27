@@ -364,12 +364,6 @@ struct ExecutorSpecialized: Executor {
   }
 
   void operator()() {
-//    if (N % config.n_tile && C_PACKING == NO_PACKING) {
-//      std::cerr << "TODO: fix cleanup code " << N;
-//      std::cerr << " " << config.n_tile << std::endl;
-//      exit(-1);
-//    }
-
     // TODO: Reimplement B packing
     static_assert(B_PACKING == NO_PACKING);
 

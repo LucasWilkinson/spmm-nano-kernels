@@ -159,7 +159,7 @@ struct PackedTile {
           size += sizeof(sop.panel_descs[i].nkern_counts) *
               sop.panel_descs[i].num_nkern;
         }
-        return size + (2) * 64; // 3*64 for cacheline alignment
+        return size + (3) * 64; // 3*64 for cacheline alignment
       }
 
       case SPARSE_MKL:

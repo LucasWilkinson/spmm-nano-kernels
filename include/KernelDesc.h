@@ -47,7 +47,7 @@ template <
   typename _Scalar,
   typename _CSRSTypes,
   typename _PackingDesc,
-  enum Schedule _S = NKM
+  enum Schedule _S
 >
 struct KernelDesc {
   using Scalar = _Scalar;
@@ -60,8 +60,8 @@ struct KernelDesc {
 };
 
 using KDFloatNoPacking =
-    KernelDesc<float, CSRStorageTypes<float*, int>, PackingDesc<NO_PACKING, NO_PACKING>>;
+    KernelDesc<float, CSRStorageTypes<float*, int>, PackingDesc<NO_PACKING, NO_PACKING>, NKM>;
 using KDFloatCPartialPacking =
-    KernelDesc<float, CSRStorageTypes<float*, int>, PackingDesc<PARTIAL_PACKING, NO_PACKING>>;
+    KernelDesc<float, CSRStorageTypes<float*, int>, PackingDesc<PARTIAL_PACKING, NO_PACKING>, NKM>;
 
 };

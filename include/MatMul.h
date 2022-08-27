@@ -11,6 +11,7 @@
 #include <fstream>
 #include <sstream>
 
+#include "utils/error.h"
 #include "utils/algorithmic.h"
 #include "utils/Vec.h"
 
@@ -24,6 +25,8 @@
 #include "Tile.h"
 #include "Executor.h"
 #include "ExecutorFactory.h"
+#include "MicroKernelPackerFactory.h"
+#include "mapping_io.h"
 
 //#define PACK_B
 using std::vector;
@@ -62,6 +65,8 @@ class MatMul {
   std::string mapping_id;
 
   ExecutorFactory<KernelDesc>* executor_factory;
+  MicroKernelPackerFactory<Scalar>* packer_factory;
+  std::shared_ptr<MicroKernelPacker<Scalar>> packer;
 
   Shape matrix_tiled_shape;
   Shape tile_shape;
@@ -158,6 +163,7 @@ class MatMul {
       TileConfig _config,
       int num_threads,
       std::string executor_id,
+      std::string mapping_id,
       enum DenseTileMergingStrategy dense_merging_strategy = ALL_SPARSE,
       enum SparseTileMergingStrategy sparse_merging_strategy = ALL_SOP,
       enum ExecutionStrategy execution_strategy = TILED_SPARSE)
@@ -165,10 +171,26 @@ class MatMul {
         num_threads(num_threads),
         executor_id(executor_id),
         executor_factory(ExecutorFactory<KernelDesc>::get_factory(executor_id)),
+        packer_factory(MicroKernelPackerFactory<Scalar>::get_factory(executor_id)),
+        mapping_id(mapping_id),
         dense_merging_strategy(dense_merging_strategy),
         sparse_merging_strategy(sparse_merging_strategy),
         execution_strategy(execution_strategy) {
     coo = new COO<Scalar>(m, k, row_offsets, column_indices, values);
+
+    ERROR_AND_EXIT_IF(!executor_factory, "Executor factory not found");
+    ERROR_AND_EXIT_IF(!packer_factory, "Packer factory not found");
+
+    ERROR_AND_EXIT_IF(packer_factory->M_r != executor_factory->M_r,
+                      "M_r mismatch between packer and executor");
+
+    std::string filepath(__FILE__);
+    auto end_of_path = filepath.find_last_of('/');
+    filepath = filepath.substr(0, end_of_path + 1);
+
+    auto nanokernel_mapping = read_pattern_mapping(mapping_id,
+       {"mappings/", filepath + "../mappings/"});
+    packer = packer_factory->create_specialized_packer(nanokernel_mapping);
 
     if (config.tiling_strategy == CAKE_TILING
         || config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
@@ -182,10 +204,8 @@ class MatMul {
           m, b_col_predict, k, num_threads, cake_cntx, KMN,
           nullptr, double(coo->nnz()) / (m * k), false, true);
 
-      if (!cache_dims->m_c || !cache_dims->k_c || !cache_dims->n_c) {
-        std::cerr << "Invalid cache dimensions" << std::endl;
-        exit(-1);
-      }
+      ERROR_AND_EXIT_IF(!cache_dims->m_c || !cache_dims->k_c || !cache_dims->n_c,
+                        "Invalid cache dimensions");
 
       config.m_tile = cache_dims->m_c;
       config.k_tile = cache_dims->k_c;
@@ -389,10 +409,10 @@ private:
       }
     }
 
-    std::cout << "Panel schedule: " << std::endl;
-    for (const auto& cost : cost_per_panel) {
-      std::cout << cost << std::endl;
-    }
+//    std::cout << "Panel schedule: " << std::endl;
+//    for (const auto& cost : cost_per_panel) {
+//      std::cout << cost << std::endl;
+//    }
 
     for (auto& _panel_indices : panel_indices) {
       auto& first_tile = merged_tiles[_panel_indices[0]];
@@ -573,23 +593,15 @@ private:
     tile_to_pack.load_c = merged_tile.load_c;
     tile_to_pack.free_on_destruction = true;
 
-    auto tile = coo->submatrix_extract(t_loc);
-
-#ifdef PACK_B
-    SOP_Tile<Scalar, Executor> sop_tile(tile, 0);
-#else
-    SOPTile<Scalar, Executor> sop_tile(tile, t_loc.cols.start);
-#endif
-
-    sop_tile.inspect();
+    Tile<Scalar> sop_tile(*coo, t_loc, packer);
 
     tile_to_pack.sop.num_panels = sop_tile.num_panels();
     tile_to_pack.sop.panel_descs = new MicroKernelPackedData[sop_tile.num_panels()];
-    sop_tile.pack_patterns(tile_to_pack.sop.panel_descs);
+    sop_tile.pack(tile_to_pack.sop.panel_descs);
 
     stats.sop_tiles_count++;
-    stats.sop_tiles_nnz_count += tile.nnz();
-    stats.sop_tiles_padding += sop_tile.num_padded_nnz();
+//    stats.sop_tiles_nnz_count += tile.nnz();
+//    stats.sop_tiles_padding += sop_tile.num_padded_nnz();
   }
 
   void _pack_dense(const MergedTile& merged_tile, _PackedTile& tile_to_pack) {
