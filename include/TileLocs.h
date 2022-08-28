@@ -44,10 +44,13 @@ struct TileLocs {
       }
 
       m_locs[tid] = {
-          ti, tj, tid, {
-                           { ti * tile_shape.rows, (ti + 1) * tile_shape.rows },
-                           { tj * tile_shape.cols, (tj + 1) * tile_shape.cols }
-                       }
+          ti,
+          tj,
+          tid,
+          {{ti * tile_shape.rows,
+            std::min((ti + 1) * tile_shape.rows, matrix_shape.rows)},
+           {tj * tile_shape.cols,
+            std::min((tj + 1) * tile_shape.cols, matrix_shape.cols)}}
       };
     }
   }
