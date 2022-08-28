@@ -155,6 +155,8 @@ public:
     typename std::vector<NonZero>::iterator begin() { return m_non_zeros.begin(); };
     typename std::vector<NonZero>::iterator end()   { return m_non_zeros.end();   };
 
+    SubMatrixIterator submatrix_begin(SubmatrixLoc loc) const
+        { return SubMatrixIterator(m_non_zeros, loc.rows, loc.cols); }
     SubMatrixIterator submatrix_begin(IntRange row_range, IntRange col_range) const
         { return SubMatrixIterator(m_non_zeros, row_range, col_range); }
     SubMatrixIterator submatrix_end() const

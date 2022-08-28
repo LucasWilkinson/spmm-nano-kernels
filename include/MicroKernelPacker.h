@@ -118,8 +118,10 @@ struct MicroKernelPackerSpeaclized:
     ERROR_AND_EXIT_IF(loc.rows.size() != MicroKernelDesc::M_r,
                       "row panel size mismatch");
 
-    static int MAX_NKERN_CALLS = loc.cols.size() * 2;
-    static int num_cols = loc.cols.size();
+    const int MAX_NKERN_CALLS = loc.cols.size() * 2;
+    const int num_cols = loc.cols.size();
+
+    assert(num_cols == loc.cols.size());
 
     vector<Pattern> panel_patterns;
     vector<int> panel_col_indices;
@@ -129,13 +131,19 @@ struct MicroKernelPackerSpeaclized:
     panel_col_indices.reserve(MAX_NKERN_CALLS);
     panel_values.reserve(MAX_NKERN_CALLS);
 
+    assert(num_cols == loc.cols.size());
+
     panel_patterns.resize(num_cols);
     panel_col_indices.resize(num_cols);
     panel_values.resize(num_cols);
 
+    assert(num_cols == loc.cols.size());
+
     for (auto& vec : panel_values) vec.fill(0);
 
-    for (auto iter = coo.submatrix_begin(loc.rows, loc.cols); iter != coo.submatrix_end(); ++iter) {
+    assert(num_cols == loc.cols.size());
+
+    for (auto iter = coo.submatrix_begin(loc); iter != coo.submatrix_end(); ++iter) {
       auto nnz = *iter;
       nnz.row -= loc.rows.start;
       nnz.col -= loc.cols.start;

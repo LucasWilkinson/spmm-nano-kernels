@@ -503,7 +503,7 @@ private:
 
     packed_tiles.resize(tiles_to_pack.size());
 
-// Pack Parallel Tiles
+    // Pack Parallel Tiles
     #pragma parallel for num_threads(16) collapse(2)
     for (int i = 0; i < tiles_to_pack.size(); i++) {
       packed_tiles[i].resize(tiles_to_pack[i].size());
