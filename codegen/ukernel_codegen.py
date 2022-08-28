@@ -128,6 +128,7 @@ def ukernel_codegen(acc_dims, nanokernels,
         print(f'Created output directory {output_root}')
 
         for (scalar, vec_width), micro_kernel_typename in zip(vec_configs, micro_kernel_typename_names):
+            reg_width_ele, _, _ = vec_type_info[(scalar, vec_width)]
             microkernel_id_ = microkernel_id(vec_width, acc_dims, nanokernels)
 
             header = ukern_header_path(micro_kernel_typename).split('/')[-1]
@@ -173,7 +174,7 @@ def ukernel_codegen(acc_dims, nanokernels,
                     f.write(f'// factory_desc | {factory_desc_json}\n')
                     f.write(f'ExecutorFactory<{kernel_desc}>* {factory_name}() {{\n')
                     f.write(f'    return new ExecutorFactorySpecialized<{kernel_desc}, {micro_kernel_typename}>('
-                            f'{acc_dims[0]}, {acc_dims[1]});\n')
+                            f'{acc_dims[0]}, {acc_dims[1]*reg_width_ele});\n')
                     f.write(f'}}\n')
                     f.write('\n')
                     f.write(f'}} // namespace {namespace}\n')
