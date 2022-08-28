@@ -7,9 +7,12 @@ import json
 from tools.codegen.codegen_utils import *
 from SOP.codegen.ukernel_codegen import ukernel_codegen
 from SOP.codegen.generate_registration import generate_ukernel_registration
+from SOP.codegen.generate_mapping import generate_mapping_to_executor
 
 output_root=f'{SCRIPT_DIR}/../generated/'
 kernel_descs = ['KDFloatNoPacking', 'KDFloatCPartialPacking' ]
+
+mapping_to_executor = {}
 
 for mapping_file in glob.glob(f'{SCRIPT_DIR}/../mappings/*.txt'):
     patterns = set()
@@ -28,6 +31,14 @@ for mapping_file in glob.glob(f'{SCRIPT_DIR}/../mappings/*.txt'):
     nkern_hash = ukernel_codegen([M_r, N_r], list(patterns), output_root=output_root, build_factories_for=kernel_descs)
     print(f'{mapping_file.split("/")[-1]} -> {nkern_hash}_x_{M_r}x{N_r}')
 
+    mapping_to_executor[mapping_file.split("/")[-1].replace(".txt", "").split('_')[-1]] \
+        = (f'{nkern_hash}', M_r, N_r)
+
+
+with open(f'{output_root}/mapping_to_executor.cpp', 'w') as f:
+    f.write('#include <unordered_map>\n')
+
 generate_ukernel_registration(output_root)
+generate_mapping_to_executor(output_root, mapping_to_executor)
 
 

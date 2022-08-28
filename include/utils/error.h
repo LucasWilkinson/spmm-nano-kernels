@@ -5,6 +5,8 @@
 #ifndef DNN_SPMM_BENCH_ERROR_H
 #define DNN_SPMM_BENCH_ERROR_H
 
+#include <iostream>
+
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
