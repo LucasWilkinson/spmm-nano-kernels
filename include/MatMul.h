@@ -103,6 +103,8 @@ class MatMul {
   vector<int> row_swizzle;
   vector<int> panel_swizzle;
 
+  const int* row_reordering;
+
   COO<Scalar>* coo = nullptr;
   void* linear_buffer = nullptr;
 
@@ -166,7 +168,8 @@ class MatMul {
       std::string mapping_id,
       enum DenseTileMergingStrategy dense_merging_strategy = ALL_SPARSE,
       enum SparseTileMergingStrategy sparse_merging_strategy = ALL_SOP,
-      enum ExecutionStrategy execution_strategy = TILED_SPARSE)
+      enum ExecutionStrategy execution_strategy = TILED_SPARSE,
+      const int* row_reordering = nullptr)
       : m(m), k(k), config(_config),
         num_threads(num_threads),
         executor_id(executor_id),
@@ -175,7 +178,8 @@ class MatMul {
         mapping_id(mapping_id),
         dense_merging_strategy(dense_merging_strategy),
         sparse_merging_strategy(sparse_merging_strategy),
-        execution_strategy(execution_strategy) {
+        execution_strategy(execution_strategy),
+        row_reordering(row_reordering) {
     coo = new COO<Scalar>(m, k, row_offsets, column_indices, values);
 
     ERROR_AND_EXIT_IF(!executor_factory, "Executor factory not found");
@@ -245,21 +249,6 @@ class MatMul {
     //std::cout << "Config: " << config.m_tile << " " << config.k_tile << " " << config.n_tile << std::endl;
     return config;
   }
-
-  //  void log_extra_info(cpp_testbed::csv_row_t& row) override {
-  //    csv_row_insert(row, "total_tile_count", stats.total_tile_count);
-  //
-  //    csv_row_insert(row, "sop_tiles_count", stats.sop_tiles_count);
-  //    csv_row_insert(row, "sop_tiles_nnz_count", stats.sop_tiles_nnz_count);
-  //    csv_row_insert(row, "sop_tiles_padding", stats.sop_tiles_padding);
-  //
-  //    csv_row_insert(row, "csr_tiles_count", stats.csr_tiles_count);
-  //    csv_row_insert(row, "csr_tiles_nnz_count", stats.csr_tiles_nnz_count);
-  //
-  //    csv_row_insert(row, "dense_tiles_count", stats.dense_tiles_count);
-  //    csv_row_insert(row, "dense_tiles_padding", stats.dense_tiles_padding);
-  //    csv_row_insert(row, "dense_tiles_nnz_count", stats.dense_tiles_nnz_count);
-  //  }
 
   ~MatMul() {
     delete coo;

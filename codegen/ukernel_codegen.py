@@ -44,7 +44,7 @@ def unroll_mapping(nnzs):
     return 2
 
 def ukernel_codegen(acc_dims, nanokernels,
-                    vec_configs = [('float', 512)],
+                    vec_configs = [('float', 512), ('float', 256)],
                     build_factories_for=None,
                     output_path=None,
                     output_root=None,
@@ -139,7 +139,7 @@ def ukernel_codegen(acc_dims, nanokernels,
                 "M_r": acc_dims[0]
             })
 
-            with open(factory_output_root + f'packer_{scalar}.cpp', 'w+') as f:
+            with open(factory_output_root + f'packer_{scalar}_{vec_width}.cpp', 'w+') as f:
                 f.write(f'#include "MicroKernelPackerFactory.h"\n')
                 f.write(f'#include "{header}"\n')
                 f.write(f'\n')
@@ -164,7 +164,7 @@ def ukernel_codegen(acc_dims, nanokernels,
                     "N_r": acc_dims[1],
                 })
 
-                with open(factory_output_root + f'executor_{kernel_desc}_{scalar}.cpp', 'w+') as f:
+                with open(factory_output_root + f'executor_{kernel_desc}_{scalar}_{vec_width}.cpp', 'w+') as f:
                     f.write(f'#include "ExecutorFactory.h"\n')
                     f.write(f'#include "KernelDesc.h"\n')
                     f.write(f'#include "{header}"\n')
