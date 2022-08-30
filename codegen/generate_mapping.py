@@ -18,8 +18,8 @@ def generate_mapping_to_executor(output_root, mapping):
         )
     with open(f'{output_root}/mapping_to_executor.cpp', 'w') as f:
         f.write(
-        f'#include "mapping_to_executor.h"\n'
-        f'\n'
+        f'#include "mapping_to_executor.h"\n\n'
+        f'#include <algorithm>\n\n'
         f'#include "utils/error.h"\n'
         f'\n'
         f'\n'

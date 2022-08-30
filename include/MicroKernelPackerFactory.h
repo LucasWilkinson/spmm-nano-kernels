@@ -8,6 +8,7 @@
 #include "MicroKernelPacker.h"
 #include "MicroKernelDesc.h"
 #include <memory>
+#include <unordered_map>
 
 namespace sop {
 
