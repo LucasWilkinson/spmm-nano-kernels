@@ -7,6 +7,14 @@ extern ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_6000
 extern ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_60007_512_4x4();
 extern ExecutorFactory<KDFloatCPartialPacking>* executor_factory_KDFloatCPartialPacking_60007_256_4x4();
 extern ExecutorFactory<KDFloatCPartialPacking>* executor_factory_KDFloatCPartialPacking_60007_512_4x4();
+extern ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_0dfe3_256_4x4();
+extern ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_0dfe3_512_4x4();
+extern ExecutorFactory<KDFloatCPartialPacking>* executor_factory_KDFloatCPartialPacking_0dfe3_256_4x4();
+extern ExecutorFactory<KDFloatCPartialPacking>* executor_factory_KDFloatCPartialPacking_0dfe3_512_4x4();
+extern ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_e8c1f_256_4x4();
+extern ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_e8c1f_512_4x4();
+extern ExecutorFactory<KDFloatCPartialPacking>* executor_factory_KDFloatCPartialPacking_e8c1f_256_4x4();
+extern ExecutorFactory<KDFloatCPartialPacking>* executor_factory_KDFloatCPartialPacking_e8c1f_512_4x4();
 extern ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_ad3b1_256_4x4();
 extern ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_ad3b1_512_4x4();
 extern ExecutorFactory<KDFloatCPartialPacking>* executor_factory_KDFloatCPartialPacking_ad3b1_256_4x4();
@@ -47,6 +55,10 @@ extern ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_91aa
 extern ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_91aaa_512_4x4();
 extern ExecutorFactory<KDFloatCPartialPacking>* executor_factory_KDFloatCPartialPacking_91aaa_256_4x4();
 extern ExecutorFactory<KDFloatCPartialPacking>* executor_factory_KDFloatCPartialPacking_91aaa_512_4x4();
+extern ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_acd31_256_4x4();
+extern ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_acd31_512_4x4();
+extern ExecutorFactory<KDFloatCPartialPacking>* executor_factory_KDFloatCPartialPacking_acd31_256_4x4();
+extern ExecutorFactory<KDFloatCPartialPacking>* executor_factory_KDFloatCPartialPacking_acd31_512_4x4();
 extern ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_a8d4c_256_4x4();
 extern ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_a8d4c_512_4x4();
 extern ExecutorFactory<KDFloatCPartialPacking>* executor_factory_KDFloatCPartialPacking_a8d4c_256_4x4();
@@ -84,6 +96,10 @@ struct ExecutorFactoryKDFloatCPartialPacking : public ExecutorFactory<KDFloatCPa
 ExecutorFactoryKDFloatCPartialPacking(){
   register_factory("60007_256_4x4", executor_factory_KDFloatCPartialPacking_60007_256_4x4());
   register_factory("60007_512_4x4", executor_factory_KDFloatCPartialPacking_60007_512_4x4());
+  register_factory("0dfe3_256_4x4", executor_factory_KDFloatCPartialPacking_0dfe3_256_4x4());
+  register_factory("0dfe3_512_4x4", executor_factory_KDFloatCPartialPacking_0dfe3_512_4x4());
+  register_factory("e8c1f_256_4x4", executor_factory_KDFloatCPartialPacking_e8c1f_256_4x4());
+  register_factory("e8c1f_512_4x4", executor_factory_KDFloatCPartialPacking_e8c1f_512_4x4());
   register_factory("ad3b1_256_4x4", executor_factory_KDFloatCPartialPacking_ad3b1_256_4x4());
   register_factory("ad3b1_512_4x4", executor_factory_KDFloatCPartialPacking_ad3b1_512_4x4());
   register_factory("f1006_256_4x4", executor_factory_KDFloatCPartialPacking_f1006_256_4x4());
@@ -104,6 +120,8 @@ ExecutorFactoryKDFloatCPartialPacking(){
   register_factory("6a59f_512_4x4", executor_factory_KDFloatCPartialPacking_6a59f_512_4x4());
   register_factory("91aaa_256_4x4", executor_factory_KDFloatCPartialPacking_91aaa_256_4x4());
   register_factory("91aaa_512_4x4", executor_factory_KDFloatCPartialPacking_91aaa_512_4x4());
+  register_factory("acd31_256_4x4", executor_factory_KDFloatCPartialPacking_acd31_256_4x4());
+  register_factory("acd31_512_4x4", executor_factory_KDFloatCPartialPacking_acd31_512_4x4());
   register_factory("a8d4c_256_4x4", executor_factory_KDFloatCPartialPacking_a8d4c_256_4x4());
   register_factory("a8d4c_512_4x4", executor_factory_KDFloatCPartialPacking_a8d4c_512_4x4());
   register_factory("77f9d_256_8x2", executor_factory_KDFloatCPartialPacking_77f9d_256_8x2());
@@ -129,6 +147,10 @@ struct ExecutorFactoryKDFloatNoPacking : public ExecutorFactory<KDFloatNoPacking
 ExecutorFactoryKDFloatNoPacking(){
   register_factory("60007_256_4x4", executor_factory_KDFloatNoPacking_60007_256_4x4());
   register_factory("60007_512_4x4", executor_factory_KDFloatNoPacking_60007_512_4x4());
+  register_factory("0dfe3_256_4x4", executor_factory_KDFloatNoPacking_0dfe3_256_4x4());
+  register_factory("0dfe3_512_4x4", executor_factory_KDFloatNoPacking_0dfe3_512_4x4());
+  register_factory("e8c1f_256_4x4", executor_factory_KDFloatNoPacking_e8c1f_256_4x4());
+  register_factory("e8c1f_512_4x4", executor_factory_KDFloatNoPacking_e8c1f_512_4x4());
   register_factory("ad3b1_256_4x4", executor_factory_KDFloatNoPacking_ad3b1_256_4x4());
   register_factory("ad3b1_512_4x4", executor_factory_KDFloatNoPacking_ad3b1_512_4x4());
   register_factory("f1006_256_4x4", executor_factory_KDFloatNoPacking_f1006_256_4x4());
@@ -149,6 +171,8 @@ ExecutorFactoryKDFloatNoPacking(){
   register_factory("6a59f_512_4x4", executor_factory_KDFloatNoPacking_6a59f_512_4x4());
   register_factory("91aaa_256_4x4", executor_factory_KDFloatNoPacking_91aaa_256_4x4());
   register_factory("91aaa_512_4x4", executor_factory_KDFloatNoPacking_91aaa_512_4x4());
+  register_factory("acd31_256_4x4", executor_factory_KDFloatNoPacking_acd31_256_4x4());
+  register_factory("acd31_512_4x4", executor_factory_KDFloatNoPacking_acd31_512_4x4());
   register_factory("a8d4c_256_4x4", executor_factory_KDFloatNoPacking_a8d4c_256_4x4());
   register_factory("a8d4c_512_4x4", executor_factory_KDFloatNoPacking_a8d4c_512_4x4());
   register_factory("77f9d_256_8x2", executor_factory_KDFloatNoPacking_77f9d_256_8x2());

@@ -4,6 +4,10 @@ namespace sop {
 
 extern MicroKernelPackerFactory<float>* packer_factory_60007_512_4x4();
 extern MicroKernelPackerFactory<float>* packer_factory_60007_256_4x4();
+extern MicroKernelPackerFactory<float>* packer_factory_0dfe3_512_4x4();
+extern MicroKernelPackerFactory<float>* packer_factory_0dfe3_256_4x4();
+extern MicroKernelPackerFactory<float>* packer_factory_e8c1f_512_4x4();
+extern MicroKernelPackerFactory<float>* packer_factory_e8c1f_256_4x4();
 extern MicroKernelPackerFactory<float>* packer_factory_ad3b1_512_4x4();
 extern MicroKernelPackerFactory<float>* packer_factory_ad3b1_256_4x4();
 extern MicroKernelPackerFactory<float>* packer_factory_f1006_512_4x4();
@@ -24,6 +28,8 @@ extern MicroKernelPackerFactory<float>* packer_factory_6a59f_512_4x4();
 extern MicroKernelPackerFactory<float>* packer_factory_6a59f_256_4x4();
 extern MicroKernelPackerFactory<float>* packer_factory_91aaa_512_4x4();
 extern MicroKernelPackerFactory<float>* packer_factory_91aaa_256_4x4();
+extern MicroKernelPackerFactory<float>* packer_factory_acd31_512_4x4();
+extern MicroKernelPackerFactory<float>* packer_factory_acd31_256_4x4();
 extern MicroKernelPackerFactory<float>* packer_factory_a8d4c_512_4x4();
 extern MicroKernelPackerFactory<float>* packer_factory_a8d4c_256_4x4();
 extern MicroKernelPackerFactory<float>* packer_factory_77f9d_512_8x2();
@@ -45,6 +51,10 @@ struct MicroKernelPackerFactoryFloat: public MicroKernelPackerFactory<float> {
 MicroKernelPackerFactoryFloat(): MicroKernelPackerFactory<float>(4) {
   register_factory("60007_512_4x4", packer_factory_60007_512_4x4());
   register_factory("60007_256_4x4", packer_factory_60007_256_4x4());
+  register_factory("0dfe3_512_4x4", packer_factory_0dfe3_512_4x4());
+  register_factory("0dfe3_256_4x4", packer_factory_0dfe3_256_4x4());
+  register_factory("e8c1f_512_4x4", packer_factory_e8c1f_512_4x4());
+  register_factory("e8c1f_256_4x4", packer_factory_e8c1f_256_4x4());
   register_factory("ad3b1_512_4x4", packer_factory_ad3b1_512_4x4());
   register_factory("ad3b1_256_4x4", packer_factory_ad3b1_256_4x4());
   register_factory("f1006_512_4x4", packer_factory_f1006_512_4x4());
@@ -65,6 +75,8 @@ MicroKernelPackerFactoryFloat(): MicroKernelPackerFactory<float>(4) {
   register_factory("6a59f_256_4x4", packer_factory_6a59f_256_4x4());
   register_factory("91aaa_512_4x4", packer_factory_91aaa_512_4x4());
   register_factory("91aaa_256_4x4", packer_factory_91aaa_256_4x4());
+  register_factory("acd31_512_4x4", packer_factory_acd31_512_4x4());
+  register_factory("acd31_256_4x4", packer_factory_acd31_256_4x4());
   register_factory("a8d4c_512_4x4", packer_factory_a8d4c_512_4x4());
   register_factory("a8d4c_256_4x4", packer_factory_a8d4c_256_4x4());
   register_factory("77f9d_512_8x2", packer_factory_77f9d_512_8x2());
