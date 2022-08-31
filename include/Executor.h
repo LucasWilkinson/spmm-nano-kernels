@@ -64,8 +64,11 @@ struct ExecutorSpecialized: Executor {
 
   const static PackingStrategy C_PACKING = KernelDesc::PackingDesc::C_PACKING;
   const static PackingStrategy B_PACKING = KernelDesc::PackingDesc::B_PACKING;
+  const static UPanelReorderingStrategy UPanelOrder = KernelDesc::UPanelOrder;
 
   const vector<vector<PackedTile>>& tiles;
+  const vector<int>& upanel_swizzle;
+
   const Scalar* __restrict__ B;
   Scalar* __restrict__ C;
 
@@ -85,6 +88,7 @@ struct ExecutorSpecialized: Executor {
   static constexpr int N_r = TileDims::N_r;
 
   const int c_N_r = N_c / N_r;
+  const int c_M_r = M_c / M_r;
 
   bool partial_N_c_loop = false;
   bool partial_N_r_loop = false;
@@ -97,16 +101,22 @@ struct ExecutorSpecialized: Executor {
   ExecutorSpecialized(
     int M, int K, int N,
     const vector<vector<PackedTile>>& tiles,
+    const vector<int>& upanel_swizzle,
     const Scalar* __restrict__ B,
     Scalar* __restrict__ C,
     int batch_size,
     int num_threads,
     const TileConfig& config
-  ): M(M), K(K), N(N), tiles(tiles), B(B), C(C), batch_size(batch_size),
-        num_threads(num_threads), config(config),
-        td(M, K, N, config.m_tile, config.k_tile,
-           std::max(config.n_tile, N_r), num_threads),
-        M_c(td.M_c), K_c(td.K_c), N_c(td.N_c)
+  ): M(M), K(K), N(N),
+     tiles(tiles),
+     upanel_swizzle(upanel_swizzle),
+     B(B), C(C),
+     batch_size(batch_size),
+     num_threads(num_threads),
+     config(config),
+     td(M, K, N, config.M_c, config.K_c,
+        std::max(config.N_c, N_r), num_threads),
+     M_c(td.M_c), K_c(td.K_c), N_c(td.N_c)
   {
     int N_c_rem = (N % N_c);
     int N_r_rem = (N % N_r);
@@ -259,7 +269,7 @@ struct ExecutorSpecialized: Executor {
    *    Not Packed
    ******************************************/
 
-  void _inner_M_c_loop(int iii, int jjj,
+  void _inner_M_c_loop(int tii, int jjj,
                       const PackedTile& pt,
                       const bool partial_final_loop) {
 
@@ -275,12 +285,17 @@ struct ExecutorSpecialized: Executor {
       int* __restrict__       pattern_counts = panel_desc.nkern_counts;
       int                     num_col_indices = panel_desc.num_col_indices;
 
+      int global_upanel_id = tii * c_M_r + pi;
+      if constexpr(UPanelOrder != NO_REORDERING) {
+        global_upanel_id = upanel_swizzle[global_upanel_id];
+      }
+
       for (; tj < _c_N_r; tj++, jj += N_r) { // N_r loop
         MicroKernel::_microkernel_max_acc(
           M, K, N,
           pattern_counts, col_indices, values, num_col_indices,
           B + jj,
-          C + jj + (pi * M_r + iii) * N,
+          C + jj + (global_upanel_id * M_r) * N,
           pt.load_c
         );
       }
@@ -291,7 +306,7 @@ struct ExecutorSpecialized: Executor {
           M, K, N,
           pattern_counts, col_indices, values, num_col_indices,
           B + jj,
-          C + jj + (pi * M_r + iii) * N,
+          C + jj + (global_upanel_id * M_r) * N,
           final_N_r_rem_mask,
           pt.load_c
         );
@@ -301,8 +316,8 @@ struct ExecutorSpecialized: Executor {
 
   void _execute_row_panel_NK(int tii) {
     using std::min;
-
     ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
+
     int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
     const int iii = tii * M_c;
 
@@ -310,11 +325,11 @@ struct ExecutorSpecialized: Executor {
     for (int tkk = 0; tkk < Kb; tkk++) {
       int tjj = 0, jjj = 0;
       for (; tjj < Nb_full; tjj++, jjj += N_c) {
-        _inner_M_c_loop(iii, jjj, tiles[tii][tkk], false);
+        _inner_M_c_loop(tii, jjj, tiles[tii][tkk], false);
       }
 
       if (partial_N_c_loop || partial_N_r_loop) {
-        _inner_M_c_loop(iii, jjj, tiles[tii][tkk], true);
+        _inner_M_c_loop(tii, jjj, tiles[tii][tkk], true);
       }
     }
   }
@@ -365,7 +380,13 @@ struct ExecutorSpecialized: Executor {
 
   void operator()() {
     // TODO: Reimplement B packing
-    static_assert(B_PACKING == NO_PACKING);
+    static_assert(B_PACKING == NO_PACKING,
+                  "B packing not implemented (needs to reimplemeted)");
+
+    // TODO: Add support for packing a upanel reordering simultaneously
+    static_assert(C_PACKING == NO_PACKING || UPanelOrder == NO_REORDERING,
+                  "Currently there is no support for packing and upanel "
+                  "reordering at the same time");
 
     #pragma omp parallel for schedule(static)
     for (int tii = 0; tii < td.Mb; tii++) {

@@ -9,8 +9,8 @@ from SOP.codegen.ukernel_codegen import ukernel_codegen
 from SOP.codegen.generate_registration import generate_ukernel_registration
 from SOP.codegen.generate_mapping import generate_mapping_to_executor
 
-output_root=f'{SCRIPT_DIR}/../generated/'
-kernel_descs = ['KDFloatNoPacking', 'KDFloatCPartialPacking' ]
+output_root = f'{SCRIPT_DIR}/../generated/'
+kernel_descs = ['KDFloatNoPacking', 'KDFloatCPartialPacking', 'KDFloatNoPackingLoadBalanced']
 
 mapping_to_executor = {}
 

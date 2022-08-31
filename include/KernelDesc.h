@@ -25,7 +25,7 @@ enum PackingStrategy {
   NO_PACKING
 };
 
-enum PanelReorderingStrategy {
+enum UPanelReorderingStrategy {
   NO_REORDERING,
   LOAD_BALANCING
 };
@@ -53,8 +53,7 @@ template <
   typename _CSRSTypes,
   typename _PackingDesc,
   enum Schedule _Sched,
-  enum PanelReorderingStrategy _PanelReoder
->
+  enum UPanelReorderingStrategy _UPanelReorder>
 struct KernelDesc {
   using Scalar = _Scalar;
   using CSRStorageTypes = _CSRSTypes;
@@ -63,7 +62,7 @@ struct KernelDesc {
   static const PackingStrategy C_PACKING = _PackingDesc::C_PACKING;
   static const PackingStrategy B_PACKING = _PackingDesc::B_PACKING;
   static const Schedule Sched = _Sched;
-  static const PanelReorderingStrategy PanelReoder = _PanelReoder;
+  static const UPanelReorderingStrategy UPanelOrder = _UPanelReorder;
 };
 
 using KDFloatNoPacking =
@@ -72,6 +71,13 @@ using KDFloatNoPacking =
                PackingDesc<NO_PACKING, NO_PACKING>,
                NKM,
                NO_REORDERING>;
+
+using KDFloatNoPackingLoadBalanced =
+    KernelDesc<float,
+               CSRStorageTypes<float*, int>,
+               PackingDesc<NO_PACKING, NO_PACKING>,
+               NKM,
+               LOAD_BALANCING>;
 
 using KDFloatCPartialPacking =
     KernelDesc<float,

@@ -14,11 +14,13 @@ enum TilingStrategy: int {
 };
 
 struct TileConfig {
-  int m_tile = 16;
-  int k_tile = 256;
-  int n_tile = 64;
+  int M_c = 16;
+  int K_c = 256;
+  int N_c = 64;
 
   TilingStrategy tiling_strategy = CAKE_TILING_WITH_TLB_COMPENSATION;
+  float beta = 1.0;
+  bool sparse_a = true;
 };
 
 };

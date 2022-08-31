@@ -27,6 +27,7 @@ public:
   virtual Executor* create_specialized_executor(
       int M, int K, int N,
       const vector<vector<PackedTile<Scalar>>>& tiles,
+      const vector<int>& upanel_swizzle,
       const Scalar* __restrict__ B,
       Scalar* __restrict__ C,
       int batch_size,
@@ -63,6 +64,7 @@ class ExecutorFactorySpecialized: public ExecutorFactory<_KernelDesc> {
   Executor* create_specialized_executor(
     int M, int K, int N,
     const vector<vector<PackedTile<Scalar>>>& tiles,
+    const vector<int>& upanel_swizzle,
     const Scalar* __restrict__ B,
     Scalar* __restrict__ C,
     int batch_size,
@@ -70,7 +72,7 @@ class ExecutorFactorySpecialized: public ExecutorFactory<_KernelDesc> {
     const TileConfig& config
   ) override {
     return new ExecutorSpecialized<_KernelDesc, MicroKernelDesc<_MircoKernel>>(
-      M, K, N, tiles, B, C, batch_size, num_threads, config);
+      M, K, N, tiles, upanel_swizzle, B, C, batch_size, num_threads, config);
   }
 };
 

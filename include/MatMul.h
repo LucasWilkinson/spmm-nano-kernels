@@ -53,6 +53,8 @@ class MatMul {
   };
 
   TileConfig config;
+  int M_r = 0, N_r = 0;
+
   int total_num_tiles = 0;
   int num_threads = 0;
   int m = 0, k = 0;
@@ -95,7 +97,7 @@ class MatMul {
   vector<vector<MergedTile>> tiles_to_pack; // Post-scheduling, Pre-Packing
   vector<vector<_PackedTile>> packed_tiles;
 
-  vector<int> panel_swizzle;
+  vector<int> upanel_swizzle;
 
   COO<Scalar>* coo = nullptr;
   void* linear_buffer = nullptr;
@@ -106,12 +108,12 @@ class MatMul {
     stats = Stats();
 
     matrix_shape = { coo->rows(), coo->cols() };
-    tile_shape = {config.m_tile, config.k_tile};
+    tile_shape = {config.M_c, config.K_c};
 
     tile_locs = TileLocs(tile_shape, matrix_shape, TileLocs::COL_FIRST);
     matrix_tiled_shape = {tile_locs.num_i_tiles(), tile_locs.num_j_tiles()};
 
-    //schedule_panels();
+    reorder_upanels();
     pack_tiles();
     pack_linear();
   }
@@ -137,7 +139,6 @@ class MatMul {
 
     ERROR_AND_EXIT_IF(!executor_factory, "Executor factory not found");
     ERROR_AND_EXIT_IF(!packer_factory, "Packer factory not found");
-
     ERROR_AND_EXIT_IF(packer_factory->M_r != executor_factory->M_r,
                       "M_r mismatch between packer and executor");
 
@@ -149,6 +150,9 @@ class MatMul {
        {"mappings/", filepath + "../mappings/"});
     packer = packer_factory->create_specialized_packer(nanokernel_mapping);
 
+    M_r = executor_factory->M_r;
+    N_r = executor_factory->N_r;
+
     if (config.tiling_strategy == CAKE_TILING ||
         config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
       cake_cntx_t* cake_cntx = cake_query_cntx();
@@ -157,37 +161,44 @@ class MatMul {
       cake_cntx->mr = executor_factory->M_r;
       cake_cntx->ncores = num_threads;
 
-      cache_dims_t* cache_dims = get_cache_dims_3(
+      cache_dims_t* cache_dims = get_cache_dims_4(
           m, b_col_predict, k, num_threads, cake_cntx, KMN,
-          nullptr, double(coo->nnz()) / (m * k), false, true);
+          nullptr, true,
+          double(coo->nnz()) / (m * k),
+          config.beta,
+          true, true);
+
+//      cache_dims_t* cache_dims = get_cache_dims_3(
+//          m, b_col_predict, k, num_threads, cake_cntx, KMN,
+//          nullptr, double(coo->nnz()) / (m * k), true, true);
 
       ERROR_AND_EXIT_IF(!cache_dims->m_c || !cache_dims->k_c || !cache_dims->n_c,
                         "Invalid cache dimensions");
 
-      config.m_tile = cache_dims->m_c;
-      config.k_tile = cache_dims->k_c;
-      config.n_tile = cache_dims->n_c;
+      config.M_c = cache_dims->m_c;
+      config.K_c = cache_dims->k_c;
+      config.N_c = cache_dims->n_c;
 
       if (config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
         static const int tlb_entries = 64;
         static const int tlb_entries_target = 64;
         static const int page_size = 4096;
 
-        int tlb_entries_used = (b_col_predict * config.k_tile) / page_size;
+        int tlb_entries_used = (b_col_predict * config.K_c) / page_size;
 
         //std::cout << "TLB entries: " << config.k_tile << " " << tlb_entries_used << std::endl;
 
         if (tlb_entries_used > tlb_entries_target) {
           int new_k_tile = (tlb_entries_target * page_size) / b_col_predict;
-          int diff = config.k_tile - new_k_tile;
-          config.k_tile = new_k_tile;
+          int diff = config.K_c - new_k_tile;
+          config.K_c = new_k_tile;
 
           // Generous realloc to N-tile
           //const int N_r = KernelDesc::N_r;
           //config.n_tile += ((diff + N_r - 1) / N_r) * N_r;
         }
 
-        tlb_entries_used = (b_col_predict * config.k_tile) / page_size;
+        tlb_entries_used = (b_col_predict * config.K_c) / page_size;
         //std::cout << "Updated TLB entries: " << config.k_tile << " " << tlb_entries_used << std::endl;
       }
 
@@ -220,13 +231,66 @@ class MatMul {
   // operator function () on objects of increment
   struct Executor* create_executor(Scalar* C, const Scalar* B, int b_cols) const {
     return executor_factory->create_specialized_executor(
-            m, k, b_cols, packed_tiles, B, C, 1, num_threads, config);
+      m, k, b_cols, packed_tiles, upanel_swizzle, B, C, 1, num_threads, config);
   }
 
 
 private:
-  void schedule_panels() {
 
+  double cost(int uti, int utj) {
+    IntRange rows = { uti * M_r, std::min((uti + 1) * M_r, m) };
+    IntRange cols = { utj * config.K_c, std::min((utj + 1) * config.K_c, k) };
+    SubmatrixLoc upanel_loc = { rows, cols };
+
+    // Just use nnz count for now, could be replaced with proper nanokernel
+    //   cost model (post packing)
+    return coo->submatrix_nnz_count(upanel_loc);
+  }
+
+  void reorder_upanels() {
+    if (KernelDesc::UPanelOrder == LOAD_BALANCING) {
+      int upanels_per_M_c = config.M_c / M_r;
+      int num_upanels = upanels_per_M_c * matrix_tiled_shape.rows;
+      upanel_swizzle.resize(num_upanels);
+
+      vector<double> panel_costs(num_upanels);
+      for (int uti = 0; uti < num_upanels; uti++) {
+        for (int utj = 0; utj < matrix_tiled_shape.cols; utj++) {
+          panel_costs[uti] += cost(uti, utj);
+        }
+      }
+
+      auto upanels_sorted_by_cost = argsort(panel_costs);
+
+      // Alternate from scheduling most expensive panels to cheapest panels
+      //   in an attempt load balance
+      int curr_idx_from_top = 0;
+      int curr_idx_from_bot = upanels_sorted_by_cost.size() - 1;
+      int curr_Mb_offset = 0;
+      int Mb = m / config.M_c;
+
+      while (curr_idx_from_top <= curr_idx_from_bot) {
+        // Schedule from top
+        for (int curr_Mb_tile = 0; curr_Mb_tile < Mb; curr_Mb_tile++,
+             curr_idx_from_top++) {
+
+          if (curr_idx_from_top > curr_idx_from_bot) break;
+          int offset = curr_Mb_tile * upanels_per_M_c + curr_Mb_offset;
+          upanel_swizzle[offset] = upanels_sorted_by_cost[curr_idx_from_top];
+        }
+        curr_Mb_offset += 1;
+
+        // Schedule from bottom
+        for (int curr_Mb_tile = 0; curr_Mb_tile < Mb; curr_Mb_tile++,
+             curr_idx_from_bot--) {
+
+          if (curr_idx_from_top > curr_idx_from_bot) break;
+          int offset = curr_Mb_tile * upanels_per_M_c + curr_Mb_offset;
+          upanel_swizzle[offset] = upanels_sorted_by_cost[curr_idx_from_bot];
+        }
+        curr_Mb_offset += 1;
+      }
+    }
   }
 
   void pack_tiles() {
@@ -237,12 +301,36 @@ private:
       panel_packed_tiles.resize(matrix_tiled_shape.cols);
     }
 
+    ERROR_AND_EXIT_IF(config.M_c % M_r != 0, "M_tile must be a multiple of M_r");
+    const int panels_per_tile = config.M_c / M_r;
+
     for (int ti = 0; ti < matrix_tiled_shape.rows; ti++) {
       const auto panel_tile_locs = tile_locs.row_panel(ti);
       for (int tj = 0; tj < panel_tile_locs.size(); tj++) {
-        _pack_ukernel(panel_tile_locs[tj].loc,
-                      tj != 0,
-                      packed_tiles[ti][tj]);
+        auto t_loc = panel_tile_locs[tj].loc;
+        packed_tiles[ti][tj].type = SPARSE_SOP;
+        packed_tiles[ti][tj].loc = t_loc;
+        packed_tiles[ti][tj].shape = t_loc.shape();
+        packed_tiles[ti][tj].load_c = tj != 0;
+        packed_tiles[ti][tj].free_on_destruction = true;
+        packed_tiles[ti][tj].sop.num_panels = panels_per_tile;
+        packed_tiles[ti][tj].sop.panel_descs =
+            new MicroKernelPackedData[panels_per_tile];
+
+        auto panel_descs = packed_tiles[ti][tj].sop.panel_descs;
+        for (int panel_id = 0; panel_id < panels_per_tile; panel_id++) {
+          int global_panel_id = ti * panels_per_tile + panel_id;
+
+          if (KernelDesc::UPanelOrder != NO_REORDERING) {
+            global_panel_id = upanel_swizzle[global_panel_id];
+          }
+
+          SubmatrixLoc panel_loc = t_loc;
+          panel_loc.rows.start = global_panel_id * M_r;
+          panel_loc.rows.end = (global_panel_id + 1) * M_r;
+
+          packer->pack(panel_descs[panel_id], panel_loc, *coo);
+        }
       }
     }
   }
@@ -272,38 +360,6 @@ private:
     std::cout << "  shape:  (" << tile.shape.rows << ", " << tile.shape.cols
               << ")" << std::endl;
     std::cout << "  load_c: " << tile.load_c << std::endl;
-  }
-
-  //
-  //  Packing helpers
-  //   typename Super::Task& t = this->task;
-
-  SubmatrixLoc _tile_loc(const MergedTile& merged_tile) {
-    if (merged_tile.num_tiles() > 1) {
-      return merge_locs(
-          tile_locs.submatrix_locs(merged_tile.ti, merged_tile.tj));
-    } else {
-      return tile_locs.at(merged_tile.ti.start, merged_tile.tj.start).loc;
-    }
-  }
-
-  void _pack_ukernel(const SubmatrixLoc t_loc, bool load_c,
-                 _PackedTile& tile_to_pack) {
-    tile_to_pack.type = SPARSE_SOP;
-    tile_to_pack.loc = t_loc;
-    tile_to_pack.shape = t_loc.shape();
-    tile_to_pack.load_c = load_c;
-    tile_to_pack.free_on_destruction = true;
-
-    Tile<Scalar> sop_tile(*coo, t_loc, packer);
-
-    tile_to_pack.sop.num_panels = sop_tile.num_panels();
-    tile_to_pack.sop.panel_descs = new MicroKernelPackedData[sop_tile.num_panels()];
-    sop_tile.pack(tile_to_pack.sop.panel_descs);
-
-    stats.sop_tiles_count++;
-//    stats.sop_tiles_nnz_count += tile.nnz();
-//    stats.sop_tiles_padding += sop_tile.num_padded_nnz();
   }
 };
 };
