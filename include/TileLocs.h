@@ -67,6 +67,36 @@ struct TileLocs {
     }
   }
 
+
+  std::vector<TileLoc> row_panel(int ti) {
+    std::vector<TileLoc> tile_locs;
+    for (int tj = 0; tj < num_j_tiles(); tj++) {
+      if (m_iteration_order == COL_FIRST) {
+        tile_locs.push_back(m_locs[(ti * num_j_tiles()) + tj]);
+      } else {
+        tile_locs.push_back(m_locs[(tj * num_i_tiles()) + ti]);
+      }
+    }
+
+    return tile_locs;
+  }
+
+
+  std::vector<TileLoc> row_panel(IntRange ti_range) {
+    std::vector<TileLoc> tile_locs;
+    for (int ti = ti_range.start; ti < ti_range.end; ti++) {
+      for (int tj = 0; tj < num_j_tiles(); tj++) {
+        if (m_iteration_order == COL_FIRST) {
+          tile_locs.push_back(m_locs[(ti * num_j_tiles()) + tj]);
+        } else {
+          tile_locs.push_back(m_locs[(tj * num_i_tiles()) + ti]);
+        }
+      }
+    }
+
+    return tile_locs;
+  }
+
   std::vector<TileLoc> slice(IntRange ti_range, IntRange tj_range) {
     std::vector<TileLoc> tile_locs;
     for (int ti = ti_range.start; ti < ti_range.end; ti++) {

@@ -209,20 +209,20 @@ struct ExecutorSpecialized: Executor {
     for (; tjj < Nb_full; tjj++, jjj += N_c) {
       for (int tkk = 0; tkk < Kb; tkk++) {
         _inner_M_c_loop_partial_packed_c(
-            iii, jjj, tiles[tii][tkk], C_packed_partial, false);
+          iii, jjj, tiles[tii][tkk], C_packed_partial, false);
       }
     }
 
     if (partial_N_c_loop || partial_N_r_loop) {
       for (int tkk = 0; tkk < Kb; tkk++) {
         _inner_M_c_loop_partial_packed_c(
-            iii, jjj, tiles[tii][tkk], C_packed_partial, true);
+          iii, jjj, tiles[tii][tkk], C_packed_partial, true);
       }
     }
 
     //report_time(report_packing_time, "Unpack C",
     unpack_C_partial_M_c<Scalar, TileDims>(
-        min(M - iii, M_c), C + iii * N, C_packed_partial, td);
+      min(M - iii, M_c), C + iii * N, C_packed_partial, td);
   }
 
 
@@ -240,13 +240,13 @@ struct ExecutorSpecialized: Executor {
     for (int tkk = 0; tkk < Kb; tkk++) {
       int tjj = 0, jjj = 0;
       for (; tjj < Nb_full; tjj++, jjj += N_c) {
-          _inner_M_c_loop_partial_packed_c(
-              iii, jjj, tiles[tii][tkk], C_packed_partial, false);
+        _inner_M_c_loop_partial_packed_c(
+          iii, jjj, tiles[tii][tkk], C_packed_partial, false);
       }
 
       if (partial_N_c_loop || partial_N_r_loop) {
         _inner_M_c_loop_partial_packed_c(
-            iii, jjj, tiles[tii][tkk], C_packed_partial, true);
+          iii, jjj, tiles[tii][tkk], C_packed_partial, true);
       }
     }
 

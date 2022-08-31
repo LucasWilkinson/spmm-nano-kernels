@@ -33,6 +33,10 @@ enum DenseTileMergingStrategy {
 };
 
 enum SparseTileMergingStrategy { ALL_CSR, ALL_SOP, MERGE_ROW_SOP, MERGE_SOP };
-enum ExecutionStrategy { UNTILED_MKL, TILED_SPARSE, BOTH_TILED };
+enum ExecutionStrategy {
+  UNTILED_MKL,
+  TILED_SPARSE,
+  BOTH_TILED
+};
 
 };
