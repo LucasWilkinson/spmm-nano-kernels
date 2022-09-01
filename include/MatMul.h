@@ -180,22 +180,15 @@ class MatMul {
       config.N_c = cache_dims->n_c;
 
       if (config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
-        static const int tlb_entries = 64;
-        static const int tlb_entries_target = 64;
+        static const int tlb_entries_target = 16;
         static const int page_size = 4096;
 
         int tlb_entries_used = (b_col_predict * config.K_c) / page_size;
-
-        //std::cout << "TLB entries: " << config.k_tile << " " << tlb_entries_used << std::endl;
 
         if (tlb_entries_used > tlb_entries_target) {
           int new_k_tile = (tlb_entries_target * page_size) / b_col_predict;
           int diff = config.K_c - new_k_tile;
           config.K_c = new_k_tile;
-
-          // Generous realloc to N-tile
-          //const int N_r = KernelDesc::N_r;
-          //config.n_tile += ((diff + N_r - 1) / N_r) * N_r;
         }
 
         tlb_entries_used = (b_col_predict * config.K_c) / page_size;
