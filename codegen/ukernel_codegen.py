@@ -3,16 +3,11 @@ import hashlib
 import os
 import json
 
-from tools.codegen.codegen_utils import *
+from SOP.codegen.codegen_utils import *
+from SOP.codegen.arch_details import *
 from functools import partial
 
 
-vec_type_info = {
-    ("float", 512):  (16, '', 's'),
-    ("float", 256):  (8,  '', 's'),
-    ("double", 512): (8, 'd', 'd'),
-    ("double", 256): (4, 'd', 'd'),
-}
 
 
 def executor_factory_name(kernel_desc, microkernel_id):
@@ -136,10 +131,12 @@ def ukernel_codegen(acc_dims, nanokernels,
                 "id": microkernel_id_,
                 "func": packer_factory_name(microkernel_id_),
                 "scalar": scalar,
-                "M_r": acc_dims[0]
+                "M_r": acc_dims[0],
+                "vec_width": vec_width,
             })
 
             with open(factory_output_root + f'packer_{scalar}_{vec_width}.cpp', 'w+') as f:
+                f.write(f'#ifdef {min_instruction_sets[vec_width]}\n')
                 f.write(f'#include "MicroKernelPackerFactory.h"\n')
                 f.write(f'#include "{header}"\n')
                 f.write(f'\n')
@@ -152,6 +149,7 @@ def ukernel_codegen(acc_dims, nanokernels,
                 f.write(f'}}\n')
                 f.write('\n')
                 f.write(f'}} // namespace {namespace}\n')
+                f.write(f'#endif // {min_instruction_sets[vec_width]}\n')
 
             for kernel_desc in build_factories_for:
                 factory_name = executor_factory_name(kernel_desc, microkernel_id_)
@@ -162,9 +160,11 @@ def ukernel_codegen(acc_dims, nanokernels,
                     "kernel_desc": kernel_desc,
                     "M_r": acc_dims[0],
                     "N_r": acc_dims[1],
+                    "vec_width": vec_width,
                 })
 
                 with open(factory_output_root + f'executor_{kernel_desc}_{scalar}_{vec_width}.cpp', 'w+') as f:
+                    f.write(f'#ifdef {min_instruction_sets[vec_width]}\n')
                     f.write(f'#include "ExecutorFactory.h"\n')
                     f.write(f'#include "KernelDesc.h"\n')
                     f.write(f'#include "{header}"\n')
@@ -178,6 +178,7 @@ def ukernel_codegen(acc_dims, nanokernels,
                     f.write(f'}}\n')
                     f.write('\n')
                     f.write(f'}} // namespace {namespace}\n')
+                    f.write(f'#endif // {min_instruction_sets[vec_width]}\n')
 
 
     for (scalar, vec_width), micro_kernel_typename in zip(vec_configs, micro_kernel_typename_names):
@@ -191,6 +192,8 @@ def ukernel_codegen(acc_dims, nanokernels,
             f.write(f'#include "Storage.h"\n')
             f.write(f'\n')
             f.write(f'#include <immintrin.h>\n\n')
+            f.write(f'\n')
+            f.write(f'#include "intrin_compatability.h"\n')
             f.write(f'\n')
             f.write(f'namespace {namespace} {{')
             f.write(f'\n')

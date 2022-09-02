@@ -7,6 +7,8 @@
 #include <immintrin.h>
 
 
+#include "intrin_compatability.h"
+
 namespace sop {
 struct MicroKernel_float_91aaa_256_4x4 {
 
@@ -127,7 +129,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -144,7 +146,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -161,7 +163,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -178,7 +180,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -195,7 +197,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -320,7 +322,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * (N_r) + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -337,7 +339,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -354,7 +356,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -371,7 +373,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -388,7 +390,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -513,7 +515,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -530,7 +532,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -547,7 +549,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -564,7 +566,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -581,7 +583,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -687,7 +689,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -698,7 +700,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -709,7 +711,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -720,7 +722,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -731,7 +733,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -805,7 +807,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * (N_r) + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -816,7 +818,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -827,7 +829,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -838,7 +840,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -849,7 +851,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -923,7 +925,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -934,7 +936,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -945,7 +947,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -956,7 +958,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -967,7 +969,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1047,7 +1049,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -1058,7 +1060,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -1069,7 +1071,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -1080,7 +1082,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -1091,7 +1093,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -1198,7 +1200,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -1209,7 +1211,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -1220,7 +1222,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -1231,7 +1233,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -1242,7 +1244,7 @@ struct MicroKernel_float_91aaa_256_4x4 {
       }
 
       
-      #pragma GCC unroll 2
+      #pragma unroll
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);

@@ -162,6 +162,7 @@ int get_cache_size(int level) {
 
   if(level == 1) {
     switch(model_id) {
+      case 79:
       case 85:
         return (32 * (1 << 10));
       default:
@@ -178,6 +179,7 @@ int get_cache_size(int level) {
       case 49:
         return (512 * (1 << 10));
       case 69:
+      case 79:
         return (256 * (1 << 10));
       case 85:
         return (1024 * (1 << 10));
@@ -199,6 +201,7 @@ int get_cache_size(int level) {
       case 49:
         return (128 * (1 << 20));
       case 69:
+      case 79:
         return (4 * (1 << 20));
       case 85:
         return (14080 * (1 << 10));
