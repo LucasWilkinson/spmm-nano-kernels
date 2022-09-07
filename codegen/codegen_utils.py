@@ -69,7 +69,10 @@ class ForLoop(Block):
         super().__init__()
         self.inner_block = Block()
         if unroll:
-            self.sub_elements.append('#pragma unroll')
+            if type(unroll) is int:
+                self.sub_elements.append(f'#pragma unroll {unroll}')
+            else:
+                self.sub_elements.append('#pragma unroll')
         self.sub_elements.append(f'for({init}; {cond}; {inc}) {{')
         self.sub_elements.append(self.inner_block)
         self.sub_elements.append('}')
@@ -90,6 +93,7 @@ class Switch(Block):
     def __iadd__(self, other):
         self.inner_block += other
         return self
+
 
 """
 Codegen Objects

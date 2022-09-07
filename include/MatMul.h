@@ -297,6 +297,7 @@ private:
     ERROR_AND_EXIT_IF(config.M_c % M_r != 0, "M_tile must be a multiple of M_r");
     const int panels_per_tile = config.M_c / M_r;
 
+    #pragma omp parallel for num_threads(16) schedule(dynamic)
     for (int ti = 0; ti < matrix_tiled_shape.rows; ti++) {
       const auto panel_tile_locs = tile_locs.row_panel(ti);
       for (int tj = 0; tj < panel_tile_locs.size(); tj++) {

@@ -189,7 +189,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -202,7 +202,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -215,7 +215,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -228,7 +228,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -241,7 +241,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -254,7 +254,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -267,7 +267,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -280,7 +280,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -293,7 +293,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -309,7 +309,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -325,7 +325,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -341,7 +341,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -357,7 +357,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -379,7 +379,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -401,7 +401,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -429,7 +429,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -457,7 +457,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -485,7 +485,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -513,7 +513,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -640,7 +640,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * (N_r) + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -653,7 +653,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -666,7 +666,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -679,7 +679,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -692,7 +692,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -705,7 +705,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -718,7 +718,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -731,7 +731,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -744,7 +744,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -760,7 +760,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -776,7 +776,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -792,7 +792,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -808,7 +808,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -830,7 +830,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -852,7 +852,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -880,7 +880,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -908,7 +908,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -936,7 +936,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -964,7 +964,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -1091,7 +1091,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1104,7 +1104,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1117,7 +1117,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1130,7 +1130,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1143,7 +1143,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1156,7 +1156,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1169,7 +1169,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1182,7 +1182,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1195,7 +1195,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1211,7 +1211,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1227,7 +1227,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1243,7 +1243,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1259,7 +1259,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1281,7 +1281,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1303,7 +1303,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1331,7 +1331,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1359,7 +1359,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1387,7 +1387,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1415,7 +1415,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1535,7 +1535,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1546,7 +1546,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1557,7 +1557,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1568,7 +1568,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1579,7 +1579,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1590,7 +1590,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1601,7 +1601,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1612,7 +1612,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1623,7 +1623,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1636,7 +1636,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1649,7 +1649,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1662,7 +1662,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1675,7 +1675,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1692,7 +1692,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1709,7 +1709,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1730,7 +1730,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1751,7 +1751,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1772,7 +1772,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1793,7 +1793,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -1887,7 +1887,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * (N_r) + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -1898,7 +1898,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -1909,7 +1909,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -1920,7 +1920,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -1931,7 +1931,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -1942,7 +1942,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -1953,7 +1953,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -1964,7 +1964,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -1975,7 +1975,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -1988,7 +1988,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -2001,7 +2001,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -2014,7 +2014,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -2027,7 +2027,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -2044,7 +2044,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -2061,7 +2061,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -2082,7 +2082,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -2103,7 +2103,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -2124,7 +2124,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -2145,7 +2145,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_load_ps(B_curr + 0 * 8);
@@ -2239,7 +2239,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2250,7 +2250,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2261,7 +2261,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2272,7 +2272,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2283,7 +2283,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2294,7 +2294,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2305,7 +2305,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2316,7 +2316,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2327,7 +2327,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2340,7 +2340,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2353,7 +2353,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2366,7 +2366,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2379,7 +2379,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2396,7 +2396,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2413,7 +2413,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2434,7 +2434,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2455,7 +2455,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2476,7 +2476,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2497,7 +2497,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_loadu_ps(B_curr + 0 * 8);
@@ -2601,7 +2601,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2612,7 +2612,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2623,7 +2623,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2634,7 +2634,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2645,7 +2645,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2656,7 +2656,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2667,7 +2667,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2678,7 +2678,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2689,7 +2689,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2702,7 +2702,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2715,7 +2715,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2728,7 +2728,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2741,7 +2741,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2758,7 +2758,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2775,7 +2775,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2796,7 +2796,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2817,7 +2817,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2838,7 +2838,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2859,7 +2859,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2986,7 +2986,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       auto curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -2997,7 +2997,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3008,7 +3008,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3019,7 +3019,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3030,7 +3030,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3041,7 +3041,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3052,7 +3052,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3063,7 +3063,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3074,7 +3074,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3087,7 +3087,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3100,7 +3100,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3113,7 +3113,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3126,7 +3126,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3143,7 +3143,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3160,7 +3160,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3181,7 +3181,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3202,7 +3202,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3223,7 +3223,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
@@ -3244,7 +3244,7 @@ struct MicroKernel_float_5b38e_256_8x2 {
       }
 
       
-      #pragma unroll
+      #pragma unroll 2
       for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         __m256 aVec;
         __m256 bVec0 = _mm256_maskz_loadu_ps(last_reg_mask, B_curr + 0 * 8);
