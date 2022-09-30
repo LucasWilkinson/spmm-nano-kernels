@@ -5,7 +5,7 @@ from SOP.codegen.arch_details import *
 
 
 def generate_ukernel_executor_registration(output_root):
-    factory_files = glob.glob(f'{output_root}/factories/**/executor_*.cpp', recursive=True)
+    factory_files = glob.glob(f'{output_root}/*/factories/**/executor_*.cpp', recursive=True)
     factory_descs = []
 
     for factory_file in factory_files:
@@ -24,10 +24,11 @@ def generate_ukernel_executor_registration(output_root):
         f.write('namespace sop {\n\n')
 
         for factory_desc in factory_descs:
-            f.write(f'#ifdef {min_instruction_sets[factory_desc["vec_width"]]}\n')
+            f.write(f'#if defined({min_instruction_sets[factory_desc["reg_width_bits"]]})')
+            f.write(f' && defined(ENABLE_{factory_desc["arch"]})\n')
             f.write(f'extern ExecutorFactory<{factory_desc["kernel_desc"]}>* ')
             f.write(f'{factory_desc["func"]}();\n')
-            f.write(f'#endif // {min_instruction_sets[factory_desc["vec_width"]]}\n')
+            f.write(f'#endif // {min_instruction_sets[factory_desc["reg_width_bits"]]}\n')
 
         f.write('\n')
 
@@ -38,9 +39,10 @@ def generate_ukernel_executor_registration(output_root):
             for factory_desc in factory_descs:
                 if factory_desc["kernel_desc"] != kernel_descs: continue
                 #f.write(f'  ExecutorFactory<{factory_desc["kernel_desc"]}>::')
-                f.write(f'#ifdef {min_instruction_sets[factory_desc["vec_width"]]}\n')
+                f.write(f'#if defined({min_instruction_sets[factory_desc["reg_width_bits"]]})')
+                f.write(f' && defined(ENABLE_{factory_desc["arch"]})\n')
                 f.write(f'  register_factory("{factory_desc["id"]}", {factory_desc["func"]}());\n')
-                f.write(f'#endif // {min_instruction_sets[factory_desc["vec_width"]]}\n')
+                f.write(f'#endif // {min_instruction_sets[factory_desc["reg_width_bits"]]}\n')
 
             f.write(f'}}\n')
             f.write(f'}};\n\n')
@@ -49,7 +51,7 @@ def generate_ukernel_executor_registration(output_root):
 
 
 def generate_ukernel_packer_registration(output_root):
-    factory_files = glob.glob(f'{output_root}/factories/**/packer_*.cpp', recursive=True)
+    factory_files = glob.glob(f'{output_root}/*/factories/**/packer_*.cpp', recursive=True)
     factory_descs = []
 
     for factory_file in factory_files:
@@ -67,10 +69,11 @@ def generate_ukernel_packer_registration(output_root):
         f.write('namespace sop {\n\n')
 
         for factory_desc in factory_descs:
-            f.write(f'#ifdef {min_instruction_sets[factory_desc["vec_width"]]}\n')
+            f.write(f'#if defined({min_instruction_sets[factory_desc["reg_width_bits"]]})')
+            f.write(f' && defined(ENABLE_{factory_desc["arch"]})\n')
             f.write(f'extern MicroKernelPackerFactory<{factory_desc["scalar"]}>* ')
             f.write(f'{factory_desc["func"]}();\n')
-            f.write(f'#endif // {min_instruction_sets[factory_desc["vec_width"]]}\n')
+            f.write(f'#endif // {min_instruction_sets[factory_desc["reg_width_bits"]]}\n')
 
         f.write('\n')
 
@@ -81,10 +84,10 @@ def generate_ukernel_packer_registration(output_root):
                     f'MicroKernelPackerFactory<{factory_desc["scalar"]}>({factory_desc["M_r"]}) {{\n')
 
             for factory_desc in factory_descs:
-                f.write(f'#ifdef {min_instruction_sets[factory_desc["vec_width"]]}\n')
-                #f.write(f'  ExecutorFactory<{factory_desc["kernel_desc"]}>::')
+                f.write(f'#if defined({min_instruction_sets[factory_desc["reg_width_bits"]]})')
+                f.write(f' && defined(ENABLE_{factory_desc["arch"]})\n')
                 f.write(f'  register_factory("{factory_desc["id"]}", {factory_desc["func"]}());\n')
-                f.write(f'#endif // {min_instruction_sets[factory_desc["vec_width"]]}\n')
+                f.write(f'#endif // {min_instruction_sets[factory_desc["reg_width_bits"]]}\n')
 
             f.write(f'}}\n')
             f.write(f'}};\n\n')

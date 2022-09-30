@@ -180,19 +180,17 @@ class MatMul {
       config.N_c = cache_dims->n_c;
 
       if (config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
-        static const int tlb_entries_target = 16;
-        static const int page_size = 4096;
+        if (config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
 
-        int tlb_entries_used = (b_col_predict * config.K_c) / page_size;
+          int BC_size_bytes = (b_col_predict * config.K_c) * sizeof(Scalar);
+          int tlb_entries_used =  BC_size_bytes / config.tlb_page_size;
 
-        if (tlb_entries_used > tlb_entries_target) {
-          int new_k_tile = (tlb_entries_target * page_size) / b_col_predict;
-          int diff = config.K_c - new_k_tile;
-          config.K_c = new_k_tile;
+          if (tlb_entries_used > config.max_tlb_entries) {
+            int target_size_bytes = (config.max_tlb_entries * config.tlb_page_size) ;
+            int new_k_tile = target_size_bytes / (b_col_predict * sizeof(Scalar));
+            config.K_c = new_k_tile;
+          }
         }
-
-        tlb_entries_used = (b_col_predict * config.K_c) / page_size;
-        //std::cout << "Updated TLB entries: " << config.k_tile << " " << tlb_entries_used << std::endl;
       }
 
       free(cake_cntx);
@@ -335,7 +333,7 @@ private:
       for (auto& tile : panel)
         linear_size += tile.linear_size_in_bytes();
 
-    linear_buffer = aligned_alloc(64, linear_size);
+    linear_buffer = aligned_alloc(4096, linear_size);
     void* linear_buffer_tmp = linear_buffer;
 
     for (auto& panel : packed_tiles)

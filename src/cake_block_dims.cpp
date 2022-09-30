@@ -755,6 +755,9 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
     kc_L3 = (int)(x);
   }
 
+//  std::cout << std::endl << "p=" << p << " nr=" << cake_cntx->nr << " alpha=" << alpha << " beta=" << beta << " lambda=" << lambda << " L2=" << cake_cntx->L2 << std::endl;
+//  std::cout << "mc_L3: " << mc_L3 << " kc_L2: " << kc_L2 << std::endl;
+
   mc_ret = mc_L3;
   if(M < p*cake_cntx->mr) {
     mc_ret = cake_cntx->mr;

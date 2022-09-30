@@ -5,6 +5,6 @@
 
 std::string get_executor_id(
     const std::string& mapping_id,
-    int vec_width_bits,
+    std::string arch,
     int N_r = -1
 );

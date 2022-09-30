@@ -10,43 +10,54 @@ std::unordered_map<
     std::tuple<
         std::string,
         int,
-        std::vector<int>
+        std::vector<std::pair<std::string, int>>
     >
 > mapping_to_executor = {
-  {"8ee60", {"a8d4c", 4, { 4 }}},
-  {"28344", {"470b8", 4, { 4 }}},
-  {"b48fd", {"60007", 4, { 4 }}},
-  {"86ca2", {"f0bdc", 4, { 4 }}},
-  {"9973d", {"45bec", 4, { 4 }}},
-  {"400fa", {"77f9d", 8, { 2 }}},
-  {"4892b", {"6a59f", 4, { 4 }}},
-  {"8e68c", {"ad3b1", 4, { 4 }}},
-  {"92be7", {"5b38e", 8, { 2 }}},
-  {"668a7", {"acd31", 4, { 4 }}},
-  {"5a1b3", {"0dfe3", 4, { 4 }}},
-  {"689a5", {"c22a5", 4, { 4 }}},
-  {"747f9", {"77f9d", 8, { 2 }}},
-  {"5535a", {"28600", 4, { 4 }}},
-  {"29556", {"0e71b", 4, { 4 }}},
-  {"52ac0", {"7bf97", 4, { 4 }}},
-  {"f8738", {"d508e", 4, { 4 }}},
-  {"5280a", {"3e5d4", 4, { 4 }}},
-  {"61fee", {"c22a5", 4, { 4 }}},
-  {"2da33", {"dad5c", 4, { 4 }}},
-  {"dc018", {"105ad", 4, { 4 }}},
-  {"da01e", {"64487", 4, { 4 }}},
-  {"d3aa0", {"e8c1f", 4, { 4 }}},
-  {"0e177", {"ad3b1", 4, { 4 }}},
-  {"cf3f2", {"91aaa", 4, { 4 }}},
-  {"b792a", {"520b4", 4, { 4 }}},
-  {"9bec8", {"f1006", 4, { 4 }}},
-  {"2cbb1", {"5eab3", 4, { 4 }}},
-  {"30842", {"77b33", 8, { 2 }}}
+  {"61fee", {"c22a5", 4, {
+
+#if defined(ENABLE_AVX512)
+    {"AVX512", 4},    {"AVX512", 2},
+#endif
+
+#if defined(ENABLE_AVX2)
+    {"AVX2", 2},
+#endif
+{"", -1}  }}},
+  {"da01e", {"64487", 4, {
+
+#if defined(ENABLE_AVX512)
+    {"AVX512", 4},    {"AVX512", 2},
+#endif
+
+#if defined(ENABLE_AVX2)
+    {"AVX2", 2},
+#endif
+{"", -1}  }}},
+  {"400fa", {"77f9d", 8, {
+
+#if defined(ENABLE_AVX512)
+    {"AVX512", 2},
+#endif
+
+#if defined(ENABLE_AVX2)
+    {"AVX2", 1},
+#endif
+{"", -1}  }}},
+  {"747f9", {"77f9d", 8, {
+
+#if defined(ENABLE_AVX512)
+    {"AVX512", 2},
+#endif
+
+#if defined(ENABLE_AVX2)
+    {"AVX2", 1},
+#endif
+{"", -1}  }}}
 };
 
 std::string get_executor_id(
     const std::string& mapping_id,
-    int vec_width_bits,
+    std::string arch,
     int N_r
 ) {
   ERROR_AND_EXIT_IF(
@@ -55,14 +66,19 @@ std::string get_executor_id(
   auto [executor_id, M_r, supprted_N_rs] = mapping_to_executor[mapping_id];
 
   if (N_r >= 1) {
-    ERROR_AND_EXIT_IF(std::find(supprted_N_rs.begin(), supprted_N_rs.end(), N_r)
-                          == supprted_N_rs.end(),
-                      "N_r not supported by mapping");
-  } else {
-    N_r = supprted_N_rs[0];
+    for (const auto& [arch_supported, N_r_supported] : supprted_N_rs) {
+      if (arch_supported == arch && N_r == N_r_supported) break;
+    }
+    ERROR_AND_EXIT("N_r not supported by mapping");  } else {
+    for (const auto& [arch_supported, N_r_supported] : supprted_N_rs) {
+      if (arch_supported == arch) {
+        N_r = N_r_supported;
+        break;
+      }
+    }
   }
 
   return executor_id +
-      "_" + std::to_string(vec_width_bits) +
+      "_" + arch +
       "_" + std::to_string(M_r) + "x" + std::to_string(N_r);
 }

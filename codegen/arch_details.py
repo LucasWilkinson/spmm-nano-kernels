@@ -1,3 +1,8 @@
+instruction_set_reg_width = {
+    "AVX512": 512,
+    "AVX2": 256,
+}
+
 vec_type_info = {
     ("float", 512):  (16, '', 's'),
     ("float", 256):  (8,  '', 's'),

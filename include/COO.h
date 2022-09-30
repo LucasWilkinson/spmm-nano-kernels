@@ -240,7 +240,9 @@ public:
     }
 
     template<typename PtrType, typename IndexType>
-    int populate_csr(_Scalar* values, PtrType* ptrs, IndexType* indices, enum CSRPtrType ptr_type = OFFSET) {
+    int populate_csr(_Scalar* values, PtrType* ptrs, IndexType* indices,
+                     enum CSRPtrType ptr_type = OFFSET,
+                     int col_offset = 0, int idx_offset = 0) {
         sort_csr_style();
 
         for (int i = 0; i < (ptr_type == OFFSET ? m_rows + 1 : m_rows); i++) { ptrs[i] = 0; }
@@ -253,10 +255,10 @@ public:
                 ptrs[nz.row]++;
             } else {
                 if ((idx + 1) > std::numeric_limits<PtrType>::max()) return -1;
-                ptrs[nz.row + 1] = idx + 1;
+                ptrs[nz.row + 1] = idx_offset + idx + 1;
             }
 
-            indices[idx] = nz.col;
+            indices[idx] = nz.col + col_offset;
             values[idx] = nz.value;
         }
 

@@ -21,6 +21,8 @@ struct TileConfig {
   TilingStrategy tiling_strategy = CAKE_TILING_WITH_TLB_COMPENSATION;
   float beta = 1.0;
   bool sparse_a = true;
+  int max_tlb_entries = 64;
+  int tlb_page_size = 4096;
 };
 
 };
