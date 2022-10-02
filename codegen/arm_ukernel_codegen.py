@@ -7,19 +7,24 @@ from .codegen_utils import *
 from .arch_details import *
 from functools import partial
 
+
 def executor_factory_name(kernel_desc, microkernel_id):
     return f'executor_factory_{kernel_desc}_{microkernel_id}'
+
 
 def packer_factory_name(microkernel_id):
     return f'packer_factory_{microkernel_id}'
 
+
 def sort_nanokernels(nanokernels):
     return sorted(nanokernels, key=lambda x: gmpy.popcount(x))
+
 
 def nanokernel_hash(nanokernels):
     nanokernels = sort_nanokernels(nanokernels)
     _hash = hashlib.md5(" ".join([str(p) for p in nanokernels]).encode("utf8")).hexdigest()
     return _hash[-5:]
+
 
 def microkernel_id(arch, acc_dims, nanokernels):
     _hash = hashlib.md5(" ".join([str(p) for p in nanokernels]).encode("utf8")).hexdigest()
@@ -34,6 +39,7 @@ def unroll_mapping(nnzs):
     if nnzs == 1: return 2
     if nnzs <= 2: return 2
     return 2
+
 
 def ukernel_codegen(acc_dims, nanokernels,
                     vec_configs,
@@ -181,7 +187,6 @@ def ukernel_codegen(acc_dims, nanokernels,
                     f.write('\n')
                     f.write(f'}} // namespace {namespace}\n')
                     f.write(f'#endif // {min_instruction_sets[reg_width_bits]}\n')
-
 
     for (scalar, arch), micro_kernel_typename in zip(vec_configs, micro_kernel_typename_names):
         include_output_root = f'{output_root}/{arch}/include/{nanokernel_hash_}/'
@@ -468,6 +473,7 @@ def ukernel_codegen(acc_dims, nanokernels,
             f.write(f'}} // {namespace}\n')
 
     return nanokernel_hash_
+
 
 def gen_executor_body(scalar, reg_width_bits, acc_dims, max_acc_width, supported_patterns,
                       packed_C=False, packed_B=False, masked=False):

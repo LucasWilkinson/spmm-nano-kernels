@@ -1,7 +1,7 @@
 import os; SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 import glob
 import json
-from SOP.codegen.arch_details import *
+from .arch_details import *
 
 
 def generate_ukernel_executor_registration(output_root):

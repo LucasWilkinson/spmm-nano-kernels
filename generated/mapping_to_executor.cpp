@@ -16,21 +16,21 @@ std::unordered_map<
   {"61fee", {"c22a5", 4, {
 
 #if defined(ENABLE_AVX512)
-    {"AVX512", 4},    {"AVX512", 2},
+    {"AVX512", 4},    {"AVX512", 4},
 #endif
 
 #if defined(ENABLE_AVX2)
-    {"AVX2", 2},
+    {"AVX2", 4},
 #endif
 {"", -1}  }}},
   {"da01e", {"64487", 4, {
 
 #if defined(ENABLE_AVX512)
-    {"AVX512", 4},    {"AVX512", 2},
+    {"AVX512", 4},    {"AVX512", 4},
 #endif
 
 #if defined(ENABLE_AVX2)
-    {"AVX2", 2},
+    {"AVX2", 4},
 #endif
 {"", -1}  }}},
   {"400fa", {"77f9d", 8, {
@@ -40,7 +40,7 @@ std::unordered_map<
 #endif
 
 #if defined(ENABLE_AVX2)
-    {"AVX2", 1},
+    {"AVX2", 2},
 #endif
 {"", -1}  }}},
   {"747f9", {"77f9d", 8, {
@@ -50,7 +50,7 @@ std::unordered_map<
 #endif
 
 #if defined(ENABLE_AVX2)
-    {"AVX2", 1},
+    {"AVX2", 2},
 #endif
 {"", -1}  }}}
 };
