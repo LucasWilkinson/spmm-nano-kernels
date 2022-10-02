@@ -39,6 +39,7 @@ for mapping_file in [f'{SCRIPT_DIR}/../mappings/mapping_{mapping_id}.txt' for ma
     M_r = int(round(math.log2(max_mapped)))
     N_r_avx512 = 16 // M_r
     N_r_avx2 = 8 // M_r
+    N_r_neon = 12 // M_r
 
     mapping_key = mapping_file.split("/")[-1].replace(".txt", "").split('_')[-1]
     common_args = dict(output_root=output_root, build_factories_for=kernel_descs)
@@ -66,6 +67,13 @@ for mapping_file in [f'{SCRIPT_DIR}/../mappings/mapping_{mapping_id}.txt' for ma
     codegen.gen_factories(**common_args, build_factories_for=kernel_descs)
 
     mapping_to_executor[mapping_key][f'{nkern_hash}']["AVX2"].append((M_r, N_r_avx512))
+    print(f'{mapping_file.split("/")[-1]} -> {ukern_id}')
+
+    common_args = dict(Nr=N_r_neon, arch="NEON", vec_width_bits=128, scalar="float")
+    ukern_id = codegen.gen_header(**common_args)
+    codegen.gen_factories(**common_args, build_factories_for=kernel_descs)
+
+    mapping_to_executor[mapping_key][f'{nkern_hash}']["NEON"].append((M_r, N_r_avx512))
     print(f'{mapping_file.split("/")[-1]} -> {ukern_id}')
 
 with open(f'{output_root}/mapping_to_executor.cpp', 'w') as f:

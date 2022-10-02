@@ -22,10 +22,12 @@ def generate_mapping_to_executor(output_root, mapping):
         f.write(
         f'#pragma once\n\n'
         f'#include <unordered_map>\n'
+        f'#include <string>\n'
         f'#include <vector>\n\n'
         f'std::string get_executor_id(\n'
         f'    const std::string& mapping_id,\n'
         f'    std::string arch,\n'
+        f'    int vec_width_bits,\n'
         f'    int N_r = -1\n'
         f');\n'
         )
@@ -50,6 +52,7 @@ def generate_mapping_to_executor(output_root, mapping):
         f'std::string get_executor_id(\n'
         f'    const std::string& mapping_id,\n'
         f'    std::string arch,\n'
+        f'    int vec_width_bits,\n'
         f'    int N_r\n'
         f') {{\n'
         f'  ERROR_AND_EXIT_IF(\n'
@@ -73,6 +76,7 @@ def generate_mapping_to_executor(output_root, mapping):
         f'\n'
         f'  return executor_id +\n'
         f'      "_" + arch +\n'
+        f'      "_" + std::to_string(vec_width_bits) +\n'
         f'      "_" + std::to_string(M_r) + "x" + std::to_string(N_r);\n'
         f'}}\n'
         )

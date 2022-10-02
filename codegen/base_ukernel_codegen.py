@@ -46,6 +46,12 @@ def unroll_mapping(nnzs):
 
 
 class UKernelCodegenBase:
+    supported_archs = {
+        'AVX512': AVX512(),
+        'AVX2': AVX2(),
+        'NEON': NEON(),
+    }
+
     def __init__(self, Mr, nanokernels, output_root=None, namespace=None):
         import os; SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
         output_root = f'{SCRIPT_DIR}/_C/generated' if output_root is None else output_root
@@ -58,9 +64,10 @@ class UKernelCodegenBase:
 
     def gen_factories(self, Nr, arch, vec_width_bits, scalar, build_factories_for=None):
         typename = microkernel_typename(scalar, arch, vec_width_bits, [self.Mr, Nr], self.nanokernels)
+        arch_details = self.supported_archs[arch]
 
-        reg_width_bits = instruction_set_reg_width[arch]
-        reg_width_ele, _, _ = vec_type_info[(scalar, reg_width_bits)]
+        reg_width_bits = vec_width_bits
+        reg_width_ele = int(vec_width_bits / SCALAR_SIZE_BITS[scalar])
         microkernel_id_ = microkernel_id(arch, vec_width_bits, [self.Mr, Nr], self.nanokernels)
 
         header = "/".join(self._header_path(arch, typename).split('/')[-2:])
@@ -75,7 +82,8 @@ class UKernelCodegenBase:
         })
 
         with open(self._factories_dir(arch) + f'packer_{scalar}_{arch}_nr_{Nr}.cpp', 'w+') as f:
-            f.write(f'#ifdef {min_instruction_sets[reg_width_bits]}\n')
+            f.write(f'{arch_details.preprocessor_guard()}\n')
+            f.write(f'#include "{header}"\n')
             f.write(f'#include "MicroKernelPackerFactory.h"\n')
             f.write(f'#include "{header}"\n')
             f.write(f'\n')
@@ -88,7 +96,7 @@ class UKernelCodegenBase:
             f.write(f'}}\n')
             f.write('\n')
             f.write(f'}} // namespace {self.namespace}\n')
-            f.write(f'#endif // {min_instruction_sets[reg_width_bits]}\n')
+            f.write(f'#endif\n')
 
         for kernel_desc in build_factories_for:
             factory_name = executor_factory_name(kernel_desc, microkernel_id_)
@@ -103,10 +111,10 @@ class UKernelCodegenBase:
             })
 
             with open(self._factories_dir(arch) + f'executor_{kernel_desc}_{scalar}_{arch}_nr_{Nr}.cpp', 'w+') as f:
-                f.write(f'#ifdef {min_instruction_sets[reg_width_bits]}\n')
+                f.write(f'{arch_details.preprocessor_guard()}\n')
                 f.write(f'#include "ExecutorFactory.h"\n')
                 f.write(f'#include "KernelDesc.h"\n')
-                f.write(f'#include "{self._header_filename(typename)}"\n')
+                f.write(f'#include "{self.nanokernel_hash}/{self._header_filename(typename)}"\n')
                 f.write(f'\n')
                 f.write(f'namespace {self.namespace} {{\n')
                 f.write(f'\n')
@@ -117,12 +125,13 @@ class UKernelCodegenBase:
                 f.write(f'}}\n')
                 f.write('\n')
                 f.write(f'}} // namespace {self.namespace}\n')
-                f.write(f'#endif // {min_instruction_sets[reg_width_bits]}\n')
+                f.write(f'#endif\n')
 
     def gen_header(self, Nr, arch, vec_width_bits, scalar='float'):
         typename = microkernel_typename(scalar, arch, vec_width_bits, [self.Mr, Nr], self.nanokernels)
         ukern_id = microkernel_id(arch, vec_width_bits, [self.Mr, Nr], self.nanokernels)
-        vec_width_ele = vec_width_bits / SCALAR_SIZE_BITS[scalar]
+        vec_width_ele = int(vec_width_bits / SCALAR_SIZE_BITS[scalar])
+        arch_details = self.supported_archs[arch]
 
         with open(self._header_path(arch, typename), 'w+') as f:
             f.write(f'#pragma once\n\n')
@@ -130,7 +139,7 @@ class UKernelCodegenBase:
             f.write(f'#include "MicroKernelBase.h"\n')
             f.write(f'#include "Storage.h"\n')
             f.write(f'\n')
-            f.write(f'#include <immintrin.h>\n\n')
+            f.write(f'{arch_details.intrin_include()}\n\n')
             f.write(f'\n')
             f.write(f'#include "intrin_compatability.h"\n')
             f.write(f'\n')
@@ -142,7 +151,7 @@ class UKernelCodegenBase:
             f.write(self._emit_nkern_decoder())
             f.write(self._emit_nkern_nnz_count())
             f.write('\n')
-            f.write(f'    using  Mask = __mmask{vec_width_ele};\n')
+            f.write(f'    using  Mask = {arch_details.mask_type(scalar, vec_width_bits)};\n')
             f.write(f'    static Mask create_mask(int n) {{ return ((1 << n) - 1); }}\n')
             f.write(f'    static Mask precomp_mask(int N) {{ return create_mask(N % {vec_width_ele}); }}\n')
             f.write('\n')
@@ -157,10 +166,26 @@ class UKernelCodegenBase:
             f.write(f'    static int num_nkern_patterns() {{ return {len(self.nanokernels)}; }}\n')
             f.write(f'')
 
-            body = partial(self._emit_executor_body, arch=arch, vec_width_bits=vec_width_bits)
+            common_args = dict(arch=arch, vec_width_bits=vec_width_bits)
+
+            body = partial(self._emit_vectorized_executor_body, **common_args)
             f.write(self._emit_microkernels(body, [Nr, 1], scalar))
 
-            #f.write(self._emit_microkernels(self, typename, Nr, scalar))
+            if arch_details.supports_masks():
+                body = partial(self._emit_vectorized_executor_body, **common_args)
+            else:
+                body = partial(self._emit_scalar_executor_body, **common_args)
+            f.write(self._emit_microkernels(body, [1], scalar, name="masked", masked=True))
+
+            body = partial(self._emit_vectorized_executor_body, **common_args, packed_C=True)
+            f.write(self._emit_microkernels(body, [Nr, 1], scalar, name="packed_C"))
+
+            if arch_details.supports_masks():
+                body = partial(self._emit_vectorized_executor_body, **common_args, packed_C=True)
+            else:
+                body = partial(self._emit_scalar_executor_body, **common_args, packed_C=True)
+            f.write(self._emit_microkernels(body, [1], scalar, name="masked_packed_C", masked=True))
+
             f.write(f'\n}};\n\n')
             f.write(f'}} // {self.namespace}\n')
 
@@ -184,7 +209,7 @@ class UKernelCodegenBase:
         return self._include_dir(arch) + self._header_filename(typename)
 
     def _emit_supported_patterns(self):
-        supported_patterns_list = ",\n            ".join([f'0b{x:08b}' for x in self.nanokernels])
+        supported_patterns_list = ",\n                ".join([f'0b{x:08b}' for x in self.nanokernels])
         return f'''
         static const uint16_t* supported_nkern_patterns() {{
             static uint16_t patterns[] = {{
@@ -196,7 +221,7 @@ class UKernelCodegenBase:
         '''
 
     def _emit_nkern_encoder(self):
-        supported_patterns_encode_cases = "\n        ".join([
+        supported_patterns_encode_cases = "\n            ".join([
             f'if (nkern_pat == 0b{x:08b}) return {i};' for i, x in enumerate(self.nanokernels)])
         return f'''
         static uint16_t encode_nkern_pattern(uint16_t nkern_pat) {{
@@ -208,7 +233,7 @@ class UKernelCodegenBase:
         '''
 
     def _emit_nkern_decoder(self):
-        supported_patterns_decode_cases = "\n        ".join([
+        supported_patterns_decode_cases = "\n            ".join([
             f'if (nkern_code == {i}) return 0b{x:08b};' for i, x in enumerate(self.nanokernels)])
         return f'''
         static uint16_t decode_nkern_pattern(uint16_t nkern_code) {{
@@ -220,7 +245,7 @@ class UKernelCodegenBase:
         '''
 
     def _emit_nkern_nnz_count(self):
-        pattern_nnz_count_cases = "\n        ".join([
+        pattern_nnz_count_cases = "\n            ".join([
             f'if (nkern_code == {i}) return {gmpy.popcount(x)};' for i, x in enumerate(self.nanokernels)])
         return f'''
         static uint16_t nnz_count_for_nkern_code(uint16_t nkern_code) {{
@@ -231,18 +256,125 @@ class UKernelCodegenBase:
         }}
         '''
 
-    def _emit_executor_body(self, Nr, arch, vec_width_bits, scalar, packed_C=False, packed_B=False, mask=None):
-        arch_details = {
-            'AVX512': AVX512(),
-            'AVX2': AVX2(),
-        }[arch]
+    def _emit_scalar_executor_body(self, Nr, arch, vec_width_bits,
+                                       scalar, packed_C=False, packed_B=False,
+                                       mask=None):
+        assert Nr == 1
 
+        arch_details = self.supported_archs[arch]
         arch_intrin_gen = ArchIntrinGenerator(arch_details, vec_width_bits, scalar)
-        vec_width_ele = vec_width_bits / SCALAR_SIZE_BITS[scalar]
+        vec_width_ele = 1
         m_reg = arch_intrin_gen.vec_type()
 
         def setup_accumulator():
             lines = [f'{scalar}* C_temp = C;']
+
+            reg_def = f'{scalar} '
+            for i in range(self.Mr):
+                for k in range(Nr):
+                    reg_def += f'c{i}{k}, '
+
+            lines += [reg_def.strip(', ') + ";"]
+            lines += ['if (load_c) {']
+
+            if packed_C:
+                c_load = lambda i, k: f'C + {i * Nr + k}'
+            else:
+                c_load = lambda i, k: f'C + {k}'
+
+            for i in range(self.Mr):
+                for k in range(Nr):
+                    lines += [f'  c{i}{k} = *({c_load(i, k)});']
+                if not packed_C:
+                    lines += [f'  C_temp += N;']
+
+            lines += ['} else {']
+            for i in range(self.Mr):
+                for k in range(Nr):
+                    lines += [f'  c{i}{k} = 0;']
+
+            lines += ['}']
+            return lines
+
+        def store_accumulator(acc_dims):
+            if packed_C:
+                c_store = lambda i, k: f'*(C + {i * Nr + k}) = c{i}{k}'
+            else:
+                c_store = lambda i, k: f'*(C + {i} * N + {k}) = c{i}{k}'
+
+            return [f'{c_store(i, k)};'
+                    for i in range(acc_dims[0])
+                    for k in range(acc_dims[1])]
+
+        def gen_pattern_case(acc_dims, id, pat):
+            case_body = Block()
+
+            count_loop = ForLoop(f'int pat_count = nkern_counts[{id}]', 'pat_count > 0', 'pat_count--',
+                                 unroll=unroll_mapping(gmpy.popcount(pat)))
+            count_loop += f'{scalar} a;'
+
+            b_load = lambda k: f'B_curr + {k}'
+            for k in range(acc_dims[1]):
+                count_loop += f'{scalar} b{k} = *({b_load(k)});'
+
+            if packed_B:
+                count_loop += f'B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;'
+            else:
+                count_loop += f'B_curr = (*col_indices_curr) * N + B; col_indices_curr++;'
+
+            pat_tmp = pat
+            idx = 0
+            while pat_tmp:
+                if pat_tmp & 1:
+                    count_loop += f'a = *curr_value_ptr; curr_value_ptr++;'
+                    for k in range(acc_dims[1]):
+                        count_loop += f'c{idx}{k} += a * b{k};'
+
+                pat_tmp >>= 1
+                idx += 1
+
+            case_body += count_loop
+
+            return case_body.sub_elements
+
+        sop_panel_executor = Block()
+        sop_panel_executor += ''
+
+        body = Block()
+        body += setup_accumulator()
+        body += 'int c_idx = 0;'
+        body += 'auto curr_value_ptr = values;'
+
+        if packed_B:
+            body += f'const {scalar} *__restrict__ B_curr = col_indices[0] * (N_r) + B;'
+        else:
+            body += f'const {scalar} *__restrict__ B_curr = col_indices[0] * N + B;'
+
+        body += 'uint32_t * col_indices_curr = col_indices + 1;'
+
+        for id, pat in enumerate(self.nanokernels):
+            body += gen_pattern_case([self.Mr, Nr], id, pat)
+
+        body += store_accumulator([self.Mr, Nr])
+        sop_panel_executor += body.sub_elements
+
+        return sop_panel_executor
+
+    def _emit_vectorized_executor_body(self, Nr, arch, vec_width_bits,
+                                       scalar, packed_C=False, packed_B=False,
+                                       mask=None):
+        arch_details = self.supported_archs[arch]
+        arch_intrin_gen = ArchIntrinGenerator(arch_details, vec_width_bits, scalar)
+        vec_width_ele = int(vec_width_bits / SCALAR_SIZE_BITS[scalar])
+        m_reg = arch_intrin_gen.vec_type()
+
+        def setup_accumulator():
+            lines = []
+            for i in range(self.Mr):
+                if not packed_C:
+                    lines += [f'{scalar}* C{i} = C + {i} * N;']
+                else:
+                    lines += [f'{scalar}* C{i} = C + {i * Nr} * {vec_width_ele};']
 
             reg_def = f'{arch_intrin_gen.vec_type()} '
             for i in range(self.Mr):
@@ -253,18 +385,17 @@ class UKernelCodegenBase:
             lines += ['if (load_c) {']
 
             if packed_C:
-                c_load = lambda i, k: arch_intrin_gen.load_intrin(f'C + {i * Nr + k} * {vec_width_ele}', aligned=True)
+                c_load = lambda i, k: arch_intrin_gen.load_intrin(f'C{i} + {i * Nr + k} * {vec_width_ele}',
+                                                                  aligned=True)
             else:
                 if mask is None:
-                    c_load = lambda i, k: arch_intrin_gen.load_intrin(f'C + {k} * {vec_width_ele}')
+                    c_load = lambda i, k: arch_intrin_gen.load_intrin(f'C{i} + {k} * {vec_width_ele}')
                 else:
-                    c_load = lambda i, k: arch_intrin_gen.load_intrin(f'C + {k} * {vec_width_ele}', mask=mask)
+                    c_load = lambda i, k: arch_intrin_gen.load_intrin(f'C{i} + {k} * {vec_width_ele}', mask=mask)
 
             for i in range(self.Mr):
                 for k in range(Nr):
                     lines += [f'  cVec{i}{k} = {c_load(i, k)};']
-                if not packed_C:
-                    lines += [f'  C_temp += N;']
 
             lines += ['} else {']
             for i in range(self.Mr):
@@ -277,10 +408,10 @@ class UKernelCodegenBase:
         def store_accumulator(acc_dims):
             if packed_C:
                 c_store = lambda i, k: \
-                    arch_intrin_gen.store_intrin(f'C + {i * Nr + k} * {vec_width_ele}', f'cVec{i}{k}')
+                    arch_intrin_gen.store_intrin(f'C{i} + {k} * {vec_width_ele}', f'cVec{i}{k}')
             else:
                 c_store = lambda i, k: \
-                    arch_intrin_gen.store_intrin(f'C + {i} * N + {k} * {vec_width_ele}', f'cVec{i}{k}', mask=mask)
+                    arch_intrin_gen.store_intrin(f'C{i} + {k} * {vec_width_ele}', f'cVec{i}{k}', mask=mask)
 
             return [f'{c_store(i, k)};'
                     for i in range(acc_dims[0])
@@ -351,7 +482,16 @@ class UKernelCodegenBase:
         return sop_panel_executor
 
     @staticmethod
-    def _emit_microkernels(body: callable, Nrs, scalar, name=""):
+    def _emit_microkernels(body: callable, Nrs, scalar, name="", masked=False):
+        mask_str = ""
+        mask_arg_string =""
+        mask = None
+
+        if masked:
+            mask = 'mask'
+            mask_str = f' {mask},'
+            mask_arg_string = f'Mask {mask},'
+
         if len(name) > 0 and name[0] != '_':
             name = '_' + name
 
@@ -367,8 +507,9 @@ class UKernelCodegenBase:
         int                          num_col_indices,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
+        {mask_arg_string}
         const bool load_c)
-    {{\n{body(Nr=Nr, scalar=scalar).emit(6)}
+    {{\n{body(Nr=Nr, scalar=scalar, mask=mask).emit(6)}
     }}\n\n
 
     __ALWAYS_INLINE static void microkernel{name}_{acc_width_str}(
@@ -376,6 +517,7 @@ class UKernelCodegenBase:
         const sop::MicroKernelPackedData& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
+        {mask_arg_string}
         const bool load_c) {{
     
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
@@ -384,8 +526,8 @@ class UKernelCodegenBase:
         int                     num_nkern = panel_desc.num_nkern;
         int                     num_col_indices = panel_desc.num_col_indices;
       
-        _microkernel_{acc_width_str}(
-            M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C, load_c
+        _microkernel{name}_{acc_width_str}(
+            M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C,{mask_str} load_c
         );
     }}
     '''

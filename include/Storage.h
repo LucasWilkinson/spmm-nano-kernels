@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <cstring>
+#include <vector>
 
 #include "utils/tiling.h"
 #include "utils/shape.h"
@@ -283,6 +284,9 @@ struct PackedTile {
 
         case DENSE:
           delete[] dense.values;
+          break;
+
+        default:
           break;
       }
     }

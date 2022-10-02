@@ -193,7 +193,6 @@ struct ExecutorSpecialized: Executor {
 
       if (partial_final_loop && partial_N_r_loop) {
         MicroKernel::_microkernel_masked_packed_C_max_acc(
-          final_N_r_loop_rem,
           M, K, N,
           pattern_counts, col_indices, values, num_col_indices,
           B + jjj + _jj,
@@ -303,7 +302,6 @@ struct ExecutorSpecialized: Executor {
 
       if (partial_final_loop && partial_N_r_loop) {
         MicroKernel::_microkernel_masked_max_acc(
-          final_N_r_loop_rem,
           M, K, N,
           pattern_counts, col_indices, values, num_col_indices,
           B + jj,

@@ -3,6 +3,11 @@ import glob
 import json
 from .arch_details import *
 
+supported_archs = {
+    'AVX512': AVX512(),
+    'AVX2': AVX2(),
+    'NEON': NEON(),
+}
 
 def generate_ukernel_executor_registration(output_root):
     factory_files = glob.glob(f'{output_root}/*/factories/**/executor_*.cpp', recursive=True)
@@ -24,11 +29,12 @@ def generate_ukernel_executor_registration(output_root):
         f.write('namespace sop {\n\n')
 
         for factory_desc in factory_descs:
-            f.write(f'#if defined({min_instruction_sets[factory_desc["reg_width_bits"]]})')
-            f.write(f' && defined(ENABLE_{factory_desc["arch"]})\n')
+            f.write(f'{supported_archs[factory_desc["arch"]].preprocessor_guard()}\n')
+            f.write(f'#if defined(ENABLE_{factory_desc["arch"]})\n')
             f.write(f'extern ExecutorFactory<{factory_desc["kernel_desc"]}>* ')
             f.write(f'{factory_desc["func"]}();\n')
-            f.write(f'#endif // {min_instruction_sets[factory_desc["reg_width_bits"]]}\n')
+            f.write(f'#endif\n')
+            f.write(f'#endif\n')
 
         f.write('\n')
 
@@ -39,10 +45,11 @@ def generate_ukernel_executor_registration(output_root):
             for factory_desc in factory_descs:
                 if factory_desc["kernel_desc"] != kernel_descs: continue
                 #f.write(f'  ExecutorFactory<{factory_desc["kernel_desc"]}>::')
-                f.write(f'#if defined({min_instruction_sets[factory_desc["reg_width_bits"]]})')
-                f.write(f' && defined(ENABLE_{factory_desc["arch"]})\n')
+                f.write(f'{supported_archs[factory_desc["arch"]].preprocessor_guard()}\n')
+                f.write(f'#if defined(ENABLE_{factory_desc["arch"]})\n')
                 f.write(f'  register_factory("{factory_desc["id"]}", {factory_desc["func"]}());\n')
-                f.write(f'#endif // {min_instruction_sets[factory_desc["reg_width_bits"]]}\n')
+                f.write(f'#endif\n')
+                f.write(f'#endif\n')
 
             f.write(f'}}\n')
             f.write(f'}};\n\n')
@@ -69,11 +76,12 @@ def generate_ukernel_packer_registration(output_root):
         f.write('namespace sop {\n\n')
 
         for factory_desc in factory_descs:
-            f.write(f'#if defined({min_instruction_sets[factory_desc["reg_width_bits"]]})')
-            f.write(f' && defined(ENABLE_{factory_desc["arch"]})\n')
+            f.write(f'{supported_archs[factory_desc["arch"]].preprocessor_guard()}\n')
+            f.write(f'#if defined(ENABLE_{factory_desc["arch"]})\n')
             f.write(f'extern MicroKernelPackerFactory<{factory_desc["scalar"]}>* ')
             f.write(f'{factory_desc["func"]}();\n')
-            f.write(f'#endif // {min_instruction_sets[factory_desc["reg_width_bits"]]}\n')
+            f.write(f'#endif\n')
+            f.write(f'#endif\n')
 
         f.write('\n')
 
@@ -84,10 +92,11 @@ def generate_ukernel_packer_registration(output_root):
                     f'MicroKernelPackerFactory<{factory_desc["scalar"]}>({factory_desc["M_r"]}) {{\n')
 
             for factory_desc in factory_descs:
-                f.write(f'#if defined({min_instruction_sets[factory_desc["reg_width_bits"]]})')
-                f.write(f' && defined(ENABLE_{factory_desc["arch"]})\n')
+                f.write(f'{supported_archs[factory_desc["arch"]].preprocessor_guard()}\n')
+                f.write(f'#if defined(ENABLE_{factory_desc["arch"]})\n')
                 f.write(f'  register_factory("{factory_desc["id"]}", {factory_desc["func"]}());\n')
-                f.write(f'#endif // {min_instruction_sets[factory_desc["reg_width_bits"]]}\n')
+                f.write(f'#endif\n')
+                f.write(f'#endif\n')
 
             f.write(f'}}\n')
             f.write(f'}};\n\n')

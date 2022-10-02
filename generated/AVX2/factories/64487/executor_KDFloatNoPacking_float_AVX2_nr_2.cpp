@@ -1,7 +1,7 @@
-#ifdef __AVX2__
+#ifdef __AVX512VL__
 #include "ExecutorFactory.h"
 #include "KernelDesc.h"
-#include "MicroKernel_float_64487_AVX2_256_4x2.h"
+#include "64487/MicroKernel_float_64487_AVX2_256_4x2.h"
 
 namespace sop {
 
@@ -11,4 +11,4 @@ ExecutorFactory<KDFloatNoPacking>* executor_factory_KDFloatNoPacking_64487_AVX2_
 }
 
 } // namespace sop
-#endif // __AVX2__
+#endif

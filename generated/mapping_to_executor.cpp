@@ -22,6 +22,10 @@ std::unordered_map<
 #if defined(ENABLE_AVX2)
     {"AVX2", 4},
 #endif
+
+#if defined(ENABLE_NEON)
+    {"NEON", 4},
+#endif
 {"", -1}  }}},
   {"da01e", {"64487", 4, {
 
@@ -31,6 +35,10 @@ std::unordered_map<
 
 #if defined(ENABLE_AVX2)
     {"AVX2", 4},
+#endif
+
+#if defined(ENABLE_NEON)
+    {"NEON", 4},
 #endif
 {"", -1}  }}},
   {"400fa", {"77f9d", 8, {
@@ -42,6 +50,10 @@ std::unordered_map<
 #if defined(ENABLE_AVX2)
     {"AVX2", 2},
 #endif
+
+#if defined(ENABLE_NEON)
+    {"NEON", 2},
+#endif
 {"", -1}  }}},
   {"747f9", {"77f9d", 8, {
 
@@ -52,12 +64,17 @@ std::unordered_map<
 #if defined(ENABLE_AVX2)
     {"AVX2", 2},
 #endif
+
+#if defined(ENABLE_NEON)
+    {"NEON", 2},
+#endif
 {"", -1}  }}}
 };
 
 std::string get_executor_id(
     const std::string& mapping_id,
     std::string arch,
+    int vec_width_bits,
     int N_r
 ) {
   ERROR_AND_EXIT_IF(
@@ -80,5 +97,6 @@ std::string get_executor_id(
 
   return executor_id +
       "_" + arch +
+      "_" + std::to_string(vec_width_bits) +
       "_" + std::to_string(M_r) + "x" + std::to_string(N_r);
 }

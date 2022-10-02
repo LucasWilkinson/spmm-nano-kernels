@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from functools import partial
 
 SCALAR_SIZE_BITS = {
+    'float16': 16,
     'float': 32,
     'double': 64,
 }
@@ -28,7 +29,11 @@ class Arch:
         pass
 
     @abstractmethod
-    def mask_type(self, vec_width_bits):
+    def intrin_include(self):
+        pass
+
+    @abstractmethod
+    def mask_type(self, scalar, vec_width_bits):
         pass
 
     @abstractmethod
@@ -77,7 +82,7 @@ class ArchIntrinGenerator:
         return self.arch.vec_type(self.scalar, self.vec_width_bits)
 
     def mask_type(self):
-        return self.arch.mask_type(self.vec_width_bits)
+        return self.arch.mask_type(self.scalar, self.vec_width_bits)
 
     def load_intrin(self, ptr, aligned=False, mask=None):
         if mask is None:
@@ -131,6 +136,9 @@ class AVX(Arch, ABC):
 
         return f'{mm}_{mask_prefix}{func}_p{mm_func_char}({", ".join(args)})'
 
+    def intrin_include(self):
+        return '#include <immintrin.h>'
+
     def vec_type(self, scalar, vec_width_bits):
         return f'__m{vec_width_bits}'
 
@@ -166,8 +174,8 @@ class AVX512(AVX):
     def preprocessor_guard(self):
         return "#ifdef __AVX512VL__"
 
-    def mask_type(self, vec_width_bits):
-        return f'__mmask{vec_width_bits}'
+    def mask_type(self, scalar, vec_width_bits):
+        return f'__mmask{int(vec_width_bits / SCALAR_SIZE_BITS[scalar])}'
 
     def masked_load_intrin(self, scalar, vec_width_bits, aligned=False):
         return partial(self.load_intrin(scalar, vec_width_bits, aligned=aligned), masked=True)
@@ -192,7 +200,7 @@ class AVX2(AVX):
     def preprocessor_guard(self):
         return "#ifdef __AVX512VL__"
 
-    def mask_type(self, vec_width_bits):
+    def mask_type(self, scalar, vec_width_bits):
         return f'uint32_t'
 
     def masked_load_intrin(self, scalar, vec_width_bits, aligned=False):
@@ -201,66 +209,62 @@ class AVX2(AVX):
     def masked_store_intrin(self, scalar, vec_width_bits, aligned=False):
         raise NotImplementedError()
 
-class AVX(Arch, ABC):
-    scalar_char = {
-        "float": ("", "s"),
-        "double": ("d", "d"),
+
+class NEON(Arch, ABC):
+    scalar_convert = {
+        "float": "float32",
+        "double": "float64",
+    }
+
+    instruction_suffix = {
+        "float16": "f16",
+        "float": "f32"
     }
 
     def __init__(self):
-        super(AVX, self).__init__()
+        super(NEON, self).__init__()
 
-    @staticmethod
-    def _intrin(*args, vec_width_bits, scalar, func, masked=False, **kwargs):
-        m_reg_char, mm_func_char = AVX.scalar_char[scalar]
-        mm = f'_mm{vec_width_bits}{m_reg_char}'
+    def supports_vec_width_bits(self, vec_width_bits) -> bool:
+        return vec_width_bits in [64, 128]
 
-        mask_prefix = ""
-        if masked:
-            if "load" in func:
-                mask_prefix = "maskz_"
-            else:
-                mask_prefix = "mask_"
+    def supports_scalar(self, scalar) -> bool:
+        return scalar in ["float16", "float"]
 
-            if "store" in func:
-                args = (args[0],) + (kwargs["mask"],) + args[1:]
-            else:
-                args = (kwargs["mask"],) + args[0:]
+    def supports_masks(self) -> bool:
+        return False
 
-        return f'{mm}_{mask_prefix}{func}_p{mm_func_char}({", ".join(args)})'
+    def preprocessor_guard(self):
+        return "#ifdef __ARM_NEON__"
+
+    def intrin_include(self):
+        return '#include <arm_neon.h>'
+
+    def mask_type(self, scalar, vec_width_bits):
+        return f'uint32_t'
 
     def vec_type(self, scalar, vec_width_bits):
-        return f'__m{vec_width_bits}'
+        vec_width_ele = int(vec_width_bits / SCALAR_SIZE_BITS[scalar])
+        return f'{self.scalar_convert[scalar]}x{vec_width_ele}_t'
 
     def load_intrin(self, scalar, vec_width_bits, aligned=False):
-        return partial(AVX._intrin, func='load' if aligned else 'loadu', vec_width_bits=vec_width_bits, scalar=scalar)
+        return lambda src: f'vld1q_{NEON.instruction_suffix[scalar]}({src})'
 
     def store_intrin(self, scalar, vec_width_bits, aligned=False):
-        return partial(AVX._intrin, func='store' if aligned else 'storeu', vec_width_bits=vec_width_bits, scalar=scalar)
+        return lambda dst, val: f'vst1q_{NEON.instruction_suffix[scalar]}({dst}, {val})'
 
     def fma_intrin(self, scalar, vec_width_bits):
-        return partial(AVX._intrin, func='fmadd', vec_width_bits=vec_width_bits, scalar=scalar)
+        return lambda a, b, c: f'vfmaq_{NEON.instruction_suffix[scalar]}({a}, {b}, {c})'
 
     def setzero_intrin(self, scalar, vec_width_bits):
-        return partial(AVX._intrin, func='setzero', vec_width_bits=vec_width_bits, scalar=scalar)
+        return lambda: f'vdupq_n_{NEON.instruction_suffix[scalar]}(0)'
 
     def broadcast_intrin(self, scalar, vec_width_bits):
-        return partial(AVX._intrin, func='set1', vec_width_bits=vec_width_bits, scalar=scalar)
+        return lambda src: f'vdupq_n_{NEON.instruction_suffix[scalar]}({src})'
 
 
 instruction_set_reg_width = {
     "AVX512": 512,
     "AVX2": 256,
+    "NEON": 128,
 }
 
-vec_type_info = {
-    ("float", 512): (16, '', 's'),
-    ("float", 256): (8, '', 's'),
-    ("double", 512): (8, 'd', 'd'),
-    ("double", 256): (4, 'd', 'd'),
-}
-
-min_instruction_sets = {
-    512: "__AVX512VL__",
-    256: "__AVX2__",
-}

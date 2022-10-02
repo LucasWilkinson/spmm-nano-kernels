@@ -1,4 +1,5 @@
-#ifdef __AVX2__
+#ifdef __AVX512VL__
+#include "77f9d/MicroKernel_float_77f9d_AVX2_256_8x1.h"
 #include "MicroKernelPackerFactory.h"
 #include "77f9d/MicroKernel_float_77f9d_AVX2_256_8x1.h"
 
@@ -10,4 +11,4 @@ MicroKernelPackerFactory<float>* packer_factory_77f9d_AVX2_256_8x1() {
 }
 
 } // namespace sop
-#endif // __AVX2__
+#endif

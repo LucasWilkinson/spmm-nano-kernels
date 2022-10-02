@@ -137,7 +137,7 @@ class MatMul {
         mapping_id(mapping_id) {
     coo = new COO<Scalar>(m, k, row_offsets, column_indices, values);
 
-    ERROR_AND_EXIT_IF(!executor_factory, "Executor factory not found");
+    ERROR_AND_EXIT_IF(!executor_factory, "Executor factory not found: " << executor_id);
     ERROR_AND_EXIT_IF(!packer_factory, "Packer factory not found");
     ERROR_AND_EXIT_IF(packer_factory->M_r != executor_factory->M_r,
                       "M_r mismatch between packer and executor");
