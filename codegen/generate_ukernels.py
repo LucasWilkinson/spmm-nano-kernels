@@ -39,7 +39,7 @@ for mapping_file in [f'{SCRIPT_DIR}/../mappings/mapping_{mapping_id}.txt' for ma
     M_r = int(round(math.log2(max_mapped)))
     N_r_avx512 = 16 // M_r
     N_r_avx2 = 8 // M_r
-    N_r_neon = 12 // M_r
+    N_r_neon = 4 if M_r < 4 else 2
 
     mapping_key = mapping_file.split("/")[-1].replace(".txt", "").split('_')[-1]
     common_args = dict(output_root=output_root, build_factories_for=kernel_descs)
@@ -47,34 +47,38 @@ for mapping_file in [f'{SCRIPT_DIR}/../mappings/mapping_{mapping_id}.txt' for ma
     codegen = UKernelCodegenBase(Mr=M_r, nanokernels=list(patterns), output_root=output_root)
     nkern_hash = codegen.nanokernel_hash
 
-    common_args = dict(Nr=N_r_avx512, arch="AVX512", vec_width_bits=512, scalar="float")
-    ukern_id = codegen.gen_header(**common_args)
-    codegen.gen_factories(**common_args, build_factories_for=kernel_descs)
+    scalars_to_generate = {
+        "AVX512": ['float', 'double'],
+        "AVX2": ['float', 'double'],
+        "NEON": ['float']
+    }
 
-    mapping_to_executor[mapping_key][f'{nkern_hash}']["AVX512"].append((M_r, N_r_avx512))
-    print(f'{mapping_file.split("/")[-1]} -> {ukern_id}')
+    Nrs_to_generate = {
+        "AVX512": { 4: [4], 8: [2, 4] },
+        "AVX2":   { 4: [4], 8: [1, 2] },
+        "NEON":   { 4: [4], 8: [1, 2] },
+    }
 
-    if N_r_avx512 == 4:
-        common_args = dict(Nr=2, arch="AVX512", vec_width_bits=512, scalar="float")
-        ukern_id = codegen.gen_header(**common_args)
-        codegen.gen_factories(**common_args, build_factories_for=kernel_descs)
+    vecwidths_to_generate = {
+        "AVX512": [512],
+        "AVX2":   [256],
+        "NEON":   [128],
+    }
 
-        mapping_to_executor[mapping_key][f'{nkern_hash}']["AVX512"].append((M_r, N_r_avx512))
-        print(f'{mapping_file.split("/")[-1]} -> {ukern_id}')
+    def gen(arch):
+        for scalar in scalars_to_generate[arch]:
+            for Nr in Nrs_to_generate[arch][M_r]:
+                for vecwidth in vecwidths_to_generate[arch]:
+                    common_args = dict(Nr=Nr, arch=arch, vec_width_bits=vecwidth, scalar=scalar)
+                    ukern_id = codegen.gen_header(**common_args)
+                    codegen.gen_factories(**common_args, build_factories_for=kernel_descs)
 
-    common_args = dict(Nr=N_r_avx2, arch="AVX2", vec_width_bits=256, scalar="float")
-    ukern_id = codegen.gen_header(**common_args)
-    codegen.gen_factories(**common_args, build_factories_for=kernel_descs)
+                    mapping_to_executor[mapping_key][f'{nkern_hash}'][arch].append((M_r, Nr))
+                    print(f'{mapping_file.split("/")[-1]} -> {ukern_id}')
 
-    mapping_to_executor[mapping_key][f'{nkern_hash}']["AVX2"].append((M_r, N_r_avx512))
-    print(f'{mapping_file.split("/")[-1]} -> {ukern_id}')
-
-    common_args = dict(Nr=N_r_neon, arch="NEON", vec_width_bits=128, scalar="float")
-    ukern_id = codegen.gen_header(**common_args)
-    codegen.gen_factories(**common_args, build_factories_for=kernel_descs)
-
-    mapping_to_executor[mapping_key][f'{nkern_hash}']["NEON"].append((M_r, N_r_avx512))
-    print(f'{mapping_file.split("/")[-1]} -> {ukern_id}')
+    gen("AVX512")
+    gen("AVX2")
+    gen("NEON")
 
 with open(f'{output_root}/mapping_to_executor.cpp', 'w') as f:
     f.write('#include <unordered_map>\n')

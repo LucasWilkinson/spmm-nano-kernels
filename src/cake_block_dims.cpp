@@ -782,7 +782,7 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
   blk_ret->n_c = nc_ret;
 
   blk_ret->m_c = blk_ret->m_c*p > M ? std::ceil(M / p) : blk_ret->m_c;
-  blk_ret->n_c = blk_ret->n_c > N ? N : blk_ret->n_c;
+//  blk_ret->n_c = blk_ret->n_c > N ? N : blk_ret->n_c;
 
   if (mc_must_divide_M) {
     while (M % blk_ret->m_c) {
@@ -790,11 +790,11 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
     }
   }
 
-  if (nc_must_divide_N) {
-    while (N % blk_ret->n_c) {
-      blk_ret->n_c--;
-    }
-  }
+//  if (nc_must_divide_N) {
+//    while (N % blk_ret->n_c) {
+//      blk_ret->n_c--;
+//    }
+//  }
 
   blk_ret->n_c  = std::max(blk_ret->n_c / cake_cntx->nr, 1) * cake_cntx->nr;
   blk_ret->m_c  = std::max(blk_ret->m_c / cake_cntx->mr, 1) * cake_cntx->mr;

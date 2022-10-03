@@ -37,8 +37,10 @@ _ai void pack_B_N_c_K_c_coop(
             + (_k * N_r)  // K   Loop
             + _j;         // N   Loop
 
+#ifdef __AVX512__
         __m512 zmm = _mm512_load_ps(B + k * N + j);
         _mm512_store_ps(B_packed + offset, zmm);
+#endif
       }
     }
   }
@@ -68,9 +70,10 @@ void pack_B_N_c(const Scalar* __restrict__ B, Scalar* __restrict__ B_packed,
         //            vec.load(B + (i * N) + col_start + j);
         //            vec.store_a(B_packed + (tj * K * N_r) + (i * N_r) + j);
 
+#ifdef __AVX512__
         __m512 zmm = _mm512_load_ps(B + (i * N) + jj + j);
         _mm512_store_ps(B_packed + (jj * K) + (i * N_r) + j, zmm);
-
+#endif
       }
     }
   }
@@ -100,8 +103,10 @@ _ai void pack_B_K_c(
               + (_k  * N_r)    // K   Loop
               + _j;            // N   Loop
 
+#ifdef __AVX512__
           __m512 zmm = _mm512_load_ps(B + k * N + j);
           _mm512_store_ps(B_packed + offset, zmm);
+#endif
         }
       }
     }
@@ -120,7 +125,9 @@ void pack_B_2(const Scalar* __restrict__ B,
   int output_offset = 0;
   int K_rem = K % K_c;
 
+#ifdef __AVX512__
   __m512i zero; zero = _mm512_xor_epi64(zero, zero);
+#endif
 
   for (int jjj = 0; jjj < N; jjj += N_c) {
     int output_offset = jjj * K_padded;
@@ -128,8 +135,10 @@ void pack_B_2(const Scalar* __restrict__ B,
       for (int jj = jjj; jj < N; jj += N_r) {
         for (int k = kkk; k < kkk + K_c; k++) {
           for (int _j = 0; _j < N_r; _j += 64/sizeof(Scalar)) {
+#ifdef __AVX512__
             __m512 zmm = _mm512_loadu_ps(B + k * N + jj + _j);
             _mm512_store_ps(B_packed + output_offset, zmm);
+#endif
             output_offset += 64/sizeof(Scalar);
           }
         }
@@ -144,6 +153,7 @@ void pack_B_2(const Scalar* __restrict__ B,
         for (int jj = jjj; jj < N; jj += N_r) {
           for (int k = kkk; k < kkk + K_c; k++) {
             for (int _j = 0; _j < N_r; _j += 64/sizeof(Scalar)) {
+#ifdef __AVX512__
               __m512i zmm;
               if (k < K) {
                 zmm = _mm512_load_epi32(B + k * N + jj + _j);
@@ -151,6 +161,7 @@ void pack_B_2(const Scalar* __restrict__ B,
                 zmm = zero;
               }
               _mm512_store_epi32(B_packed + output_offset, zmm);
+#endif
               output_offset += 64/sizeof(Scalar);
             }
           }
@@ -182,9 +193,10 @@ _ai void pack_B_N_c(int jjj, const Scalar* __restrict__ B,
               + (_jj * K_c)    // N_r Loop
               + (_k  * N_r)    // K   Loop
               + _j;            // N   Loop
-
+#ifdef __AVX512__
           __m512 zmm = _mm512_load_ps(B + k * N + j);
           _mm512_store_ps(B_packed + offset, zmm);
+#endif
         }
       }
     }
@@ -219,9 +231,10 @@ void pack_B(const Scalar* __restrict__ B,
 //                  + (_jj * K_c)    // N_r Loop
 //                  + (_k  * N_r)    // K   Loop
 //                  + _j;            // N   Loop
-
+#ifdef __AVX512__
               __m512 zmm = _mm512_load_ps(B + k * N + j);
               _mm512_store_ps(B_packed + offset, zmm);
+#endif
             }
           }
         }
@@ -262,9 +275,11 @@ _ai void pack_C_partial(
               int i = ii + _i;
               int j = jj + _j;
 
+#ifdef VECTORCLASS_ENABLED
               VecType vec;
               vec.load(&C[(i * N) + j]);
               vec.store_a(C_packed + offset + _i * N_r + _j);
+#endif
             }
           }
         }
@@ -297,6 +312,8 @@ _ai void unpack_C_partial_M_c(
     const TileDims& td
 ) {
   ALIAS_TILE_DIMS(TileDims, td);
+
+#ifdef VECTORCLASS_ENABLED
   using VecType = typename Vec<Scalar, 512>::Type;
 
   for (int ii = 0; ii < rows_to_unpack; ii += M_r) {
@@ -315,6 +332,7 @@ _ai void unpack_C_partial_M_c(
         // Full N_r
         int jj = jjj, _jj = 0;
         for (; jj < N_c_end; jj += N_r, _jj += N_r) {
+
           #pragma unroll 4
           for (int _j = 0; _j < N_r; _j += VecType::size()) {
             int offset = ooo + (_jj * M_r) + (_i * N_r) + _j;
@@ -342,6 +360,7 @@ _ai void unpack_C_partial_M_c(
       }
     }
   }
+#endif
 }
 
 
@@ -374,9 +393,11 @@ _ai void unpack_C_partial_M_c_N_c(
         for (int _j = 0; _j < N_r; _j += VecType::size()) {
           int j = jj + _j;
 
+#ifdef __AVX512__
           std::cout << " testing " << std::endl;
           __m512 zmm = _mm512_load_ps(C_packed + offset + _i * N_r + _j);
           _mm512_stream_ps(C + (i * N) + j, zmm);
+#endif
         }
       }
     }
@@ -411,11 +432,12 @@ _ai void unpack_C_partial(
             #pragma unroll
             for (int _j = 0; _j < N_r; _j += VecType::size()) {
               int j = jj + _j;
-
+#ifdef VECTORCLASS_ENABLED
               VecType vec;
               vec.load_a(C_packed + offset + _i * N_r + _j);
               std::cout << " testing " << vec.data[0] << std::endl;
               vec.store(&C[(i * N) + j]);
+#endif
             }
           }
         }

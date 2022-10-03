@@ -136,7 +136,6 @@ struct MicroKernel_float_77f9d_NEON_128_8x1 {
         int                          num_col_indices,
         const float *__restrict__ B,
         float *__restrict__ C,
-        
         const bool load_c)
     {
       
@@ -159,315 +158,315 @@ struct MicroKernel_float_77f9d_NEON_128_8x1 {
         cVec60 = vld1q_f32(C6 + 0 * 4);
         cVec70 = vld1q_f32(C7 + 0 * 4);
       } else {
-        cVec00 = vdupq_n_f32(0);
-        cVec10 = vdupq_n_f32(0);
-        cVec20 = vdupq_n_f32(0);
-        cVec30 = vdupq_n_f32(0);
-        cVec40 = vdupq_n_f32(0);
-        cVec50 = vdupq_n_f32(0);
-        cVec60 = vdupq_n_f32(0);
-        cVec70 = vdupq_n_f32(0);
+        cVec00 = vmovq_n_f32(0);
+        cVec10 = vmovq_n_f32(0);
+        cVec20 = vmovq_n_f32(0);
+        cVec30 = vmovq_n_f32(0);
+        cVec40 = vmovq_n_f32(0);
+        cVec50 = vmovq_n_f32(0);
+        cVec60 = vmovq_n_f32(0);
+        cVec70 = vmovq_n_f32(0);
       }
       
       int c_idx = 0;
-      auto curr_value_ptr = values;
+      float* __restrict__ curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
@@ -492,7 +491,6 @@ struct MicroKernel_float_77f9d_NEON_128_8x1 {
         const sop::MicroKernelPackedData& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
-        
         const bool load_c) {
     
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
@@ -506,7 +504,7 @@ struct MicroKernel_float_77f9d_NEON_128_8x1 {
         );
     }
     
-    __ALWAYS_INLINE static void _microkernel_masked_max_acc(
+    __ALWAYS_INLINE static void _microkernel_cleanup_max_acc(
         int M, int K, int N,
         int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
@@ -514,376 +512,361 @@ struct MicroKernel_float_77f9d_NEON_128_8x1 {
         int                          num_col_indices,
         const float *__restrict__ B,
         float *__restrict__ C,
-        Mask mask,
-        const bool load_c)
+        const bool load_c,
+        int  elements_remaining,
+        Mask precomp_mask)
     {
-      
-      float* C_temp = C;
-      float c00, c10, c20, c30, c40, c50, c60, c70;
-      if (load_c) {
-        c00 = *(C + 0);
-        C_temp += N;
-        c10 = *(C + 0);
-        C_temp += N;
-        c20 = *(C + 0);
-        C_temp += N;
-        c30 = *(C + 0);
-        C_temp += N;
-        c40 = *(C + 0);
-        C_temp += N;
-        c50 = *(C + 0);
-        C_temp += N;
-        c60 = *(C + 0);
-        C_temp += N;
-        c70 = *(C + 0);
-        C_temp += N;
-      } else {
-        c00 = 0;
-        c10 = 0;
-        c20 = 0;
-        c30 = 0;
-        c40 = 0;
-        c50 = 0;
-        c60 = 0;
-        c70 = 0;
-      }
-      
-      int c_idx = 0;
-      auto curr_value_ptr = values;
-      const float *__restrict__ B_curr = col_indices[0] * N + B;
-      uint32_t * col_indices_curr = col_indices + 1;
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
+      for(; elements_remaining >= 4; elements_remaining -= 4, C += 4, B += 4) {
+          
+          float* C0 = C + 0 * N;
+          float* C1 = C + 1 * N;
+          float* C2 = C + 2 * N;
+          float* C3 = C + 3 * N;
+          float* C4 = C + 4 * N;
+          float* C5 = C + 5 * N;
+          float* C6 = C + 6 * N;
+          float* C7 = C + 7 * N;
+          float32x4_t cVec00, cVec10, cVec20, cVec30, cVec40, cVec50, cVec60, cVec70;
+          if (load_c) {
+            cVec00 = vld1q_f32(C0 + 0 * 4);
+            cVec10 = vld1q_f32(C1 + 0 * 4);
+            cVec20 = vld1q_f32(C2 + 0 * 4);
+            cVec30 = vld1q_f32(C3 + 0 * 4);
+            cVec40 = vld1q_f32(C4 + 0 * 4);
+            cVec50 = vld1q_f32(C5 + 0 * 4);
+            cVec60 = vld1q_f32(C6 + 0 * 4);
+            cVec70 = vld1q_f32(C7 + 0 * 4);
+          } else {
+            cVec00 = vmovq_n_f32(0);
+            cVec10 = vmovq_n_f32(0);
+            cVec20 = vmovq_n_f32(0);
+            cVec30 = vmovq_n_f32(0);
+            cVec40 = vmovq_n_f32(0);
+            cVec50 = vmovq_n_f32(0);
+            cVec60 = vmovq_n_f32(0);
+            cVec70 = vmovq_n_f32(0);
+          }
+          
+          int c_idx = 0;
+          float* __restrict__ curr_value_ptr = values;
+          const float *__restrict__ B_curr = col_indices[0] * N + B;
+          uint32_t * col_indices_curr = col_indices + 1;
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          vst1q_f32(C0 + 0 * 4, cVec00);
+          vst1q_f32(C1 + 0 * 4, cVec10);
+          vst1q_f32(C2 + 0 * 4, cVec20);
+          vst1q_f32(C3 + 0 * 4, cVec30);
+          vst1q_f32(C4 + 0 * 4, cVec40);
+          vst1q_f32(C5 + 0 * 4, cVec50);
+          vst1q_f32(C6 + 0 * 4, cVec60);
+          vst1q_f32(C7 + 0 * 4, cVec70);
+          
+          
+
 
       }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
-
-      }
-
-      
-      *(C + 0 * N + 0) = c00;
-      *(C + 1 * N + 0) = c10;
-      *(C + 2 * N + 0) = c20;
-      *(C + 3 * N + 0) = c30;
-      *(C + 4 * N + 0) = c40;
-      *(C + 5 * N + 0) = c50;
-      *(C + 6 * N + 0) = c60;
-      *(C + 7 * N + 0) = c70;
-      
-      
 
     }
 
 
-
-    __ALWAYS_INLINE static void microkernel_masked_max_acc(
-        int M, int K, int N,
-        const sop::MicroKernelPackedData& panel_desc,
-        const float *__restrict__ B,
-        float *__restrict__ C,
-        Mask mask,
-        const bool load_c) {
-    
-        uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
-        float* __restrict__     values = panel_desc.values;
-        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
-        int                     num_nkern = panel_desc.num_nkern;
-        int                     num_col_indices = panel_desc.num_col_indices;
-      
-        _microkernel_masked_max_acc(
-            M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C, mask, load_c
-        );
-    }
     
     __ALWAYS_INLINE static void _microkernel_packed_C_max_acc(
         int M, int K, int N,
@@ -893,7 +876,6 @@ struct MicroKernel_float_77f9d_NEON_128_8x1 {
         int                          num_col_indices,
         const float *__restrict__ B,
         float *__restrict__ C,
-        
         const bool load_c)
     {
       
@@ -916,315 +898,315 @@ struct MicroKernel_float_77f9d_NEON_128_8x1 {
         cVec60 = vld1q_f32(C6 + 6 * 4);
         cVec70 = vld1q_f32(C7 + 7 * 4);
       } else {
-        cVec00 = vdupq_n_f32(0);
-        cVec10 = vdupq_n_f32(0);
-        cVec20 = vdupq_n_f32(0);
-        cVec30 = vdupq_n_f32(0);
-        cVec40 = vdupq_n_f32(0);
-        cVec50 = vdupq_n_f32(0);
-        cVec60 = vdupq_n_f32(0);
-        cVec70 = vdupq_n_f32(0);
+        cVec00 = vmovq_n_f32(0);
+        cVec10 = vmovq_n_f32(0);
+        cVec20 = vmovq_n_f32(0);
+        cVec30 = vmovq_n_f32(0);
+        cVec40 = vmovq_n_f32(0);
+        cVec50 = vmovq_n_f32(0);
+        cVec60 = vmovq_n_f32(0);
+        cVec70 = vmovq_n_f32(0);
       }
       
       int c_idx = 0;
-      auto curr_value_ptr = values;
+      float* __restrict__ curr_value_ptr = values;
       const float *__restrict__ B_curr = col_indices[0] * N + B;
       uint32_t * col_indices_curr = col_indices + 1;
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
       
-      #pragma unroll 2
+      #pragma unroll 1
       for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
         float32x4_t aVec;
         float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
         B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec00 = vfmaq_f32(aVec, bVec0, cVec00);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec10 = vfmaq_f32(aVec, bVec0, cVec10);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec20 = vfmaq_f32(aVec, bVec0, cVec20);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec30 = vfmaq_f32(aVec, bVec0, cVec30);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec40 = vfmaq_f32(aVec, bVec0, cVec40);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec50 = vfmaq_f32(aVec, bVec0, cVec50);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec60 = vfmaq_f32(aVec, bVec0, cVec60);
-        aVec = vdupq_n_f32(*curr_value_ptr); curr_value_ptr++;
-        cVec70 = vfmaq_f32(aVec, bVec0, cVec70);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+        aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+        cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
 
       }
 
@@ -1249,7 +1231,6 @@ struct MicroKernel_float_77f9d_NEON_128_8x1 {
         const sop::MicroKernelPackedData& panel_desc,
         const float *__restrict__ B,
         float *__restrict__ C,
-        
         const bool load_c) {
     
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
@@ -1263,7 +1244,7 @@ struct MicroKernel_float_77f9d_NEON_128_8x1 {
         );
     }
     
-    __ALWAYS_INLINE static void _microkernel_masked_packed_C_max_acc(
+    __ALWAYS_INLINE static void _microkernel_cleanup_packed_C_max_acc(
         int M, int K, int N,
         int* __restrict__            nkern_counts,
         uint32_t* __restrict__       col_indices,
@@ -1271,368 +1252,361 @@ struct MicroKernel_float_77f9d_NEON_128_8x1 {
         int                          num_col_indices,
         const float *__restrict__ B,
         float *__restrict__ C,
-        Mask mask,
-        const bool load_c)
+        const bool load_c,
+        int  elements_remaining,
+        Mask precomp_mask)
     {
-      
-      float* C_temp = C;
-      float c00, c10, c20, c30, c40, c50, c60, c70;
-      if (load_c) {
-        c00 = *(C + 0);
-        c10 = *(C + 1);
-        c20 = *(C + 2);
-        c30 = *(C + 3);
-        c40 = *(C + 4);
-        c50 = *(C + 5);
-        c60 = *(C + 6);
-        c70 = *(C + 7);
-      } else {
-        c00 = 0;
-        c10 = 0;
-        c20 = 0;
-        c30 = 0;
-        c40 = 0;
-        c50 = 0;
-        c60 = 0;
-        c70 = 0;
-      }
-      
-      int c_idx = 0;
-      auto curr_value_ptr = values;
-      const float *__restrict__ B_curr = col_indices[0] * N + B;
-      uint32_t * col_indices_curr = col_indices + 1;
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
+      for(; elements_remaining >= 4; elements_remaining -= 4, C += 4, B += 4) {
+          
+          float* C0 = C + 0 * 4;
+          float* C1 = C + 1 * 4;
+          float* C2 = C + 2 * 4;
+          float* C3 = C + 3 * 4;
+          float* C4 = C + 4 * 4;
+          float* C5 = C + 5 * 4;
+          float* C6 = C + 6 * 4;
+          float* C7 = C + 7 * 4;
+          float32x4_t cVec00, cVec10, cVec20, cVec30, cVec40, cVec50, cVec60, cVec70;
+          if (load_c) {
+            cVec00 = vld1q_f32(C0 + 0 * 4);
+            cVec10 = vld1q_f32(C1 + 1 * 4);
+            cVec20 = vld1q_f32(C2 + 2 * 4);
+            cVec30 = vld1q_f32(C3 + 3 * 4);
+            cVec40 = vld1q_f32(C4 + 4 * 4);
+            cVec50 = vld1q_f32(C5 + 5 * 4);
+            cVec60 = vld1q_f32(C6 + 6 * 4);
+            cVec70 = vld1q_f32(C7 + 7 * 4);
+          } else {
+            cVec00 = vmovq_n_f32(0);
+            cVec10 = vmovq_n_f32(0);
+            cVec20 = vmovq_n_f32(0);
+            cVec30 = vmovq_n_f32(0);
+            cVec40 = vmovq_n_f32(0);
+            cVec50 = vmovq_n_f32(0);
+            cVec60 = vmovq_n_f32(0);
+            cVec70 = vmovq_n_f32(0);
+          }
+          
+          int c_idx = 0;
+          float* __restrict__ curr_value_ptr = values;
+          const float *__restrict__ B_curr = col_indices[0] * N + B;
+          uint32_t * col_indices_curr = col_indices + 1;
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[0]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          #pragma unroll 1
+          for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
+            float32x4_t aVec;
+            float32x4_t bVec0 = vld1q_f32(B_curr + 0 * 4);
+            B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec00 = vfmaq_f32(cVec00, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec10 = vfmaq_f32(cVec10, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec20 = vfmaq_f32(cVec20, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec30 = vfmaq_f32(cVec30, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec40 = vfmaq_f32(cVec40, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec50 = vfmaq_f32(cVec50, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec60 = vfmaq_f32(cVec60, aVec, bVec0);
+            aVec = vld1q_dup_f32(curr_value_ptr); curr_value_ptr++;
+            cVec70 = vfmaq_f32(cVec70, aVec, bVec0);
+
+          }
+
+          
+          vst1q_f32(C0 + 0 * 4, cVec00);
+          vst1q_f32(C1 + 0 * 4, cVec10);
+          vst1q_f32(C2 + 0 * 4, cVec20);
+          vst1q_f32(C3 + 0 * 4, cVec30);
+          vst1q_f32(C4 + 0 * 4, cVec40);
+          vst1q_f32(C5 + 0 * 4, cVec50);
+          vst1q_f32(C6 + 0 * 4, cVec60);
+          vst1q_f32(C7 + 0 * 4, cVec70);
+          
+          
+
 
       }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[1]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[2]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[3]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[4]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[5]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[6]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[7]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[8]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[9]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[10]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[11]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[12]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[13]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[14]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[15]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[16]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[17]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
-
-      }
-
-      
-      #pragma unroll 2
-      for(int pat_count = nkern_counts[18]; pat_count > 0; pat_count--) {
-        float a;
-        float b0 = *(B_curr + 0);
-        B_curr = (*col_indices_curr) * N + B; col_indices_curr++;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c00 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c10 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c20 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c30 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c40 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c50 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c60 += a * b0;
-        a = *curr_value_ptr; curr_value_ptr++;
-        c70 += a * b0;
-
-      }
-
-      
-      *(C + 0) = c00;
-      *(C + 1) = c10;
-      *(C + 2) = c20;
-      *(C + 3) = c30;
-      *(C + 4) = c40;
-      *(C + 5) = c50;
-      *(C + 6) = c60;
-      *(C + 7) = c70;
-      
-      
 
     }
 
 
-
-    __ALWAYS_INLINE static void microkernel_masked_packed_C_max_acc(
-        int M, int K, int N,
-        const sop::MicroKernelPackedData& panel_desc,
-        const float *__restrict__ B,
-        float *__restrict__ C,
-        Mask mask,
-        const bool load_c) {
-    
-        uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
-        float* __restrict__     values = panel_desc.values;
-        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
-        int                     num_nkern = panel_desc.num_nkern;
-        int                     num_col_indices = panel_desc.num_col_indices;
-      
-        _microkernel_masked_packed_C_max_acc(
-            M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C, mask, load_c
-        );
-    }
     
 };
 

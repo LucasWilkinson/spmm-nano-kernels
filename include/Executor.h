@@ -7,7 +7,6 @@
 #include <assert.h>
 #include <omp.h>
 #include <chrono>
-#include <vectorclass.h>
 //#include <aligned_new>
 
 #include "utils/Vec.h"
@@ -192,13 +191,14 @@ struct ExecutorSpecialized: Executor {
       }
 
       if (partial_final_loop && partial_N_r_loop) {
-        MicroKernel::_microkernel_masked_packed_C_max_acc(
+        MicroKernel::_microkernel_cleanup_packed_C_max_acc(
           M, K, N,
           pattern_counts, col_indices, values, num_col_indices,
           B + jjj + _jj,
           C_packed + jjj * M_c + (pi * M_r) * N_c + (tj * N_r) * M_r,
-          final_N_r_rem_mask,
-          pt.load_c
+          pt.load_c,
+          final_N_r_loop_rem,
+          final_N_r_rem_mask
         );
       }
     }
@@ -301,13 +301,14 @@ struct ExecutorSpecialized: Executor {
       }
 
       if (partial_final_loop && partial_N_r_loop) {
-        MicroKernel::_microkernel_masked_max_acc(
+        MicroKernel::_microkernel_cleanup_max_acc(
           M, K, N,
           pattern_counts, col_indices, values, num_col_indices,
           B + jj,
           C + jj + (global_upanel_id * M_r) * N,
-          final_N_r_rem_mask,
-          pt.load_c
+          pt.load_c,
+          final_N_r_loop_rem,
+          final_N_r_rem_mask
         );
       }
     }

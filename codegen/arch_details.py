@@ -119,8 +119,12 @@ class AVX(Arch, ABC):
 
     @staticmethod
     def _intrin(*args, vec_width_bits, scalar, func, masked=False, **kwargs):
+        args = list(args)
         m_reg_char, mm_func_char = AVX.scalar_char[scalar]
         mm = f'_mm{vec_width_bits}{m_reg_char}'
+
+        if func == 'set1':
+            args[0] = '*' + args[0]
 
         mask_prefix = ""
         if masked:
@@ -253,13 +257,13 @@ class NEON(Arch, ABC):
         return lambda dst, val: f'vst1q_{NEON.instruction_suffix[scalar]}({dst}, {val})'
 
     def fma_intrin(self, scalar, vec_width_bits):
-        return lambda a, b, c: f'vfmaq_{NEON.instruction_suffix[scalar]}({a}, {b}, {c})'
+        return lambda a, b, c: f'vfmaq_{NEON.instruction_suffix[scalar]}({c}, {a}, {b})'
 
     def setzero_intrin(self, scalar, vec_width_bits):
-        return lambda: f'vdupq_n_{NEON.instruction_suffix[scalar]}(0)'
+        return lambda: f'vmovq_n_{NEON.instruction_suffix[scalar]}(0)'
 
     def broadcast_intrin(self, scalar, vec_width_bits):
-        return lambda src: f'vdupq_n_{NEON.instruction_suffix[scalar]}({src})'
+        return lambda src: f'vld1q_dup_{NEON.instruction_suffix[scalar]}({src})'
 
 
 instruction_set_reg_width = {

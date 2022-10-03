@@ -9,8 +9,6 @@
 #include <utility>
 #include <vector>
 
-#include "utils/Vec.h"
-
 //
 //  Cache utils
 //
@@ -53,6 +51,10 @@ constexpr bool is_in(int i, std::integer_sequence<int, Is...>) { return ((i == I
 //  Buffer Utils
 //
 
+#ifdef __AVX2__
+
+#include "utils/Vec.h"
+
 template<typename Vec, bool one_iter_max>
 inline int _zero_vectorized_loop(int i, typename Vec::Scalar *array, int numel) {
     using VecType = typename Vec::Type;
@@ -87,5 +89,14 @@ void zero(T * array, int numel) {
 //
 //  File system utils
 //
+
+#else
+template<typename T>
+void zero(T * array, int numel) {
+    #pragma unroll 4
+    for (int i = 0; i < numel; i++) { array[i] = 0; }
+}
+
+#endif
 
 std::string resolve_path(std::string file, const std::vector<std::string>& search_dirs);

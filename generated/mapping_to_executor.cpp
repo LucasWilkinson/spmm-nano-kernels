@@ -20,7 +20,7 @@ std::unordered_map<
 #endif
 
 #if defined(ENABLE_AVX2)
-    {"AVX2", 4},
+    {"AVX2", 4},    {"AVX2", 4},
 #endif
 
 #if defined(ENABLE_NEON)
@@ -34,7 +34,7 @@ std::unordered_map<
 #endif
 
 #if defined(ENABLE_AVX2)
-    {"AVX2", 4},
+    {"AVX2", 4},    {"AVX2", 4},
 #endif
 
 #if defined(ENABLE_NEON)
@@ -44,29 +44,29 @@ std::unordered_map<
   {"400fa", {"77f9d", 8, {
 
 #if defined(ENABLE_AVX512)
-    {"AVX512", 2},
+    {"AVX512", 2},    {"AVX512", 4},    {"AVX512", 2},    {"AVX512", 4},
 #endif
 
 #if defined(ENABLE_AVX2)
-    {"AVX2", 2},
+    {"AVX2", 1},    {"AVX2", 2},    {"AVX2", 1},    {"AVX2", 2},
 #endif
 
 #if defined(ENABLE_NEON)
-    {"NEON", 2},
+    {"NEON", 1},    {"NEON", 2},
 #endif
 {"", -1}  }}},
   {"747f9", {"77f9d", 8, {
 
 #if defined(ENABLE_AVX512)
-    {"AVX512", 2},
+    {"AVX512", 2},    {"AVX512", 4},    {"AVX512", 2},    {"AVX512", 4},
 #endif
 
 #if defined(ENABLE_AVX2)
-    {"AVX2", 2},
+    {"AVX2", 1},    {"AVX2", 2},    {"AVX2", 1},    {"AVX2", 2},
 #endif
 
 #if defined(ENABLE_NEON)
-    {"NEON", 2},
+    {"NEON", 1},    {"NEON", 2},
 #endif
 {"", -1}  }}}
 };

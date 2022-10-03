@@ -40,9 +40,9 @@ def microkernel_typename(scalar, arch, vec_width_bits, acc_dims, nanokernels):
 
 
 def unroll_mapping(nnzs):
-    if nnzs == 1: return 2
-    if nnzs <= 2: return 2
-    return 2
+    if nnzs == 1: return 1
+    if nnzs <= 2: return 1
+    return 1
 
 
 class UKernelCodegenBase:
@@ -168,23 +168,13 @@ class UKernelCodegenBase:
 
             common_args = dict(arch=arch, vec_width_bits=vec_width_bits)
 
-            body = partial(self._emit_vectorized_executor_body, **common_args)
-            f.write(self._emit_microkernels(body, [Nr, 1], scalar))
+            main_body = partial(self._emit_vectorized_executor_body, **common_args)
+            cleanup_body = partial(self._emit_vectorized_executor_body_cleanup, **common_args)
+            f.write(self._emit_microkernels(main_body, cleanup_body, Nr, scalar, name=""))
 
-            if arch_details.supports_masks():
-                body = partial(self._emit_vectorized_executor_body, **common_args)
-            else:
-                body = partial(self._emit_scalar_executor_body, **common_args)
-            f.write(self._emit_microkernels(body, [1], scalar, name="masked", masked=True))
-
-            body = partial(self._emit_vectorized_executor_body, **common_args, packed_C=True)
-            f.write(self._emit_microkernels(body, [Nr, 1], scalar, name="packed_C"))
-
-            if arch_details.supports_masks():
-                body = partial(self._emit_vectorized_executor_body, **common_args, packed_C=True)
-            else:
-                body = partial(self._emit_scalar_executor_body, **common_args, packed_C=True)
-            f.write(self._emit_microkernels(body, [1], scalar, name="masked_packed_C", masked=True))
+            main_body = partial(self._emit_vectorized_executor_body, **common_args, packed_C=True)
+            cleanup_body = partial(self._emit_vectorized_executor_body_cleanup, **common_args, packed_C=True)
+            f.write(self._emit_microkernels(main_body, cleanup_body, Nr, scalar, name="packed_C"))
 
             f.write(f'\n}};\n\n')
             f.write(f'}} // {self.namespace}\n')
@@ -310,7 +300,7 @@ class UKernelCodegenBase:
             case_body = Block()
 
             count_loop = ForLoop(f'int pat_count = nkern_counts[{id}]', 'pat_count > 0', 'pat_count--',
-                                 unroll=unroll_mapping(gmpy.popcount(pat)))
+                                 unroll=unroll_mapping(gmpy.popcount(pat)) if arch != "NEON" else None)
             count_loop += f'{scalar} a;'
 
             b_load = lambda k: f'B_curr + {k}'
@@ -361,7 +351,8 @@ class UKernelCodegenBase:
         return sop_panel_executor
 
     def _emit_vectorized_executor_body(self, Nr, arch, vec_width_bits,
-                                       scalar, packed_C=False, packed_B=False,
+                                       scalar,
+                                       packed_C=False, packed_B=False,
                                        mask=None):
         arch_details = self.supported_archs[arch]
         arch_intrin_gen = ArchIntrinGenerator(arch_details, vec_width_bits, scalar)
@@ -446,7 +437,7 @@ class UKernelCodegenBase:
             idx = 0
             while pat_tmp:
                 if pat_tmp & 1:
-                    count_loop += f'aVec = {arch_intrin_gen.broadcast_intrin("*curr_value_ptr")}; curr_value_ptr++;'
+                    count_loop += f'aVec = {arch_intrin_gen.broadcast_intrin("curr_value_ptr")}; curr_value_ptr++;'
                     for k in range(acc_dims[1]):
                         intrinsic = arch_intrin_gen.fma_intrin('aVec', f'bVec{k}', f'cVec{idx}{k}')
                         count_loop += f'cVec{idx}{k} = {intrinsic};'
@@ -464,7 +455,7 @@ class UKernelCodegenBase:
         body = Block()
         body += setup_accumulator()
         body += 'int c_idx = 0;'
-        body += 'auto curr_value_ptr = values;'
+        body += f'{scalar}* __restrict__ curr_value_ptr = values;'
 
         if packed_B:
             body += f'const {scalar} *__restrict__ B_curr = col_indices[0] * (N_r) + B;'
@@ -481,8 +472,23 @@ class UKernelCodegenBase:
 
         return sop_panel_executor
 
+    def _emit_vectorized_executor_body_cleanup(self, Nr, arch, vec_width_bits,
+                                               scalar,
+                                               packed_C=False, packed_B=False,
+                                               mask=None):
+        vec_width_ele = int(vec_width_bits / SCALAR_SIZE_BITS[scalar])
+        cleanup_loop = ForLoop(f'', f'elements_remaining >= {vec_width_ele}',
+                               f'elements_remaining -= {vec_width_ele}, C += {vec_width_ele}, B += {vec_width_ele}')
+        cleanup_loop += self._emit_vectorized_executor_body(1, arch, vec_width_bits, scalar,
+                                                            packed_C=packed_C, packed_B=packed_B)
+
+        # cleanup_loop += self._emit_vectorized_executor_body(Nr, arch, vec_width_bits, scalar,
+        #                                                     packed_C=packed_C, packed_B=packed_B, mask=mask)
+        return cleanup_loop
+
+
     @staticmethod
-    def _emit_microkernels(body: callable, Nrs, scalar, name="", masked=False):
+    def _emit_microkernels(main_body: callable, cleanup_body: callable, Nr, scalar, name="", masked=False):
         mask_str = ""
         mask_arg_string =""
         mask = None
@@ -495,10 +501,8 @@ class UKernelCodegenBase:
         if len(name) > 0 and name[0] != '_':
             name = '_' + name
 
-        for i, Nr in enumerate(sorted(Nrs, reverse=True)):
-            acc_width_str = str(Nr) if i != 0 else "max_acc"
-
-            return f'''
+        acc_width_str = "max_acc"
+        return f'''
     __ALWAYS_INLINE static void _microkernel{name}_{acc_width_str}(
         int M, int K, int N,
         int* __restrict__            nkern_counts,
@@ -507,9 +511,8 @@ class UKernelCodegenBase:
         int                          num_col_indices,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
-        {mask_arg_string}
         const bool load_c)
-    {{\n{body(Nr=Nr, scalar=scalar, mask=mask).emit(6)}
+    {{\n{main_body(Nr=Nr, scalar=scalar).emit(6)}
     }}\n\n
 
     __ALWAYS_INLINE static void microkernel{name}_{acc_width_str}(
@@ -517,7 +520,6 @@ class UKernelCodegenBase:
         const sop::MicroKernelPackedData& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
-        {mask_arg_string}
         const bool load_c) {{
     
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
@@ -530,4 +532,18 @@ class UKernelCodegenBase:
             M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C,{mask_str} load_c
         );
     }}
+    
+    __ALWAYS_INLINE static void _microkernel_cleanup{name}_{acc_width_str}(
+        int M, int K, int N,
+        int* __restrict__            nkern_counts,
+        uint32_t* __restrict__       col_indices,
+        {scalar}* __restrict__       values,
+        int                          num_col_indices,
+        const {scalar} *__restrict__ B,
+        {scalar} *__restrict__ C,
+        const bool load_c,
+        int  elements_remaining,
+        Mask precomp_mask)
+    {{\n{cleanup_body(Nr=Nr, scalar=scalar).emit(6)}
+    }}\n\n
     '''
