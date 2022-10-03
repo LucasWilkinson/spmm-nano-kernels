@@ -5,8 +5,8 @@
 
 namespace sop {
 
-// factory_desc | {"id": "77f9d_AVX2_256_8x1", "func": "packer_factory_77f9d_AVX2_256_8x1", "scalar": "float", "M_r": 8, "N_r": 1, "arch": "AVX2", "reg_width_bits": 256}
-MicroKernelPackerFactory<float>* packer_factory_77f9d_AVX2_256_8x1() {
+// factory_desc | {"id": "77f9d_AVX2_256_8x1", "func": "packer_factory_77f9d_AVX2_256_8x1_float", "scalar": "float", "M_r": 8, "N_r": 1, "arch": "AVX2", "reg_width_bits": 256}
+MicroKernelPackerFactory<float>* packer_factory_77f9d_AVX2_256_8x1_float() {
     return new MicroKernelPackerFactorySpecialized<MicroKernel_float_77f9d_AVX2_256_8x1>(8);
 }
 

@@ -75,23 +75,23 @@ def generate_ukernel_packer_registration(output_root):
         f.write('#include "MicroKernelPackerFactory.h"\n\n')
         f.write('namespace sop {\n\n')
 
-        for factory_desc in factory_descs:
-            f.write(f'{supported_archs[factory_desc["arch"]].preprocessor_guard()}\n')
-            f.write(f'#if defined(ENABLE_{factory_desc["arch"]})\n')
-            f.write(f'extern MicroKernelPackerFactory<{factory_desc["scalar"]}>* ')
-            f.write(f'{factory_desc["func"]}();\n')
-            f.write(f'#endif\n')
-            f.write(f'#endif\n')
-
-        f.write('\n')
-
         for scalar in scalars:
+            for factory_desc in filter(lambda x: x["scalar"] == scalar, factory_descs):
+                f.write(f'{supported_archs[factory_desc["arch"]].preprocessor_guard()}\n')
+                f.write(f'#if defined(ENABLE_{factory_desc["arch"]})\n')
+                f.write(f'extern MicroKernelPackerFactory<{scalar}>* ')
+                f.write(f'{factory_desc["func"]}();\n')
+                f.write(f'#endif\n')
+                f.write(f'#endif\n')
+
+            f.write('\n')
+
             f.write(f'struct MicroKernelPackerFactory{scalar.capitalize()}: '
                     f'public MicroKernelPackerFactory<{scalar}> {{\n')
             f.write(f'MicroKernelPackerFactory{scalar.capitalize()}(): '
-                    f'MicroKernelPackerFactory<{factory_desc["scalar"]}>({factory_desc["M_r"]}) {{\n')
+                    f'MicroKernelPackerFactory<{scalar}>({factory_desc["M_r"]}) {{\n')
 
-            for factory_desc in factory_descs:
+            for factory_desc in filter(lambda x: x["scalar"] == scalar, factory_descs):
                 f.write(f'{supported_archs[factory_desc["arch"]].preprocessor_guard()}\n')
                 f.write(f'#if defined(ENABLE_{factory_desc["arch"]})\n')
                 f.write(f'  register_factory("{factory_desc["id"]}", {factory_desc["func"]}());\n')

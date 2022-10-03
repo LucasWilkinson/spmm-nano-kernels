@@ -16,8 +16,8 @@ def executor_factory_name(kernel_desc, microkernel_id):
     return f'executor_factory_{kernel_desc}_{microkernel_id}'
 
 
-def packer_factory_name(microkernel_id):
-    return f'packer_factory_{microkernel_id}'
+def packer_factory_name(scalar, microkernel_id):
+    return f'packer_factory_{microkernel_id}_{scalar}'
 
 
 def sort_nanokernels(nanokernels):
@@ -73,7 +73,7 @@ class UKernelCodegenBase:
         header = "/".join(self._header_path(arch, typename).split('/')[-2:])
         factory_desc_json = json.dumps({
             "id": microkernel_id_,
-            "func": packer_factory_name(microkernel_id_),
+            "func": packer_factory_name(scalar, microkernel_id_),
             "scalar": scalar,
             "M_r": self.Mr,
             "N_r": Nr,
@@ -90,7 +90,7 @@ class UKernelCodegenBase:
             f.write(f'namespace {self.namespace} {{\n')
             f.write(f'\n')
             f.write(f'// factory_desc | {factory_desc_json}\n')
-            f.write(f'MicroKernelPackerFactory<{scalar}>* {packer_factory_name(microkernel_id_)}() {{\n')
+            f.write(f'MicroKernelPackerFactory<{scalar}>* {packer_factory_name(scalar, microkernel_id_)}() {{\n')
             f.write(f'    return new MicroKernelPackerFactorySpecialized<{typename}>('
                     f'{self.Mr});\n')
             f.write(f'}}\n')

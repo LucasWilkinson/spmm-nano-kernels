@@ -37,9 +37,6 @@ for mapping_file in [f'{SCRIPT_DIR}/../mappings/mapping_{mapping_id}.txt' for ma
                 patterns.add(pat)
 
     M_r = int(round(math.log2(max_mapped)))
-    N_r_avx512 = 16 // M_r
-    N_r_avx2 = 8 // M_r
-    N_r_neon = 4 if M_r < 4 else 2
 
     mapping_key = mapping_file.split("/")[-1].replace(".txt", "").split('_')[-1]
     common_args = dict(output_root=output_root, build_factories_for=kernel_descs)
@@ -48,15 +45,15 @@ for mapping_file in [f'{SCRIPT_DIR}/../mappings/mapping_{mapping_id}.txt' for ma
     nkern_hash = codegen.nanokernel_hash
 
     scalars_to_generate = {
-        "AVX512": ['float', 'double'],
-        "AVX2": ['float', 'double'],
+        "AVX512": ['float'],
+        "AVX2": ['float'],
         "NEON": ['float']
     }
 
     Nrs_to_generate = {
         "AVX512": { 4: [4], 8: [2, 4] },
         "AVX2":   { 4: [4], 8: [1, 2] },
-        "NEON":   { 4: [4], 8: [1, 2] },
+        "NEON":   { 4: [4, 3], 8: [1, 2] },
     }
 
     vecwidths_to_generate = {
