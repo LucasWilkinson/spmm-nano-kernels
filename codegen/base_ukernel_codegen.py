@@ -246,15 +246,8 @@ class UKernelCodegenBase:
         }}
         '''
 
-    def _emit_scalar_executor_body(self, Nr, arch, vec_width_bits,
-                                       scalar, packed_C=False, packed_B=False,
-                                       mask=None):
-        assert Nr == 1
-
-        arch_details = self.supported_archs[arch]
-        arch_intrin_gen = ArchIntrinGenerator(arch_details, vec_width_bits, scalar)
-        vec_width_ele = 1
-        m_reg = arch_intrin_gen.vec_type()
+    def _emit_scalar_executor_body(self, scalar, packed_C=False, packed_B=False, mask=None):
+        Nr = 1
 
         def setup_accumulator():
             lines = [f'{scalar}* C_temp = C;']
@@ -299,8 +292,7 @@ class UKernelCodegenBase:
         def gen_pattern_case(acc_dims, id, pat):
             case_body = Block()
 
-            count_loop = ForLoop(f'int pat_count = nkern_counts[{id}]', 'pat_count > 0', 'pat_count--',
-                                 unroll=unroll_mapping(gmpy.popcount(pat)) if arch != "NEON" else None)
+            count_loop = ForLoop(f'int pat_count = nkern_counts[{id}]', 'pat_count > 0', 'pat_count--')
             count_loop += f'{scalar} a;'
 
             b_load = lambda k: f'B_curr + {k}'
@@ -477,14 +469,22 @@ class UKernelCodegenBase:
                                                packed_C=False, packed_B=False,
                                                mask=None):
         vec_width_ele = int(vec_width_bits / SCALAR_SIZE_BITS[scalar])
-        cleanup_loop = ForLoop(f'', f'elements_remaining >= {vec_width_ele}',
-                               f'elements_remaining -= {vec_width_ele}, C += {vec_width_ele}, B += {vec_width_ele}')
-        cleanup_loop += self._emit_vectorized_executor_body(1, arch, vec_width_bits, scalar,
+        func_body = Block()
+        vec_cleanup_loop = ForLoop(f'', f'elements_remaining >= {vec_width_ele}',
+                                    f'elements_remaining -= {vec_width_ele}, C += {vec_width_ele}, B += {vec_width_ele}')
+        vec_cleanup_loop += self._emit_vectorized_executor_body(1, arch, vec_width_bits, scalar,
                                                             packed_C=packed_C, packed_B=packed_B)
+
+        scalar_cleanup_loop = ForLoop(f'', f'elements_remaining', f'elements_remaining--, C += 1, B += 1')
+        scalar_cleanup_loop += self._emit_scalar_executor_body(scalar, packed_C=packed_C, packed_B=packed_B)
+
+
+        func_body += vec_cleanup_loop
+        func_body += scalar_cleanup_loop
 
         # cleanup_loop += self._emit_vectorized_executor_body(Nr, arch, vec_width_bits, scalar,
         #                                                     packed_C=packed_C, packed_B=packed_B, mask=mask)
-        return cleanup_loop
+        return func_body
 
 
     @staticmethod
