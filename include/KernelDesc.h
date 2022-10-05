@@ -25,6 +25,7 @@ enum PackingStrategy {
   NO_PACKING
 };
 
+
 enum UPanelReorderingStrategy {
   NO_REORDERING,
   LOAD_BALANCING
@@ -65,25 +66,48 @@ struct KernelDesc {
   static const UPanelReorderingStrategy UPanelOrder = _UPanelReorder;
 };
 
-using KDFloatNoPacking =
+
+using KD_PIFloatSplitN =
     KernelDesc<float,
                CSRStorageTypes<float*, int>,
                PackingDesc<NO_PACKING, NO_PACKING>,
-               NKM,
+               C1_MKN,
                NO_REORDERING>;
 
-using KDFloatNoPackingLoadBalanced =
+using KD_PIFloatSplitM =
     KernelDesc<float,
                CSRStorageTypes<float*, int>,
                PackingDesc<NO_PACKING, NO_PACKING>,
-               NKM,
+               C1_MKN,
+               NO_REORDERING>;
+
+using KD_PIFloatLoadBalancedSplitM =
+    KernelDesc<float,
+               CSRStorageTypes<float*, int>,
+               PackingDesc<NO_PACKING, NO_PACKING>,
+               C1_MKN,
                LOAD_BALANCING>;
 
-using KDFloatCPartialPacking =
+
+using KD_IntelFloat=
+    KernelDesc<float,
+               CSRStorageTypes<float*, int>,
+               PackingDesc<NO_PACKING, NO_PACKING>,
+               C3_mnNKM,
+               NO_REORDERING>;
+
+using KD_IntelFloatLoadBalanced =
+    KernelDesc<float,
+               CSRStorageTypes<float*, int>,
+               PackingDesc<NO_PACKING, NO_PACKING>,
+               C3_mnNKM,
+               LOAD_BALANCING>;
+
+using KD_IntelFloatCPartialPacking =
     KernelDesc<float,
                CSRStorageTypes<float*, int>,
                PackingDesc<PARTIAL_PACKING, NO_PACKING>,
-               NKM,
+               C3_mnNKM,
                NO_REORDERING>;
 
 };

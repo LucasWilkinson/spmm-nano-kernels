@@ -12,11 +12,24 @@ from .generate_registration import generate_ukernel_registration
 from .generate_mapping import generate_mapping_to_executor
 
 output_root = os.path.abspath(f"{SCRIPT_DIR}/../generated/")
-kernel_descs = [
-    'KDFloatNoPacking',
-    'KDFloatCPartialPacking',
-    'KDFloatNoPackingLoadBalanced'
-]
+kernel_descs = {
+    "AVX512": [
+        'KD_IntelFloat',
+        'KD_IntelFloatCPartialPacking',
+    #    'KD_IntelFloatLoadBalanced'
+    ],
+    "AVX2": [
+        'KD_IntelFloat',
+        'KD_IntelFloatCPartialPacking',
+        #    'KD_IntelFloatLoadBalanced'
+    ],
+    "NEON": [
+        'KD_PIFloatSplitN',
+        'KD_PIFloatSplitM',
+        'KD_PIFloatLoadBalancedSplitM',
+        #    'KDFloatLoadBalanced'
+    ]
+}
 
 mappings_to_generate = ["61fee", "da01e", "400fa", "747f9"]
 
@@ -53,7 +66,7 @@ for mapping_file in [f'{SCRIPT_DIR}/../mappings/mapping_{mapping_id}.txt' for ma
     Nrs_to_generate = {
         "AVX512": { 4: [4], 8: [2, 4] },
         "AVX2":   { 4: [4], 8: [1, 2] },
-        "NEON":   { 4: [6, 4, 3], 8: [4,3,2,1] },
+        "NEON":   { 4: [4, 3, 2], 8: [4, 3, 2, 1] },
     }
 
     vecwidths_to_generate = {
@@ -62,13 +75,15 @@ for mapping_file in [f'{SCRIPT_DIR}/../mappings/mapping_{mapping_id}.txt' for ma
         "NEON":   [128],
     }
 
+    kernel_descs
+
     def gen(arch):
         for scalar in scalars_to_generate[arch]:
             for Nr in Nrs_to_generate[arch][M_r]:
                 for vecwidth in vecwidths_to_generate[arch]:
                     common_args = dict(Nr=Nr, arch=arch, vec_width_bits=vecwidth, scalar=scalar)
                     ukern_id = codegen.gen_header(**common_args)
-                    codegen.gen_factories(**common_args, build_factories_for=kernel_descs)
+                    codegen.gen_factories(**common_args, build_factories_for=kernel_descs[arch])
 
                     mapping_to_executor[mapping_key][f'{nkern_hash}'][arch].append((M_r, Nr))
                     print(f'{mapping_file.split("/")[-1]} -> {ukern_id}')

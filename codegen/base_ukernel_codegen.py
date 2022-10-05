@@ -3,6 +3,7 @@ import hashlib
 import os
 import json
 
+from dataclasses import dataclass
 from .codegen_utils import *
 from .arch_details import *
 from functools import partial
@@ -10,6 +11,10 @@ from functools import partial
 ##
 #   Utils
 ##
+
+
+def popcount(x):
+    return gmpy.popcount(x)
 
 
 def executor_factory_name(kernel_desc, microkernel_id):
@@ -152,8 +157,8 @@ class UKernelCodegenBase:
             f.write(self._emit_nkern_nnz_count())
             f.write('\n')
             f.write(f'    using  Mask = {arch_details.mask_type(scalar, vec_width_bits)};\n')
-            f.write(f'    static Mask create_mask(int n) {{ return ((1 << n) - 1); }}\n')
-            f.write(f'    static Mask precomp_mask(int N) {{ return create_mask(N % {vec_width_ele}); }}\n')
+            f.write(f'    static constexpr Mask create_mask(int n) {{ return ((uint64_t) (1 << n) - 1); }}\n')
+            f.write(f'    static constexpr Mask precomp_mask(int N) {{ return create_mask(N % {vec_width_ele}); }}\n')
             f.write('\n')
             f.write(f'    using Scalar = {scalar};\n')
             f.write(f'    static constexpr int M_r = {self.Mr};\n')
@@ -168,12 +173,12 @@ class UKernelCodegenBase:
 
             common_args = dict(arch=arch, vec_width_bits=vec_width_bits)
 
-            main_body = partial(self._emit_vectorized_executor_body, **common_args)
-            cleanup_body = partial(self._emit_vectorized_executor_body_cleanup, **common_args)
+            main_body = partial(self._emit_executor_body_vectorized, **common_args)
+            cleanup_body = partial(self._emit_executor_body_cleanup, **common_args)
             f.write(self._emit_microkernels(main_body, cleanup_body, Nr, scalar, name=""))
 
-            main_body = partial(self._emit_vectorized_executor_body, **common_args, packed_C=True)
-            cleanup_body = partial(self._emit_vectorized_executor_body_cleanup, **common_args, packed_C=True)
+            main_body = partial(self._emit_executor_body_vectorized, **common_args, packed_C=True)
+            cleanup_body = partial(self._emit_executor_body_cleanup, **common_args, packed_C=True)
             f.write(self._emit_microkernels(main_body, cleanup_body, Nr, scalar, name="packed_C"))
 
             f.write(f'\n}};\n\n')
@@ -246,87 +251,101 @@ class UKernelCodegenBase:
         }}
         '''
 
-    def _emit_scalar_executor_body(self, scalar, packed_C=False, packed_B=False, mask=None):
-        Nr = 1
+    @dataclass
+    class Intrinsics:
+        vec_type: str
+        vec_width_ele: str
+        load: callable
+        load_aligned: callable
+        store: callable
+        store_aligned: callable
+        fma: callable
+        zero_reg: callable
+        broadcast: callable
 
-        def setup_accumulator():
-            lines = [f'{scalar}* C_temp = C;']
+    @staticmethod
+    def nnz_iterator(pat):
+        id, loc = 0, 0
+        while pat:
+            if pat & 1:
+                yield id, loc
+                id += 1
+            pat >>= 1
+            loc += 1
 
-            reg_def = f'{scalar} '
-            for i in range(self.Mr):
-                for k in range(Nr):
-                    reg_def += f'c{i}{k}, '
+    def _gen_nano_kernel_preload_B(self, Nr, intrinsics: Intrinsics, pat, packed_B=False):
+        reg_t = intrinsics.vec_type
+        case_body = Block()
 
-            lines += [reg_def.strip(', ') + ";"]
-            lines += ['if (load_c) {']
+        b_load = lambda k: intrinsics.load(f'B_curr + {k}')
+        case_body += [f'{reg_t} b{k} = {b_load(k)};' for k in range(Nr)]
 
-            if packed_C:
-                c_load = lambda i, k: f'C + {i * Nr + k}'
-            else:
-                c_load = lambda i, k: f'C + {k}'
+        if packed_B:
+            case_body += f'B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;'
+        else:
+            case_body += f'B_curr = (*col_indices_curr) * N + B; col_indices_curr++;'
 
-            for i in range(self.Mr):
-                for k in range(Nr):
-                    lines += [f'  c{i}{k} = *({c_load(i, k)});']
-                if not packed_C:
-                    lines += [f'  C_temp += N;']
+        for _, loc in self.nnz_iterator(pat):
+            case_body += f'{reg_t} a{loc} = {intrinsics.broadcast(f"curr_value_ptr")};'
+            case_body += f'curr_value_ptr++;'
+            case_body += [f'c{loc}{k} = {intrinsics.fma(f"a{loc}", f"b{k}", f"c{loc}{k}")};' for k in range(Nr)]
 
-            lines += ['} else {']
-            for i in range(self.Mr):
-                for k in range(Nr):
-                    lines += [f'  c{i}{k} = 0;']
+        return case_body.sub_elements
 
-            lines += ['}']
-            return lines
+    def _gen_nano_kernel_preload_A(self, Nr, intrinsics: Intrinsics, pat, packed_B=False):
+        reg_t = intrinsics.vec_type
+        vec_width_ele = intrinsics.vec_width_ele
 
-        def store_accumulator(acc_dims):
-            if packed_C:
-                c_store = lambda i, k: f'*(C + {i * Nr + k}) = c{i}{k}'
-            else:
-                c_store = lambda i, k: f'*(C + {i} * N + {k}) = c{i}{k}'
+        case_body = Block()
+        case_body += [f'{reg_t} a{loc} = {intrinsics.broadcast("curr_value_ptr")}; curr_value_ptr++;'
+                      for _, loc in self.nnz_iterator(pat)]
 
-            return [f'{c_store(i, k)};'
-                    for i in range(acc_dims[0])
-                    for k in range(acc_dims[1])]
+        for k in range(Nr):
+            case_body += f'{reg_t} b{k} = {intrinsics.load(f"B_curr + {k} * {vec_width_ele}")};'
+            for _, loc in self.nnz_iterator(pat):
+                case_body += f'c{loc}{k} = {intrinsics.fma(f"a{loc}", f"b{k}", f"c{loc}{k}")};'
 
-        def gen_pattern_case(acc_dims, id, pat):
-            case_body = Block()
+        if packed_B:
+            case_body += f'B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;'
+        else:
+            case_body += f'B_curr = (*col_indices_curr) * N + B; col_indices_curr++;'
 
-            count_loop = ForLoop(f'int pat_count = nkern_counts[{id}]', 'pat_count > 0', 'pat_count--')
-            count_loop += f'{scalar} a;'
+        return case_body.sub_elements
 
-            b_load = lambda k: f'B_curr + {k}'
-            for k in range(acc_dims[1]):
-                count_loop += f'{scalar} b{k} = *({b_load(k)});'
-
-            if packed_B:
-                count_loop += f'B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;'
-            else:
-                count_loop += f'B_curr = (*col_indices_curr) * N + B; col_indices_curr++;'
-
-            pat_tmp = pat
-            idx = 0
-            while pat_tmp:
-                if pat_tmp & 1:
-                    count_loop += f'a = *curr_value_ptr; curr_value_ptr++;'
-                    for k in range(acc_dims[1]):
-                        count_loop += f'c{idx}{k} += a * b{k};'
-
-                pat_tmp >>= 1
-                idx += 1
-
-            case_body += count_loop
-
-            return case_body.sub_elements
+    def _emit_executor_body(self,
+                            Nr,
+                            scalar,
+                            intrinsics: Intrinsics,
+                            packed_C=False,
+                            packed_B=False):
+        reg_t = intrinsics.vec_type
+        vec_width_ele = intrinsics.vec_width_ele
 
         sop_panel_executor = Block()
         sop_panel_executor += ''
-
         body = Block()
-        body += setup_accumulator()
+
+        ##
+        #   Setup Accumulator
+        ##
+        body += f'{reg_t} ' + ", ".join([f'c{i}{j}' for i in range(self.Mr) for j in range(Nr)]) + ';'
+
+        if packed_C:
+            c_row = lambda i: f' C + {i * Nr * vec_width_ele}; // Row: {i}'
+            c_load = lambda i, k: intrinsics.load_aligned(f'C{i} + {i * Nr * vec_width_ele + k * vec_width_ele}')
+        else:
+            c_row = lambda i: f' C + {i} * N'
+            c_load = lambda i, k: intrinsics.load(f'C{i} + {k} * {vec_width_ele}')
+
+        body += 'if (load_c) {'
+        body += [f'  {scalar}* __restrict__ C{i} = {c_row(i)};' for i in range(self.Mr)]
+        body += [f'  c{i}{k} = {c_load(i, k)};' for i in range(self.Mr) for k in range(Nr)]
+        body += '} else {'
+        body += [f'  c{i}{k} = {intrinsics.zero_reg()};' for i in range(self.Mr) for k in range(Nr)]
+        body += '}'
+
         body += 'int c_idx = 0;'
         body += 'auto curr_value_ptr = values;'
-
         if packed_B:
             body += f'const {scalar} *__restrict__ B_curr = col_indices[0] * (N_r) + B;'
         else:
@@ -334,156 +353,92 @@ class UKernelCodegenBase:
 
         body += 'uint32_t * col_indices_curr = col_indices + 1;'
 
+        ##
+        #   Gen Nanokernels
+        ##
         for id, pat in enumerate(self.nanokernels):
-            body += gen_pattern_case([self.Mr, Nr], id, pat)
+            nkern_loop = ForLoop(f'int pat_count = nkern_counts[{id}]', 'pat_count > 0', 'pat_count--')
+            nkern_loop += self._gen_nano_kernel_preload_A(Nr, intrinsics, pat, packed_B=packed_B)
+            body += nkern_loop
 
-        body += store_accumulator([self.Mr, Nr])
+        ##
+        #   Store accumulator
+        ##
+        if packed_C:
+            c_store = lambda i, k: intrinsics.store_aligned(
+                f'(C + {i * Nr * vec_width_ele + k * vec_width_ele})', f'c{i}{k}')
+        else:
+            c_store = lambda i, k: intrinsics.store(f'C + {i} * N + {k * vec_width_ele}', f'c{i}{k}')
+
+        body += [f'{c_store(i, k)};' for i in range(self.Mr) for k in range(Nr)]
         sop_panel_executor += body.sub_elements
 
         return sop_panel_executor
 
-    def _emit_vectorized_executor_body(self, Nr, arch, vec_width_bits,
-                                       scalar,
+    def _emit_executor_body_vectorized(self, Nr, arch, vec_width_bits, scalar,
                                        packed_C=False, packed_B=False,
                                        mask=None):
-        arch_details = self.supported_archs[arch]
-        arch_intrin_gen = ArchIntrinGenerator(arch_details, vec_width_bits, scalar)
+        arch = self.supported_archs[arch]
+        assert arch.supports_scalar(scalar)
+
+        arch_intrinsics = ArchIntrinGenerator(arch, vec_width_bits, scalar)
         vec_width_ele = int(vec_width_bits / SCALAR_SIZE_BITS[scalar])
-        m_reg = arch_intrin_gen.vec_type()
+        vector_intrinsics = self.Intrinsics(
+            vec_type=arch_intrinsics.vec_type(),
+            vec_width_ele=vec_width_ele,
+            load=arch_intrinsics.load_intrin,
+            load_aligned=partial(arch_intrinsics.load_intrin, aligned=True),
+            store=arch_intrinsics.store_intrin,
+            store_aligned=partial(arch_intrinsics.store_intrin, aligned=True),
+            broadcast=arch_intrinsics.broadcast_intrin,
+            fma=arch_intrinsics.fma_intrin,
+            zero_reg=arch_intrinsics.setzero_intrin
+        )
 
-        def setup_accumulator():
-            lines = []
-            for i in range(self.Mr):
-                if not packed_C:
-                    lines += [f'{scalar}* C{i} = C + {i} * N;']
-                else:
-                    lines += [f'{scalar}* C{i} = C + {i * Nr} * {vec_width_ele};']
+        return self._emit_executor_body(Nr, scalar, vector_intrinsics, packed_C, packed_B)
 
-            reg_def = f'{arch_intrin_gen.vec_type()} '
-            for i in range(self.Mr):
-                for k in range(Nr):
-                    reg_def += f'cVec{i}{k}, '
+    def _emit_executor_body_cleanup(self, Nr, arch, vec_width_bits, scalar,
+                                    packed_C=False, packed_B=False,
+                                    mask=None):
+        arch = self.supported_archs[arch]
+        assert arch.supports_scalar(scalar)
 
-            lines += [reg_def.strip(', ') + ";"]
-            lines += ['if (load_c) {']
-
-            if packed_C:
-                c_load = lambda i, k: arch_intrin_gen.load_intrin(f'C{i} + {i * Nr + k} * {vec_width_ele}',
-                                                                  aligned=True)
-            else:
-                if mask is None:
-                    c_load = lambda i, k: arch_intrin_gen.load_intrin(f'C{i} + {k} * {vec_width_ele}')
-                else:
-                    c_load = lambda i, k: arch_intrin_gen.load_intrin(f'C{i} + {k} * {vec_width_ele}', mask=mask)
-
-            for i in range(self.Mr):
-                for k in range(Nr):
-                    lines += [f'  cVec{i}{k} = {c_load(i, k)};']
-
-            lines += ['} else {']
-            for i in range(self.Mr):
-                for k in range(Nr):
-                    lines += [f'  cVec{i}{k} = {arch_intrin_gen.setzero_intrin()};']
-
-            lines += ['}']
-            return lines
-
-        def store_accumulator(acc_dims):
-            if packed_C:
-                c_store = lambda i, k: \
-                    arch_intrin_gen.store_intrin(f'C{i} + {k} * {vec_width_ele}', f'cVec{i}{k}')
-            else:
-                c_store = lambda i, k: \
-                    arch_intrin_gen.store_intrin(f'C{i} + {k} * {vec_width_ele}', f'cVec{i}{k}', mask=mask)
-
-            return [f'{c_store(i, k)};'
-                    for i in range(acc_dims[0])
-                    for k in range(acc_dims[1])]
-
-        def gen_pattern_case(acc_dims, id, pat):
-            case_body = Block()
-
-            count_loop = ForLoop(f'int pat_count = nkern_counts[{id}]', 'pat_count > 0', 'pat_count--',
-                                 unroll=unroll_mapping(gmpy.popcount(pat)))
-            count_loop += f'{m_reg} aVec;'
-
-            if packed_B:
-                assert mask is None
-                load_intrin = partial(arch_intrin_gen.load_intrin, aligned=True)
-            else:
-                load_intrin = partial(arch_intrin_gen.load_intrin, aligned=False)
-
-            b_load = lambda k: load_intrin(f'B_curr + {k} * {vec_width_ele}', mask=mask)
-
-            for k in range(acc_dims[1]):
-                count_loop += f'{m_reg} bVec{k} = {b_load(k)};'
-
-            if packed_B:
-                count_loop += f'B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;'
-                # for k in range(acc_dims[1]):
-                #     count_loop += f'__builtin_prefetch(((uint8_t*) B_curr) + {k * 64}, 0, 3);'
-            else:
-                count_loop += f'B_curr = (*col_indices_curr) * N + B; col_indices_curr++;'
-
-            pat_tmp = pat
-            idx = 0
-            while pat_tmp:
-                if pat_tmp & 1:
-                    count_loop += f'aVec = {arch_intrin_gen.broadcast_intrin("curr_value_ptr")}; curr_value_ptr++;'
-                    for k in range(acc_dims[1]):
-                        intrinsic = arch_intrin_gen.fma_intrin('aVec', f'bVec{k}', f'cVec{idx}{k}')
-                        count_loop += f'cVec{idx}{k} = {intrinsic};'
-
-                pat_tmp >>= 1
-                idx += 1
-
-            case_body += count_loop
-
-            return case_body.sub_elements
-
-        sop_panel_executor = Block()
-        sop_panel_executor += ''
-
-        body = Block()
-        body += setup_accumulator()
-        body += 'int c_idx = 0;'
-        body += f'{scalar}* __restrict__ curr_value_ptr = values;'
-
-        if packed_B:
-            body += f'const {scalar} *__restrict__ B_curr = col_indices[0] * (N_r) + B;'
-        else:
-            body += f'const {scalar} *__restrict__ B_curr = col_indices[0] * N + B;'
-
-        body += 'uint32_t * col_indices_curr = col_indices + 1;'
-
-        for id, pat in enumerate(self.nanokernels):
-            body += gen_pattern_case([self.Mr, Nr], id, pat)
-
-        body += store_accumulator([self.Mr, Nr])
-        sop_panel_executor += body.sub_elements
-
-        return sop_panel_executor
-
-    def _emit_vectorized_executor_body_cleanup(self, Nr, arch, vec_width_bits,
-                                               scalar,
-                                               packed_C=False, packed_B=False,
-                                               mask=None):
+        arch_intrinsics = ArchIntrinGenerator(arch, vec_width_bits, scalar)
         vec_width_ele = int(vec_width_bits / SCALAR_SIZE_BITS[scalar])
+        vector_intrinsics = self.Intrinsics(
+            vec_type=arch_intrinsics.vec_type(),
+            vec_width_ele=vec_width_ele,
+            load=arch_intrinsics.load_intrin,
+            load_aligned=partial(arch_intrinsics.load_intrin, aligned=True),
+            store=arch_intrinsics.store_intrin,
+            store_aligned=partial(arch_intrinsics.store_intrin, aligned=True),
+            broadcast=arch_intrinsics.broadcast_intrin,
+            fma=arch_intrinsics.fma_intrin,
+            zero_reg=arch_intrinsics.setzero_intrin
+        )
+
+        scalar_intrinsics = self.Intrinsics(
+            vec_type=scalar,
+            vec_width_ele=1,
+            load=lambda x: f'*({x})',
+            load_aligned=lambda x: f'*({x})',
+            store=lambda x, y: f'*({x}) = {y}',
+            store_aligned=lambda x, y: f'*({x}) = {y}',
+            broadcast=lambda x: f'*({x})',
+            fma=lambda a, b, c: f'{a} * {b} + {c}',
+            zero_reg=lambda: '0'
+        )
+
         func_body = Block()
         vec_cleanup_loop = ForLoop(f'', f'elements_remaining >= {vec_width_ele}',
-                                    f'elements_remaining -= {vec_width_ele}, C += {vec_width_ele}, B += {vec_width_ele}')
-        vec_cleanup_loop += self._emit_vectorized_executor_body(1, arch, vec_width_bits, scalar,
-                                                            packed_C=packed_C, packed_B=packed_B)
+                                   f'elements_remaining -= {vec_width_ele}, C += {vec_width_ele}, B += {vec_width_ele}')
+        vec_cleanup_loop += self._emit_executor_body(1, scalar, vector_intrinsics, packed_C, packed_B)
 
         scalar_cleanup_loop = ForLoop(f'', f'elements_remaining', f'elements_remaining--, C += 1, B += 1')
-        scalar_cleanup_loop += self._emit_scalar_executor_body(scalar, packed_C=packed_C, packed_B=packed_B)
-
+        scalar_cleanup_loop += self._emit_executor_body(1, scalar, scalar_intrinsics, packed_C, packed_B)
 
         func_body += vec_cleanup_loop
         func_body += scalar_cleanup_loop
-
-        # cleanup_loop += self._emit_vectorized_executor_body(Nr, arch, vec_width_bits, scalar,
-        #                                                     packed_C=packed_C, packed_B=packed_B, mask=mask)
         return func_body
 
 

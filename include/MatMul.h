@@ -36,6 +36,7 @@ namespace sop {
 template <typename KernelDesc>
 class MatMul {
   using Scalar = typename KernelDesc::Scalar;
+  static const Schedule schedule = KernelDesc::Sched;
 
   using CSRPtr = int;
   using CSRIndex = int;
@@ -153,8 +154,13 @@ class MatMul {
     M_r = executor_factory->M_r;
     N_r = executor_factory->N_r;
 
-    if (config.tiling_strategy == CAKE_TILING ||
-        config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
+    if (schedule == C1_NmKM) {
+        // Multiple of N_r and larger than or equal to N
+        config.N_c = ((b_col_predict + N_r - 1) / N_r) * N_r;
+    } else if (schedule == C1_MKN) {
+        config.M_c = m;
+    } else if (config.tiling_strategy == CAKE_TILING ||
+               config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
       cake_cntx_t* cake_cntx = cake_query_cntx();
 
       cake_cntx->nr = executor_factory->N_r;

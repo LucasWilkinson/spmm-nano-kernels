@@ -11,8 +11,10 @@ namespace sop {
 //
 
 enum Schedule {
-  NKM,
-  KNM
+  C3_mnNKM,
+  C3_mnKNM,
+  C1_NmKM,
+  C1_MKN
 };
 
 enum TileType {

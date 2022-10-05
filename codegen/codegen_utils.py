@@ -65,7 +65,7 @@ class Block:
 
 
 class ForLoop(Block):
-    def __init__(self, init, cond, inc, unroll=False):
+    def __init__(self, init, cond, inc, unroll=False, attribute=None):
         super().__init__()
         self.inner_block = Block()
         if unroll:
@@ -73,7 +73,7 @@ class ForLoop(Block):
                 self.sub_elements.append(f'#pragma unroll {unroll}')
             else:
                 self.sub_elements.append('#pragma unroll')
-        self.sub_elements.append(f'for({init}; {cond}; {inc}) {{')
+        self.sub_elements.append(f'for({init}; {cond}; {inc}) {attribute if attribute else ""}{{')
         self.sub_elements.append(self.inner_block)
         self.sub_elements.append('}')
 

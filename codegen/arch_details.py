@@ -98,8 +98,8 @@ class ArchIntrinGenerator:
             assert self.supports_masks()
             return self.arch.masked_store_intrin(self.scalar, self.vec_width_bits, aligned)(ptr, val, mask=mask)
 
-    def fma_intrin(self, a, b, c):
-        return self.arch.fma_intrin(self.scalar, self.vec_width_bits)(a, b, c)
+    def fma_intrin(self, a, b, c, fused_broadcast=False):
+        return self.arch.fma_intrin(self.scalar, self.vec_width_bits, fused_broadcast=fused_broadcast)(a, b, c)
 
     def setzero_intrin(self):
         return self.arch.setzero_intrin(self.scalar, self.vec_width_bits)()
@@ -152,7 +152,7 @@ class AVX(Arch, ABC):
     def store_intrin(self, scalar, vec_width_bits, aligned=False):
         return partial(AVX._intrin, func='store' if aligned else 'storeu', vec_width_bits=vec_width_bits, scalar=scalar)
 
-    def fma_intrin(self, scalar, vec_width_bits):
+    def fma_intrin(self, scalar, vec_width_bits, fused_broadcast=False):
         return partial(AVX._intrin, func='fmadd', vec_width_bits=vec_width_bits, scalar=scalar)
 
     def setzero_intrin(self, scalar, vec_width_bits):
@@ -202,7 +202,7 @@ class AVX2(AVX):
         return scalar in ["float", "double"]
 
     def preprocessor_guard(self):
-        return "#ifdef __AVX512VL__"
+        return "#ifdef __AVX2__"
 
     def mask_type(self, scalar, vec_width_bits):
         return f'uint32_t'
@@ -256,8 +256,8 @@ class NEON(Arch, ABC):
     def store_intrin(self, scalar, vec_width_bits, aligned=False):
         return lambda dst, val: f'vst1q_{NEON.instruction_suffix[scalar]}({dst}, {val})'
 
-    def fma_intrin(self, scalar, vec_width_bits):
-        return lambda a, b, c: f'vfmaq_{NEON.instruction_suffix[scalar]}({c}, {a}, {b})'
+    def fma_intrin(self, scalar, vec_width_bits, fused_broadcast=False):
+        return lambda a, b, c: f'vmlaq{"_n" if fused_broadcast else ""}_{NEON.instruction_suffix[scalar]}({c}, {a}, {b})'
 
     def setzero_intrin(self, scalar, vec_width_bits):
         return lambda: f'vmovq_n_{NEON.instruction_suffix[scalar]}(0)'

@@ -10,6 +10,7 @@
 //#include <aligned_new>
 
 #include "utils/Vec.h"
+#include "utils/error.h"
 
 #include "boost/preprocessor/repetition/repeat.hpp"
 
@@ -20,381 +21,489 @@
 
 namespace sop {
 
-using std::vector;
+    using std::vector;
 
-struct Executor {
-  Executor() = default;
-  virtual ~Executor() = default;
-  virtual void execute_row_panel(int tii) = 0;
-  virtual void operator()() = 0;
-};
+    struct Executor {
+        Executor() = default;
+        virtual ~Executor() = default;
+        virtual void execute_row_panel(int tii) = 0;
+        virtual void operator()() = 0;
+    };
 
-template <typename F, typename ... Ts>
-void report_time(bool report, const std::string& name, F&& f, Ts&&...args)
-{
-  std::chrono::time_point<std::chrono::high_resolution_clock>
-      start_time, end_time;
-  using dur = std::chrono::duration<double>;
+    template <typename F, typename ... Ts>
+    void report_time(bool report, const std::string& name, F&& f, Ts&&...args)
+    {
+        std::chrono::time_point<std::chrono::high_resolution_clock>
+                start_time, end_time;
+        using dur = std::chrono::duration<double>;
 
-  if (report) {
-    start_time = std::chrono::high_resolution_clock::now();
-    std::forward<F>(f)(std::forward<Ts>(args)...);
-    end_time = std::chrono::high_resolution_clock::now();
-    std::cout << std::endl << name << ": "
-              << dur(end_time - start_time).count() * 1e6 << "us"
-              << std::endl;
-  } else {
-    std::forward<F>(f)(std::forward<Ts>(args)...);
-  }
-}
-
-template <typename KernelDesc, typename MicroKernelDesc>
-struct ExecutorSpecialized: Executor {
-  using Scalar = typename KernelDesc::Scalar;
-  using CSRPtr = typename KernelDesc::CSRStorageTypes::Ptr;
-
-  using RegTile = typename MicroKernelDesc::RegTile;
-  using TileDims = typename MicroKernelDesc::TileDims;
-  using VecType = typename MicroKernelDesc::VecType;
-  using MicroKernel = typename MicroKernelDesc::MicroKernel;
-
-  static_assert(std::is_same<Scalar, typename MicroKernel::Scalar>::value,
-              "Scalar type mismatch");
-  using PackedTile = sop::PackedTile<Scalar>;
-
-  const static PackingStrategy C_PACKING = KernelDesc::PackingDesc::C_PACKING;
-  const static PackingStrategy B_PACKING = KernelDesc::PackingDesc::B_PACKING;
-  const static UPanelReorderingStrategy UPanelOrder = KernelDesc::UPanelOrder;
-
-  const vector<vector<PackedTile>>& tiles;
-  const vector<int>& upanel_swizzle;
-
-  const Scalar* __restrict__ B;
-  Scalar* __restrict__ C;
-
-  Scalar* __restrict__ C_packed = nullptr;
-  Scalar* __restrict__ C_packed_partial_global = nullptr;
-  Scalar* __restrict__ B_packed = nullptr;
-
-  int M, K, N;
-  int batch_size;
-  int num_threads;
-
-  const TileConfig& config;
-  const TileDims td;
-
-  int M_c, K_c, N_c;
-  static constexpr int M_r = TileDims::M_r;
-  static constexpr int N_r = TileDims::N_r;
-
-  const int c_N_r = N_c / N_r;
-  const int c_M_r = M_c / M_r;
-
-  bool partial_N_c_loop = false;
-  bool partial_N_r_loop = false;
-  int final_N_c_loop_N_r_count = 0;
-  int final_N_r_loop_rem = 0;
-  typename MicroKernel::Mask final_N_r_rem_mask;
-
-  bool report_packing_time = false;
-
-  ExecutorSpecialized(
-    int M, int K, int N,
-    const vector<vector<PackedTile>>& tiles,
-    const vector<int>& upanel_swizzle,
-    const Scalar* __restrict__ B,
-    Scalar* __restrict__ C,
-    int batch_size,
-    int num_threads,
-    const TileConfig& config
-  ): M(M), K(K), N(N),
-     tiles(tiles),
-     upanel_swizzle(upanel_swizzle),
-     B(B), C(C),
-     batch_size(batch_size),
-     num_threads(num_threads),
-     config(config),
-     td(M, K, N, config.M_c, config.K_c,
-        std::max(config.N_c, N_r), num_threads),
-     M_c(td.M_c), K_c(td.K_c), N_c(td.N_c)
-  {
-    int N_c_rem = (N % N_c);
-    int N_r_rem = (N % N_r);
-
-    partial_N_c_loop = (N_c_rem != 0);
-    partial_N_r_loop = (N_r_rem != 0);
-
-    final_N_c_loop_N_r_count = N_c_rem / N_r;
-    final_N_r_loop_rem = N_r_rem;
-    final_N_r_rem_mask = MicroKernel::precomp_mask(N_r_rem);
-
-    if (C_PACKING == PREPACK) {
-      C_packed =
-          new (std::align_val_t(4096)) Scalar[td.M_padded * td.N_padded]();
+        if (report) {
+            start_time = std::chrono::high_resolution_clock::now();
+            std::forward<F>(f)(std::forward<Ts>(args)...);
+            end_time = std::chrono::high_resolution_clock::now();
+            std::cout << std::endl << name << ": "
+                      << dur(end_time - start_time).count() * 1e6 << "us"
+                      << std::endl;
+        } else {
+            std::forward<F>(f)(std::forward<Ts>(args)...);
+        }
     }
 
-    if (C_PACKING == PARTIAL_PACKING) {
-      C_packed_partial_global =
-          new (std::align_val_t(4096)) Scalar[td.M_padded * td.N_padded];
-    }
+    template <typename KernelDesc, typename MicroKernelDesc>
+    struct ExecutorSpecialized: Executor {
+        using Scalar = typename KernelDesc::Scalar;
+        using CSRPtr = typename KernelDesc::CSRStorageTypes::Ptr;
 
-    if (B_PACKING == PREPACK || B_PACKING == PARTIAL_PACKING) {
-      B_packed =
-          new (std::align_val_t(4096)) Scalar[td.K_padded * td.N_padded];
-    }
-  }
+        using RegTile = typename MicroKernelDesc::RegTile;
+        using TileDims = typename MicroKernelDesc::TileDims;
+        using VecType = typename MicroKernelDesc::VecType;
+        using MicroKernel = typename MicroKernelDesc::MicroKernel;
 
-  ~ExecutorSpecialized() {
-    // Clean-up!
-    if (C_PACKING == PREPACK) {
-      ::operator delete[](C_packed, std::align_val_t(4096));
-    }
+        static_assert(std::is_same<Scalar, typename MicroKernel::Scalar>::value,
+                      "Scalar type mismatch");
+        using PackedTile = sop::PackedTile<Scalar>;
 
-    if (C_PACKING == PARTIAL_PACKING) {
-      ::operator delete[](C_packed_partial_global, std::align_val_t(4096));
-    }
+        const static PackingStrategy C_PACKING = KernelDesc::PackingDesc::C_PACKING;
+        const static PackingStrategy B_PACKING = KernelDesc::PackingDesc::B_PACKING;
+        const static UPanelReorderingStrategy UPanelOrder = KernelDesc::UPanelOrder;
 
-    if (B_PACKING == PREPACK || B_PACKING == PARTIAL_PACKING) {
-      ::operator delete[](B_packed, std::align_val_t(4096));
-    }
-  }
+        const vector<vector<PackedTile>>& tiles;
+        const vector<int>& upanel_swizzle;
 
-  /******************************************
-   *    Patial C Packed
-   ******************************************/
+        const Scalar* __restrict__ B;
+        Scalar* __restrict__ C;
 
-  void _inner_M_c_loop_partial_packed_c(int iii, int jjj,
-                               const PackedTile& pt,
-                               Scalar* __restrict__ C_packed,
-                               const bool partial_final_loop) {
+        Scalar* __restrict__ C_packed = nullptr;
+        Scalar* __restrict__ C_packed_partial_global = nullptr;
+        Scalar* __restrict__ B_packed = nullptr;
 
-    int _c_N_r = (partial_final_loop) ? final_N_c_loop_N_r_count : c_N_r;
+        int M, K, N;
+        int batch_size;
+        int num_threads;
 
-    // M_r loop
-    for (int pi = 0; pi < pt.sop.num_panels; pi++) {
-      int tj = 0, _jj = 0;
-      const auto& panel_desc = pt.sop.panel_descs[pi];
+        bool first_run = true;
 
-      uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
-      float* __restrict__     values = panel_desc.values;
-      int* __restrict__       pattern_counts = panel_desc.nkern_counts;
-      int                     num_col_indices = panel_desc.num_col_indices;
+        const TileConfig& config;
+        const TileDims td;
 
-      for (; tj < _c_N_r; tj++, _jj += N_r) { // N_r loop
-        MicroKernel::_microkernel_packed_C_max_acc(
-          M, K, N,
-          pattern_counts, col_indices, values, num_col_indices,
-          B + jjj + _jj,
-          C_packed + jjj * M_c + (pi * M_r) * N_c + _jj * M_r,
-          pt.load_c
-        );
-      }
+        int M_c, K_c, N_c;
+        static constexpr int M_r = TileDims::M_r;
+        static constexpr int N_r = TileDims::N_r;
 
-      if (partial_final_loop && partial_N_r_loop) {
-        MicroKernel::_microkernel_cleanup_packed_C_max_acc(
-          M, K, N,
-          pattern_counts, col_indices, values, num_col_indices,
-          B + jjj + _jj,
-          C_packed + jjj * M_c + (pi * M_r) * N_c + (tj * N_r) * M_r,
-          pt.load_c,
-          final_N_r_loop_rem,
-          final_N_r_rem_mask
-        );
-      }
-    }
-  }
+        const int c_N_r = N_c / N_r;
+        const int c_M_r = M_c / M_r;
 
-  void _execute_row_panel_partial_packed_C_KN(int tii) {
-    using std::min;
+        bool partial_N_c_loop = false;
+        bool partial_N_r_loop = false;
+        int final_N_c_loop_N_r_count = 0;
+        int final_N_r_loop_rem = 0;
+        typename MicroKernel::Mask final_N_r_rem_mask;
 
-    ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
-    int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
-    const int iii = tii * M_c;
+        bool report_packing_time = false;
 
-    Scalar* __restrict__ C_packed_partial =
-        C_packed_partial_global + iii * N_padded;
+        ExecutorSpecialized(
+                int M, int K, int N,
+                const vector<vector<PackedTile>>& tiles,
+                const vector<int>& upanel_swizzle,
+                const Scalar* __restrict__ B,
+                Scalar* __restrict__ C,
+                int batch_size,
+                int num_threads,
+                const TileConfig& config
+        ): M(M), K(K), N(N),
+           tiles(tiles),
+           upanel_swizzle(upanel_swizzle),
+           B(B), C(C),
+           batch_size(batch_size),
+           num_threads(num_threads),
+           config(config),
+           td(M, K, N, config.M_c, config.K_c,
+              std::max(config.N_c, N_r), num_threads),
+           M_c(td.M_c), K_c(td.K_c), N_c(td.N_c)
+        {
+            int N_c_rem = (N % N_c);
+            int N_r_rem = (N % N_r);
 
-     // K_c loop
-    int tjj = 0, jjj = 0;
-    for (; tjj < Nb_full; tjj++, jjj += N_c) {
-      for (int tkk = 0; tkk < Kb; tkk++) {
-        _inner_M_c_loop_partial_packed_c(
-          iii, jjj, tiles[tii][tkk], C_packed_partial, false);
-      }
-    }
+            partial_N_c_loop = (N_c_rem != 0);
+            partial_N_r_loop = (N_r_rem != 0);
 
-    if (partial_N_c_loop || partial_N_r_loop) {
-      for (int tkk = 0; tkk < Kb; tkk++) {
-        _inner_M_c_loop_partial_packed_c(
-          iii, jjj, tiles[tii][tkk], C_packed_partial, true);
-      }
-    }
+            final_N_c_loop_N_r_count = N_c_rem / N_r;
+            final_N_r_loop_rem = N_r_rem;
+            final_N_r_rem_mask = MicroKernel::precomp_mask(N_r_rem);
 
-    //report_time(report_packing_time, "Unpack C",
-    unpack_C_partial_M_c<Scalar, TileDims>(
-      min(M - iii, M_c), C + iii * N, C_packed_partial, td);
-  }
+            if (C_PACKING == PREPACK) {
+                C_packed =
+                        new (std::align_val_t(4096)) Scalar[td.M_padded * td.N_padded]();
+            }
+
+            if (C_PACKING == PARTIAL_PACKING) {
+                C_packed_partial_global =
+                        new (std::align_val_t(4096)) Scalar[td.M_padded * td.N_padded];
+            }
+
+            if (B_PACKING == PREPACK || B_PACKING == PARTIAL_PACKING) {
+                B_packed =
+                        new (std::align_val_t(4096)) Scalar[td.K_padded * td.N_padded];
+            }
+        }
+
+        ~ExecutorSpecialized() {
+            // Clean-up!
+            if (C_PACKING == PREPACK) {
+                ::operator delete[](C_packed, std::align_val_t(4096));
+            }
+
+            if (C_PACKING == PARTIAL_PACKING) {
+                ::operator delete[](C_packed_partial_global, std::align_val_t(4096));
+            }
+
+            if (B_PACKING == PREPACK || B_PACKING == PARTIAL_PACKING) {
+                ::operator delete[](B_packed, std::align_val_t(4096));
+            }
+        }
+
+        /******************************************
+         *    Patial C Packed
+         ******************************************/
+//
+//  void _inner_M_c_loop_partial_packed_c(int iii, int jjj,
+//                               const PackedTile& pt,
+//                               Scalar* __restrict__ C_packed,
+//                               const bool partial_final_loop) {
+//
+//    int _c_N_r = (partial_final_loop) ? final_N_c_loop_N_r_count : c_N_r;
+//
+//    // M_r loop
+//    for (int pi = 0; pi < pt.sop.num_panels; pi++) {
+//      int tj = 0, _jj = 0;
+//      const auto& panel_desc = pt.sop.panel_descs[pi];
+//
+//      uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
+//      float* __restrict__     values = panel_desc.values;
+//      int* __restrict__       pattern_counts = panel_desc.nkern_counts;
+//      int                     num_col_indices = panel_desc.num_col_indices;
+//
+//      for (; tj < _c_N_r; tj++, _jj += N_r) { // N_r loop
+//        MicroKernel::_microkernel_packed_C_max_acc(
+//          M, K, N,
+//          pattern_counts, col_indices, values, num_col_indices,
+//          B + jjj + _jj,
+//          C_packed + jjj * M_c + (pi * M_r) * N_c + _jj * M_r,
+//          pt.load_c
+//        );
+//      }
+//
+//      if (partial_final_loop && partial_N_r_loop) {
+//        MicroKernel::_microkernel_cleanup_packed_C_max_acc(
+//          M, K, N,
+//          pattern_counts, col_indices, values, num_col_indices,
+//          B + jjj + _jj,
+//          C_packed + jjj * M_c + (pi * M_r) * N_c + (tj * N_r) * M_r,
+//          pt.load_c,
+//          final_N_r_loop_rem,
+//          final_N_r_rem_mask
+//        );
+//      }
+//    }
+//  }
+//
+//  void _execute_row_panel_partial_packed_C_KN(int tii) {
+//    using std::min;
+//
+//    ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
+//    int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
+//    const int iii = tii * M_c;
+//
+//    Scalar* __restrict__ C_packed_partial =
+//        C_packed_partial_global + iii * N_padded;
+//
+//     // K_c loop
+//    int tjj = 0, jjj = 0;
+//    for (; tjj < Nb_full; tjj++, jjj += N_c) {
+//      for (int tkk = 0; tkk < Kb; tkk++) {
+//        _inner_M_c_loop_partial_packed_c(
+//          iii, jjj, tiles[tii][tkk], C_packed_partial, false);
+//      }
+//    }
+//
+//    if (partial_N_c_loop || partial_N_r_loop) {
+//      for (int tkk = 0; tkk < Kb; tkk++) {
+//        _inner_M_c_loop_partial_packed_c(
+//          iii, jjj, tiles[tii][tkk], C_packed_partial, true);
+//      }
+//    }
+//
+//    //report_time(report_packing_time, "Unpack C",
+//    unpack_C_partial_M_c<Scalar, TileDims>(
+//      min(M - iii, M_c), C + iii * N, C_packed_partial, td);
+//  }
+//
+//
+//  void _execute_row_panel_partial_packed_C_NK(int tii) {
+//    using std::min;
+//
+//    ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
+//    int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
+//    const int iii = tii * M_c;
+//
+//    Scalar* __restrict__ C_packed_partial =
+//        C_packed_partial_global + iii * N_padded;
+//
+//    // K_c loop
+//    for (int tkk = 0; tkk < Kb; tkk++) {
+//      int tjj = 0, jjj = 0;
+//      for (; tjj < Nb_full; tjj++, jjj += N_c) {
+//        _inner_M_c_loop_partial_packed_c(
+//          iii, jjj, tiles[tii][tkk], C_packed_partial, false);
+//      }
+//
+//      if (partial_N_c_loop || partial_N_r_loop) {
+//        _inner_M_c_loop_partial_packed_c(
+//          iii, jjj, tiles[tii][tkk], C_packed_partial, true);
+//      }
+//    }
+//
+//    //report_time(report_packing_time, "Unpack C",
+//    unpack_C_partial_M_c<Scalar, TileDims>(
+//        min(M - iii, M_c), C + iii * N, C_packed_partial, td);
+//  }
+
+        /******************************************
+         *    Not Packed
+         ******************************************/
+
+        inline void _inner_nm_loop(
+                int tii, int jjj,
+                const PackedTile& pt,
+                const bool partial_final_loop) {
+
+            int _c_N_r = (partial_final_loop) ? final_N_c_loop_N_r_count : c_N_r;
+            int tj = 0, jj = jjj;
+
+//            if (first_run) {
+//                std::cout << pt.sop.num_panels << std::endl;
+//                first_run = false;
+//            }
+
+            // M_r loop
+            for (; tj < _c_N_r; tj++, jj += N_r) { // N_r loop
+                for (int pi = 0; pi < pt.sop.num_panels; pi++) {
+                    const auto &panel_desc = pt.sop.panel_descs[pi];
+
+                    uint32_t *__restrict__ col_indices = (uint32_t *) panel_desc.col_indices;
+                    float *__restrict__ values = panel_desc.values;
+                    int *__restrict__ pattern_counts = panel_desc.nkern_counts;
+                    int num_col_indices = panel_desc.num_col_indices;
+
+                    int global_upanel_id = tii * c_M_r + pi;
+                    if constexpr(UPanelOrder != NO_REORDERING) {
+                        global_upanel_id = upanel_swizzle[global_upanel_id];
+                    }
+
+                    MicroKernel::_microkernel_max_acc(
+                        M, K, N,
+                        pattern_counts, col_indices, values, num_col_indices,
+                        B + jj,
+                        C + jj + (global_upanel_id * M_r) * N,
+                        pt.load_c
+                    );
+                }
+            }
+
+            if (partial_final_loop && partial_N_r_loop) {
+                for (int pi = 0; pi < pt.sop.num_panels; pi++) {
+                    const auto &panel_desc = pt.sop.panel_descs[pi];
+
+                    uint32_t *__restrict__ col_indices = (uint32_t *) panel_desc.col_indices;
+                    float *__restrict__ values = panel_desc.values;
+                    int *__restrict__ pattern_counts = panel_desc.nkern_counts;
+                    int num_col_indices = panel_desc.num_col_indices;
+
+                    int global_upanel_id = tii * c_M_r + pi;
+                    if constexpr(UPanelOrder != NO_REORDERING) {
+                        global_upanel_id = upanel_swizzle[global_upanel_id];
+                    }
+
+                    MicroKernel::_microkernel_cleanup_max_acc(
+                        M, K, N,
+                        pattern_counts, col_indices, values, num_col_indices,
+                        B + jj,
+                        C + jj + (global_upanel_id * M_r) * N,
+                        pt.load_c,
+                        final_N_r_loop_rem,
+                        final_N_r_rem_mask
+                    );
+                }
+            }
+        }
 
 
-  void _execute_row_panel_partial_packed_C_NK(int tii) {
-    using std::min;
+        inline void _inner_mn_loop(
+                int tii, int jjj,
+                const PackedTile& pt,
+                const bool partial_final_loop) {
+            int _c_N_r = (partial_final_loop) ? final_N_c_loop_N_r_count : c_N_r;
 
-    ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
-    int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
-    const int iii = tii * M_c;
+            // M_r loop
+            for (int pi = 0; pi < pt.sop.num_panels; pi++) {
+                int tj = 0, jj = jjj;
+                const auto& panel_desc = pt.sop.panel_descs[pi];
 
-    Scalar* __restrict__ C_packed_partial =
-        C_packed_partial_global + iii * N_padded;
+                uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
+                float* __restrict__     values = panel_desc.values;
+                int* __restrict__       pattern_counts = panel_desc.nkern_counts;
+                int                     num_col_indices = panel_desc.num_col_indices;
 
-    // K_c loop
-    for (int tkk = 0; tkk < Kb; tkk++) {
-      int tjj = 0, jjj = 0;
-      for (; tjj < Nb_full; tjj++, jjj += N_c) {
-        _inner_M_c_loop_partial_packed_c(
-          iii, jjj, tiles[tii][tkk], C_packed_partial, false);
-      }
+                int global_upanel_id = tii * c_M_r + pi;
+                if constexpr(UPanelOrder != NO_REORDERING) {
+                    global_upanel_id = upanel_swizzle[global_upanel_id];
+                }
 
-      if (partial_N_c_loop || partial_N_r_loop) {
-        _inner_M_c_loop_partial_packed_c(
-          iii, jjj, tiles[tii][tkk], C_packed_partial, true);
-      }
-    }
+                for (; tj < _c_N_r; tj++, jj += N_r) { // N_r loop
+                    MicroKernel::_microkernel_max_acc(
+                        M, K, N,
+                        pattern_counts, col_indices, values, num_col_indices,
+                        B + jj,
+                        C + jj + (global_upanel_id * M_r) * N,
+                        pt.load_c
+                    );
+                }
 
-    //report_time(report_packing_time, "Unpack C",
-    unpack_C_partial_M_c<Scalar, TileDims>(
-        min(M - iii, M_c), C + iii * N, C_packed_partial, td);
-  }
+                if (partial_final_loop && partial_N_r_loop) {
+                    MicroKernel::_microkernel_cleanup_max_acc(
+                        M, K, N,
+                        pattern_counts, col_indices, values, num_col_indices,
+                        B + jj,
+                        C + jj + (global_upanel_id * M_r) * N,
+                        pt.load_c,
+                        final_N_r_loop_rem,
+                        final_N_r_rem_mask
+                    );
+                }
+            }
+        }
 
-  /******************************************
-   *    Not Packed
-   ******************************************/
+        void _execute_row_panel_NK(int tii) {
+            using std::min;
+            ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
 
-  void _inner_M_c_loop(int tii, int jjj,
-                      const PackedTile& pt,
-                      const bool partial_final_loop) {
+            int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
+            const int iii = tii * M_c;
 
-    int _c_N_r = (partial_final_loop) ? final_N_c_loop_N_r_count : c_N_r;
+            // K_c loop
+            for (int tkk = 0; tkk < Kb; tkk++) {
+                int tjj = 0, jjj = 0;
+                for (; tjj < Nb_full; tjj++, jjj += N_c) {
+                    _inner_nm_loop(tii, jjj, tiles[tii][tkk], false);
+                }
 
-    // M_r loop
-    for (int pi = 0; pi < pt.sop.num_panels; pi++) {
-      int tj = 0, jj = jjj;
-      const auto& panel_desc = pt.sop.panel_descs[pi];
+                if (partial_N_c_loop || partial_N_r_loop) {
+                    _inner_nm_loop(tii, jjj, tiles[tii][tkk], true);
+                }
+            }
+        }
 
-      uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
-      float* __restrict__     values = panel_desc.values;
-      int* __restrict__       pattern_counts = panel_desc.nkern_counts;
-      int                     num_col_indices = panel_desc.num_col_indices;
+        void _execute_row_panel_KN(int tii) {
+            using std::min;
 
-      int global_upanel_id = tii * c_M_r + pi;
-      if constexpr(UPanelOrder != NO_REORDERING) {
-        global_upanel_id = upanel_swizzle[global_upanel_id];
-      }
+            ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
+            int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
+            const int iii = tii * M_c;
 
-      for (; tj < _c_N_r; tj++, jj += N_r) { // N_r loop
-        MicroKernel::_microkernel_max_acc(
-          M, K, N,
-          pattern_counts, col_indices, values, num_col_indices,
-          B + jj,
-          C + jj + (global_upanel_id * M_r) * N,
-          pt.load_c
-        );
-      }
+            // K_c loop
+            int tjj = 0, jjj = 0;
+            for (; tjj < Nb_full; tjj++, jjj += N_c) {
+                for (int tkk = 0; tkk < Kb; tkk++) {
+                    _inner_nm_loop(iii, jjj, tiles[tii][tkk], false);
+                }
+            }
 
-      if (partial_final_loop && partial_N_r_loop) {
-        MicroKernel::_microkernel_cleanup_max_acc(
-          M, K, N,
-          pattern_counts, col_indices, values, num_col_indices,
-          B + jj,
-          C + jj + (global_upanel_id * M_r) * N,
-          pt.load_c,
-          final_N_r_loop_rem,
-          final_N_r_rem_mask
-        );
-      }
-    }
-  }
+            if (partial_N_c_loop || partial_N_r_loop) {
+                for (int tkk = 0; tkk < Kb; tkk++) {
+                    _inner_nm_loop(iii, jjj, tiles[tii][tkk], true);
+                }
+            }
+        }
 
-  void _execute_row_panel_NK(int tii) {
-    using std::min;
-    ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
+        /******************************************
+         *    Outer Loop
+         ******************************************/
 
-    int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
-    const int iii = tii * M_c;
+        constexpr int num_parallel_tile() {
+            if constexpr(
+                    KernelDesc::Sched == C1_NmKM
+                    || KernelDesc::Sched == C3_mnKNM
+                    || KernelDesc::Sched == C3_mnNKM) {
+                return td.Mb;
+            } else if constexpr(
+                    KernelDesc::Sched == C1_MKN) {
+                return td.Nb;
+            } else {
+                ERROR_AND_EXIT("Not implemented");
+            }
+        }
 
-    // K_c loop
-    for (int tkk = 0; tkk < Kb; tkk++) {
-      int tjj = 0, jjj = 0;
-      for (; tjj < Nb_full; tjj++, jjj += N_c) {
-        _inner_M_c_loop(tii, jjj, tiles[tii][tkk], false);
-      }
+        void execute_row_panel(int p) {
+            using std::min;
+            ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
+            int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
 
-      if (partial_N_c_loop || partial_N_r_loop) {
-        _inner_M_c_loop(tii, jjj, tiles[tii][tkk], true);
-      }
-    }
-  }
+            if constexpr(
+                KernelDesc::Sched == C1_NmKM
+                || KernelDesc::Sched == C3_mnKNM
+                || KernelDesc::Sched == C3_mnNKM
+            ) {
+                int tii = p;
+                if constexpr(KernelDesc::Sched == C1_NmKM) {
+                    for (int tkk = 0; tkk < Kb; tkk++) {
+                        // Compute full strips of N (i.e. N_c)
+                        _inner_nm_loop(tii, 0, tiles[tii][tkk], partial_N_c_loop || partial_N_r_loop);
+                    }
+                } else {
+                    if constexpr(C_PACKING == PARTIAL_PACKING) {
+                        if (KernelDesc::Sched == C3_mnKNM) {
+                            //_execute_row_panel_partial_packed_C_KN(tii);
+                        } else {
+                            //_execute_row_panel_partial_packed_C_NK(tii);
+                        }
+                    } else {
+                        if constexpr(KernelDesc::Sched == C3_mnKNM) {
+                            _execute_row_panel_KN(tii);
+                        } else {
+                            _execute_row_panel_NK(tii);
+                        }
+                    }
+                }
+            } else if constexpr(
+                KernelDesc::Sched == C1_MKN
+            ) {
+                int tjj = p;
+                bool _partial_N_c_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == Nb - 1);
+                for (int tkk = 0; tkk < Kb; tkk++) {
+                    _inner_nm_loop(0, tjj * N_c, tiles[0][tkk], _partial_N_c_loop);
+                }
+            } else {
+                ERROR_AND_EXIT("Not implemented");
+            }
+        }
 
-  void _execute_row_panel_KN(int tii) {
-    using std::min;
+        void operator()() {
+            // TODO: Reimplement B packing
+            static_assert(B_PACKING == NO_PACKING,
+                          "B packing not implemented (needs to reimplemeted)");
 
-    ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
-    int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
-    const int iii = tii * M_c;
+            // TODO: Add support for packing a upanel reordering simultaneously
+            static_assert(C_PACKING == NO_PACKING || UPanelOrder == NO_REORDERING,
+                          "Currently there is no support for packing and upanel "
+                          "reordering at the same time");
 
-    // K_c loop
-    int tjj = 0, jjj = 0;
-    for (; tjj < Nb_full; tjj++, jjj += N_c) {
-      for (int tkk = 0; tkk < Kb; tkk++) {
-        _inner_M_c_loop(iii, jjj, tiles[tii][tkk], false);
-      }
-    }
+            #pragma omp parallel for schedule(static)
+            for (int p = 0; p < num_parallel_tile(); p++) {
+                execute_row_panel(p);
+            }
 
-    if (partial_N_c_loop || partial_N_r_loop) {
-      for (int tkk = 0; tkk < Kb; tkk++) {
-        _inner_M_c_loop(iii, jjj, tiles[tii][tkk], true);
-      }
-    }
-  }
-
-  /******************************************
-   *    Outer Loop
-   ******************************************/
-
-  void execute_row_panel(int tii) {
-    using std::min;
-
-    if (C_PACKING == PARTIAL_PACKING) {
-      if (KernelDesc::Sched == KNM) {
-        _execute_row_panel_partial_packed_C_KN(tii);
-      } else {
-        _execute_row_panel_partial_packed_C_NK(tii);
-      }
-    } else {
-      if (KernelDesc::Sched == KNM) {
-        _execute_row_panel_KN(tii);
-      } else {
-        _execute_row_panel_NK(tii);
-      }
-    }
-  }
-
-  void operator()() {
-    // TODO: Reimplement B packing
-    static_assert(B_PACKING == NO_PACKING,
-                  "B packing not implemented (needs to reimplemeted)");
-
-    // TODO: Add support for packing a upanel reordering simultaneously
-    static_assert(C_PACKING == NO_PACKING || UPanelOrder == NO_REORDERING,
-                  "Currently there is no support for packing and upanel "
-                  "reordering at the same time");
-
-    #pragma omp parallel for schedule(static)
-    for (int tii = 0; tii < td.Mb; tii++) {
-      execute_row_panel(tii);
-    }
-
-    report_packing_time = false;
-  }
-};
+            report_packing_time = false;
+        }
+    };
 
 };
