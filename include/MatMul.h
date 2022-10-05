@@ -14,6 +14,7 @@
 #include "utils/error.h"
 #include "utils/algorithmic.h"
 #include "utils/Vec.h"
+#include "utils/type_name.h"
 
 #include "cake_block_dims.h"
 #include "TileLocs.h"
@@ -138,7 +139,10 @@ class MatMul {
         mapping_id(mapping_id) {
     coo = new COO<Scalar>(m, k, row_offsets, column_indices, values);
 
-    ERROR_AND_EXIT_IF(!executor_factory, "Executor factory not found: " << executor_id);
+    ERROR_AND_EXIT_IF(!executor_factory,
+      "Executor factory not found: " << executor_id <<
+      " for kernel desc: " << type_name<KernelDesc>() <<
+      ", Registered factories: " << ExecutorFactory<KernelDesc>::dump_registered_factories());
     ERROR_AND_EXIT_IF(!packer_factory, "Packer factory not found");
     ERROR_AND_EXIT_IF(packer_factory->M_r != executor_factory->M_r,
                       "M_r mismatch between packer and executor");

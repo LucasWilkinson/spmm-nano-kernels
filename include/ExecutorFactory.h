@@ -6,6 +6,7 @@
 #define DNN_SPMM_BENCH_EXECUTORFACTORY_H
 
 #include <unordered_map>
+#include <sstream>
 
 #include "MicroKernelDesc.h"
 #include "Executor.h"
@@ -44,6 +45,16 @@ public:
 
   static ExecutorFactory* get_factory(const std::string& name) {
     return get_factories()[name];
+  }
+
+  static std::string dump_registered_factories() {
+    std::stringstream ss;
+    for (auto& [name, factory] : get_factories()) {
+        if (factory != nullptr) {
+            ss << name << std::endl;
+        }
+    }
+    return ss.str();
   }
 
   static void register_factory(const std::string& name, ExecutorFactory* factory) {

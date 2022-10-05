@@ -68,46 +68,57 @@ struct KernelDesc {
 
 
 using KD_PIFloatSplitN =
-    KernelDesc<float,
-               CSRStorageTypes<float*, int>,
-               PackingDesc<NO_PACKING, NO_PACKING>,
-               C1_MKN,
-               NO_REORDERING>;
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<NO_PACKING, NO_PACKING>,
+        C1_MKN,
+        NO_REORDERING
+    >;
 
 using KD_PIFloatSplitM =
-    KernelDesc<float,
-               CSRStorageTypes<float*, int>,
-               PackingDesc<NO_PACKING, NO_PACKING>,
-               C1_MKN,
-               NO_REORDERING>;
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<NO_PACKING, NO_PACKING>,
+        C1_MKN,
+        NO_REORDERING
+    >;
 
 using KD_PIFloatLoadBalancedSplitM =
-    KernelDesc<float,
-               CSRStorageTypes<float*, int>,
-               PackingDesc<NO_PACKING, NO_PACKING>,
-               C1_MKN,
-               LOAD_BALANCING>;
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<NO_PACKING, NO_PACKING>,
+        C1_MKN,
+        LOAD_BALANCING
+    >;
 
 
 using KD_IntelFloat=
-    KernelDesc<float,
-               CSRStorageTypes<float*, int>,
-               PackingDesc<NO_PACKING, NO_PACKING>,
-               C3_mnNKM,
-               NO_REORDERING>;
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<NO_PACKING, NO_PACKING>,
+        C3_mnKNM,
+        NO_REORDERING
+    >;
 
 using KD_IntelFloatLoadBalanced =
-    KernelDesc<float,
-               CSRStorageTypes<float*, int>,
-               PackingDesc<NO_PACKING, NO_PACKING>,
-               C3_mnNKM,
-               LOAD_BALANCING>;
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<NO_PACKING, NO_PACKING>,
+        C3_mnKNM,
+        LOAD_BALANCING
+    >;
 
 using KD_IntelFloatCPartialPacking =
-    KernelDesc<float,
-               CSRStorageTypes<float*, int>,
-               PackingDesc<PARTIAL_PACKING, NO_PACKING>,
-               C3_mnNKM,
-               NO_REORDERING>;
-
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<PARTIAL_PACKING, NO_PACKING>,
+        C3_mnKNM,
+        LOAD_BALANCING
+    >;
 };

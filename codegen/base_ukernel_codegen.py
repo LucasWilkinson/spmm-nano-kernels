@@ -275,9 +275,10 @@ class UKernelCodegenBase:
 
     def _gen_nano_kernel_preload_B(self, Nr, intrinsics: Intrinsics, pat, packed_B=False):
         reg_t = intrinsics.vec_type
+        vec_width_ele = intrinsics.vec_width_ele
         case_body = Block()
 
-        b_load = lambda k: intrinsics.load(f'B_curr + {k}')
+        b_load = lambda k: intrinsics.load(f'B_curr + {k} * {vec_width_ele}')
         case_body += [f'{reg_t} b{k} = {b_load(k)};' for k in range(Nr)]
 
         if packed_B:
@@ -358,7 +359,7 @@ class UKernelCodegenBase:
         ##
         for id, pat in enumerate(self.nanokernels):
             nkern_loop = ForLoop(f'int pat_count = nkern_counts[{id}]', 'pat_count > 0', 'pat_count--')
-            nkern_loop += self._gen_nano_kernel_preload_A(Nr, intrinsics, pat, packed_B=packed_B)
+            nkern_loop += self._gen_nano_kernel_preload_B(Nr, intrinsics, pat, packed_B=packed_B)
             body += nkern_loop
 
         ##
@@ -440,7 +441,6 @@ class UKernelCodegenBase:
         func_body += vec_cleanup_loop
         func_body += scalar_cleanup_loop
         return func_body
-
 
     @staticmethod
     def _emit_microkernels(main_body: callable, cleanup_body: callable, Nr, scalar, name="", masked=False):

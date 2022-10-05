@@ -26,7 +26,7 @@ namespace sop {
     struct Executor {
         Executor() = default;
         virtual ~Executor() = default;
-        virtual void execute_row_panel(int tii) = 0;
+        virtual void execute_thread(int tii) = 0;
         virtual void operator()() = 0;
     };
 
@@ -414,13 +414,13 @@ namespace sop {
             int tjj = 0, jjj = 0;
             for (; tjj < Nb_full; tjj++, jjj += N_c) {
                 for (int tkk = 0; tkk < Kb; tkk++) {
-                    _inner_nm_loop(iii, jjj, tiles[tii][tkk], false);
+                    _inner_nm_loop(tii, jjj, tiles[tii][tkk], false);
                 }
             }
 
             if (partial_N_c_loop || partial_N_r_loop) {
                 for (int tkk = 0; tkk < Kb; tkk++) {
-                    _inner_nm_loop(iii, jjj, tiles[tii][tkk], true);
+                    _inner_nm_loop(tii, jjj, tiles[tii][tkk], true);
                 }
             }
         }
@@ -443,7 +443,7 @@ namespace sop {
             }
         }
 
-        void execute_row_panel(int p) {
+        void execute_thread(int p) {
             using std::min;
             ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
             int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
@@ -499,7 +499,7 @@ namespace sop {
 
             #pragma omp parallel for schedule(static)
             for (int p = 0; p < num_parallel_tile(); p++) {
-                execute_row_panel(p);
+                execute_thread(p);
             }
 
             report_packing_time = false;
