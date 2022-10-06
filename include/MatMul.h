@@ -121,6 +121,8 @@ class MatMul {
   }
 
  public:
+  int require_storage = 0;
+
   MatMul(
       int m, int k,
       int           b_col_predict,
@@ -343,6 +345,7 @@ private:
       for (auto& tile : panel)
         linear_size += tile.linear_size_in_bytes();
 
+    require_storage = linear_size;
     linear_buffer = aligned_alloc(4096, linear_size);
     void* linear_buffer_tmp = linear_buffer;
 
