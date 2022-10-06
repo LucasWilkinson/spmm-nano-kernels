@@ -1,4 +1,4 @@
-import gmpy
+# import gmpy
 import hashlib
 import os
 import json
@@ -14,7 +14,7 @@ from functools import partial
 
 
 def popcount(x):
-    return gmpy.popcount(x)
+    return bin(x).count("1")
 
 
 def executor_factory_name(kernel_desc, microkernel_id):
@@ -26,7 +26,7 @@ def packer_factory_name(scalar, microkernel_id):
 
 
 def sort_nanokernels(nanokernels):
-    return sorted(nanokernels, key=lambda x: gmpy.popcount(x))
+    return sorted(nanokernels, key=lambda x: popcount(x))
 
 
 def nanokernel_hash(nanokernels):
@@ -241,7 +241,7 @@ class UKernelCodegenBase:
 
     def _emit_nkern_nnz_count(self):
         pattern_nnz_count_cases = "\n            ".join([
-            f'if (nkern_code == {i}) return {gmpy.popcount(x)};' for i, x in enumerate(self.nanokernels)])
+            f'if (nkern_code == {i}) return {popcount(x)};' for i, x in enumerate(self.nanokernels)])
         return f'''
         static uint16_t nnz_count_for_nkern_code(uint16_t nkern_code) {{
             {pattern_nnz_count_cases}

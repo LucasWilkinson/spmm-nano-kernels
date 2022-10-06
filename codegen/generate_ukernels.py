@@ -1,6 +1,6 @@
 import math
 import os; SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-import gmpy
+# import gmpy
 import glob
 import json
 import shutil
