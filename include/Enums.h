@@ -11,8 +11,8 @@ namespace sop {
 //
 
 enum Schedule {
-  C3_mnNKM,
-  C3_mnKNM,
+  C3_nmNKM,
+  C3_nmKNM,
   C1_NmKM,
   C1_MKN
 };

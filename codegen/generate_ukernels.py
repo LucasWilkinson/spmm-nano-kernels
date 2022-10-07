@@ -14,14 +14,20 @@ from .generate_mapping import generate_mapping_to_executor
 output_root = os.path.abspath(f"{SCRIPT_DIR}/../generated/")
 kernel_descs = {
     "AVX512": [
-        'KD_IntelFloat',
+        'KD_IntelFloatNKM',
+        'KD_IntelFloatLoadBalancedNKM',
+        'KD_IntelFloatKNM',
+        'KD_IntelFloatLoadBalancedKNM',
         #'KD_IntelFloatCPartialPacking',
-        'KD_IntelFloatLoadBalanced'
+
     ],
     "AVX2": [
-        'KD_IntelFloat',
+        'KD_IntelFloatNKM',
+        'KD_IntelFloatLoadBalancedNKM',
+        'KD_IntelFloatKNM',
+        'KD_IntelFloatLoadBalancedKNM',
         #'KD_IntelFloatCPartialPacking',
-        'KD_IntelFloatLoadBalanced'
+
     ],
     "NEON": [
         'KD_PIFloatSplitN',

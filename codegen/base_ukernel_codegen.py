@@ -57,7 +57,7 @@ class UKernelCodegenBase:
         'NEON': NEON(),
     }
 
-    def __init__(self, Mr, nanokernels, output_root=None, namespace=None):
+    def __init__(self, Mr, nanokernels, output_root=None, namespace=None, fuse_bias=False, fuse_minmax=False):
         import os; SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
         output_root = f'{SCRIPT_DIR}/_C/generated' if output_root is None else output_root
 

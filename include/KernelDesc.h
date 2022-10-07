@@ -95,30 +95,58 @@ using KD_PIFloatLoadBalancedSplitM =
     >;
 
 
-using KD_IntelFloat=
+using KD_IntelFloatNKM=
     KernelDesc<
         float,
         CSRStorageTypes<float*, int>,
         PackingDesc<NO_PACKING, NO_PACKING>,
-        C3_mnKNM,
+        C3_nmNKM,
         NO_REORDERING
     >;
 
-using KD_IntelFloatLoadBalanced =
+using KD_IntelFloatLoadBalancedNKM =
     KernelDesc<
         float,
         CSRStorageTypes<float*, int>,
         PackingDesc<NO_PACKING, NO_PACKING>,
-        C3_mnKNM,
+        C3_nmNKM,
         LOAD_BALANCING
     >;
 
-using KD_IntelFloatCPartialPacking =
+using KD_IntelFloatCPartialPackingNKM =
     KernelDesc<
         float,
         CSRStorageTypes<float*, int>,
         PackingDesc<PARTIAL_PACKING, NO_PACKING>,
-        C3_mnKNM,
+        C3_nmNKM,
+        LOAD_BALANCING
+    >;
+
+
+using KD_IntelFloatKNM=
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<NO_PACKING, NO_PACKING>,
+        C3_nmKNM,
+        NO_REORDERING
+    >;
+
+using KD_IntelFloatLoadBalancedKNM =
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<NO_PACKING, NO_PACKING>,
+        C3_nmKNM,
+        LOAD_BALANCING
+    >;
+
+using KD_IntelFloatCPartialPackingKNM =
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<PARTIAL_PACKING, NO_PACKING>,
+        C3_nmKNM,
         LOAD_BALANCING
     >;
 };

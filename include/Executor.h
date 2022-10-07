@@ -272,7 +272,7 @@ namespace sop {
          *    Not Packed
          ******************************************/
 
-        inline void _inner_nm_loop(
+        inline void _inner_mn_loop(
                 int tii, int jjj,
                 const PackedTile& pt,
                 const bool partial_final_loop) {
@@ -338,7 +338,7 @@ namespace sop {
         }
 
 
-        inline void _inner_mn_loop(
+        inline void _inner_nm_loop(
                 int tii, int jjj,
                 const PackedTile& pt,
                 const bool partial_final_loop) {
@@ -432,8 +432,8 @@ namespace sop {
         constexpr int num_parallel_tile() {
             if constexpr(
                     KernelDesc::Sched == C1_NmKM
-                    || KernelDesc::Sched == C3_mnKNM
-                    || KernelDesc::Sched == C3_mnNKM) {
+                    || KernelDesc::Sched == C3_nmKNM
+                    || KernelDesc::Sched == C3_nmNKM) {
                 return td.Mb;
             } else if constexpr(
                     KernelDesc::Sched == C1_MKN) {
@@ -450,8 +450,8 @@ namespace sop {
 
             if constexpr(
                 KernelDesc::Sched == C1_NmKM
-                || KernelDesc::Sched == C3_mnKNM
-                || KernelDesc::Sched == C3_mnNKM
+                || KernelDesc::Sched == C3_nmKNM
+                || KernelDesc::Sched == C3_nmNKM
             ) {
                 int tii = p;
                 if constexpr(KernelDesc::Sched == C1_NmKM) {
@@ -461,13 +461,13 @@ namespace sop {
                     }
                 } else {
                     if constexpr(C_PACKING == PARTIAL_PACKING) {
-                        if (KernelDesc::Sched == C3_mnKNM) {
+                        if (KernelDesc::Sched == C3_nmKNM) {
                             //_execute_row_panel_partial_packed_C_KN(tii);
                         } else {
                             //_execute_row_panel_partial_packed_C_NK(tii);
                         }
                     } else {
-                        if constexpr(KernelDesc::Sched == C3_mnKNM) {
+                        if constexpr(KernelDesc::Sched == C3_nmKNM) {
                             _execute_row_panel_KN(tii);
                         } else {
                             _execute_row_panel_NK(tii);
