@@ -33,7 +33,11 @@ public:
       Scalar* __restrict__ C,
       int batch_size,
       int num_threads,
-      const TileConfig& config
+      const TileConfig& config,
+      const float* bias,
+      enum Activation activation,
+      const float min,
+      const float max
   ) { return nullptr; };
 
   // Hack for now to enforce initialization order, only works within
@@ -80,10 +84,15 @@ class ExecutorFactorySpecialized: public ExecutorFactory<_KernelDesc> {
     Scalar* __restrict__ C,
     int batch_size,
     int num_threads,
-    const TileConfig& config
+    const TileConfig& config,
+    const Scalar* bias,
+    enum Activation activation,
+    const Scalar min,
+    const Scalar max
   ) override {
     return new ExecutorSpecialized<_KernelDesc, MicroKernelDesc<_MircoKernel>>(
-      M, K, N, tiles, upanel_swizzle, B, C, batch_size, num_threads, config);
+      M, K, N, tiles, upanel_swizzle, B, C, batch_size, num_threads, config,
+      bias, activation, min, max);
   }
 };
 

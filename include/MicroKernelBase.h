@@ -10,6 +10,11 @@
 
 namespace sop {
 
+enum Activation {
+    NONE,
+    MINMAX
+};
+
 static const uint16_t ZERO_PATTERN_ID = std::numeric_limits<uint16_t>::max();
 
 } // namespace sop

@@ -78,6 +78,12 @@ class MatMul {
   DenseMatrix<bool> tile_is_dense;
   DenseMatrix<TileType> tile_type;
 
+  const Scalar* bias = nullptr;
+  enum Activation activation = NONE;
+  Scalar min = std::numeric_limits<Scalar>::min();
+  Scalar max = std::numeric_limits<Scalar>::max();
+
+
   struct Stats {
     int total_tile_count = 0;
 
@@ -132,13 +138,21 @@ class MatMul {
       TileConfig    config_,
       int           num_threads,
       std::string   executor_id,
-      std::string   mapping_id)
-      : m(m), k(k), config(config_),
-        num_threads(num_threads),
-        executor_id(executor_id),
-        executor_factory(ExecutorFactory<KernelDesc>::get_factory(executor_id)),
-        packer_factory(MicroKernelPackerFactory<Scalar>::get_factory(executor_id)),
-        mapping_id(mapping_id) {
+      std::string   mapping_id,
+      const Scalar* bias = nullptr,
+      enum Activation activation = NONE,
+      Scalar min = std::numeric_limits<Scalar>::min(),
+      Scalar max = std::numeric_limits<Scalar>::max()
+  ):
+      m(m), k(k), config(config_),
+      num_threads(num_threads),
+      executor_id(executor_id),
+      executor_factory(ExecutorFactory<KernelDesc>::get_factory(executor_id)),
+      packer_factory(MicroKernelPackerFactory<Scalar>::get_factory(executor_id)),
+      mapping_id(mapping_id),
+      bias(bias),
+      activation(activation),
+      min(min), max(max) {
     coo = new COO<Scalar>(m, k, row_offsets, column_indices, values);
 
     ERROR_AND_EXIT_IF(!executor_factory,
@@ -234,7 +248,8 @@ class MatMul {
   // operator function () on objects of increment
   struct Executor* create_executor(Scalar* C, const Scalar* B, int b_cols) const {
     return executor_factory->create_specialized_executor(
-      m, k, b_cols, packed_tiles, upanel_swizzle, B, C, 1, num_threads, config);
+      m, k, b_cols, packed_tiles, upanel_swizzle, B, C, 1, num_threads, config,
+      bias, activation, min, max);
   }
 
 

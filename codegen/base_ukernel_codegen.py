@@ -151,6 +151,15 @@ class UKernelCodegenBase:
             f.write(f'namespace {self.namespace} {{')
             f.write(f'\n')
             f.write(f'struct {typename} {{\n')
+
+            f.write(f'    enum Activation activation = NONE;\n')
+            f.write(f'    {scalar} min = std::numeric_limits<{scalar}>::min();\n')
+            f.write(f'    {scalar} max = std::numeric_limits<{scalar}>::max();\n\n')
+            f.write(f'    {typename}(enum Activation activation = NONE, \n'
+                    f'                {scalar} min = std::numeric_limits<{scalar}>::min(),\n'
+                    f'                {scalar} max = std::numeric_limits<{scalar}>::max()):\n'
+                    f'                  activation(activation),\n'
+                    f'                  min(min), max(max) {{}}\n')
             f.write(self._emit_supported_patterns())
             f.write(self._emit_nkern_encoder())
             f.write(self._emit_nkern_decoder())
@@ -261,7 +270,10 @@ class UKernelCodegenBase:
         store_aligned: callable
         fma: callable
         zero_reg: callable
+        broadcast_from_ptr: callable
         broadcast: callable
+        min: callable
+        max: callable
 
     @staticmethod
     def nnz_iterator(pat):
@@ -287,7 +299,7 @@ class UKernelCodegenBase:
             case_body += f'B_curr = (*col_indices_curr) * B_stride + B; col_indices_curr++;'
 
         for _, loc in self.nnz_iterator(pat):
-            case_body += f'{reg_t} a{loc} = {intrinsics.broadcast(f"curr_value_ptr")};'
+            case_body += f'{reg_t} a{loc} = {intrinsics.broadcast_from_ptr(f"curr_value_ptr")};'
             case_body += f'curr_value_ptr++;'
             case_body += [f'c{loc}{k} = {intrinsics.fma(f"a{loc}", f"b{k}", f"c{loc}{k}")};' for k in range(Nr)]
 
@@ -298,7 +310,7 @@ class UKernelCodegenBase:
         vec_width_ele = intrinsics.vec_width_ele
 
         case_body = Block()
-        case_body += [f'{reg_t} a{loc} = {intrinsics.broadcast("curr_value_ptr")}; curr_value_ptr++;'
+        case_body += [f'{reg_t} a{loc} = {intrinsics.broadcast_from_ptr("curr_value_ptr")}; curr_value_ptr++;'
                       for _, loc in self.nnz_iterator(pat)]
 
         for k in range(Nr):
@@ -341,6 +353,9 @@ class UKernelCodegenBase:
         body += 'if (load_c) {'
         body += [f'  {scalar}* __restrict__ C{i} = {c_row(i)};' for i in range(self.Mr)]
         body += [f'  c{i}{k} = {c_load(i, k)};' for i in range(self.Mr) for k in range(Nr)]
+        body += '} else if (bias) {'
+        body += [f'  c{i}{k} = {intrinsics.broadcast_from_ptr(f"bias + {i}")};'
+                 for i in range(self.Mr) for k in range(Nr)]
         body += '} else {'
         body += [f'  c{i}{k} = {intrinsics.zero_reg()};' for i in range(self.Mr) for k in range(Nr)]
         body += '}'
@@ -365,13 +380,24 @@ class UKernelCodegenBase:
         ##
         #   Store accumulator
         ##
+
         if packed_C:
             c_store = lambda i, k: intrinsics.store_aligned(
-                f'(C + {i * Nr * vec_width_ele + k * vec_width_ele})', f'c{i}{k}')
+                f'(C_out + {i * Nr * vec_width_ele + k * vec_width_ele})', f'c{i}{k}')
         else:
-            c_store = lambda i, k: intrinsics.store(f'C + {i} * C_stride + {k * vec_width_ele}', f'c{i}{k}')
+            c_store = lambda i, k: intrinsics.store(f'C_out + {i} * C_out_stride + {k * vec_width_ele}', f'c{i}{k}')
 
-        body += [f'{c_store(i, k)};' for i in range(self.Mr) for k in range(Nr)]
+        body += 'if (activation == MINMAX && apply_activation) {'
+        body += f'  {reg_t} min_vec = {intrinsics.broadcast("min")};'
+        body += f'  {reg_t} max_vec = {intrinsics.broadcast("max")};'
+        for i in range(self.Mr):
+            for k in range(Nr):
+                body += f'   c{i}{k} = {intrinsics.min(f"c{i}{k}", "max_vec")};'
+                body += f'   c{i}{k} = {intrinsics.max(f"c{i}{k}", "min_vec")};'
+                body += f'   {c_store(i, k)};'
+        body += '} else {'
+        body += [f'  {c_store(i, k)};' for i in range(self.Mr) for k in range(Nr)]
+        body += '}'
         sop_panel_executor += body.sub_elements
 
         return sop_panel_executor
@@ -391,9 +417,12 @@ class UKernelCodegenBase:
             load_aligned=partial(arch_intrinsics.load_intrin, aligned=True),
             store=arch_intrinsics.store_intrin,
             store_aligned=partial(arch_intrinsics.store_intrin, aligned=True),
+            broadcast_from_ptr=arch_intrinsics.broadcast_from_ptr_intrin,
             broadcast=arch_intrinsics.broadcast_intrin,
             fma=arch_intrinsics.fma_intrin,
-            zero_reg=arch_intrinsics.setzero_intrin
+            zero_reg=arch_intrinsics.setzero_intrin,
+            min=arch_intrinsics.min_intrin,
+            max=arch_intrinsics.max_intrin
         )
 
         return self._emit_executor_body(Nr, scalar, vector_intrinsics, packed_C, packed_B)
@@ -413,9 +442,12 @@ class UKernelCodegenBase:
             load_aligned=partial(arch_intrinsics.load_intrin, aligned=True),
             store=arch_intrinsics.store_intrin,
             store_aligned=partial(arch_intrinsics.store_intrin, aligned=True),
+            broadcast_from_ptr=arch_intrinsics.broadcast_from_ptr_intrin,
             broadcast=arch_intrinsics.broadcast_intrin,
             fma=arch_intrinsics.fma_intrin,
-            zero_reg=arch_intrinsics.setzero_intrin
+            zero_reg=arch_intrinsics.setzero_intrin,
+            min=arch_intrinsics.min_intrin,
+            max=arch_intrinsics.max_intrin
         )
 
         scalar_intrinsics = self.Intrinsics(
@@ -425,17 +457,22 @@ class UKernelCodegenBase:
             load_aligned=lambda x: f'*({x})',
             store=lambda x, y: f'*({x}) = {y}',
             store_aligned=lambda x, y: f'*({x}) = {y}',
-            broadcast=lambda x: f'*({x})',
+            broadcast_from_ptr=lambda x: f'*({x})',
+            broadcast=lambda x: f'{x}',
             fma=lambda a, b, c: f'{a} * {b} + {c}',
-            zero_reg=lambda: '0'
+            zero_reg=lambda: '0',
+            min=lambda x, y: f'(({x} > {y}) ? {y} : {x})',
+            max=lambda x, y: f'(({x} > {y}) ? {x} : {y})'
         )
 
         func_body = Block()
         vec_cleanup_loop = ForLoop(f'', f'elements_remaining >= {vec_width_ele}',
-                                   f'elements_remaining -= {vec_width_ele}, C += {vec_width_ele}, B += {vec_width_ele}')
+                                   f'elements_remaining -= {vec_width_ele}, '
+                                   f'C += {vec_width_ele}, C_out += {vec_width_ele}, B += {vec_width_ele}')
         vec_cleanup_loop += self._emit_executor_body(1, scalar, vector_intrinsics, packed_C, packed_B)
 
-        scalar_cleanup_loop = ForLoop(f'', f'elements_remaining', f'elements_remaining--, C += 1, B += 1')
+        scalar_cleanup_loop = ForLoop(f'', f'elements_remaining', f'elements_remaining--, '
+                                      f'C += 1, C_out += 1, B += 1')
         scalar_cleanup_loop += self._emit_executor_body(1, scalar, scalar_intrinsics, packed_C, packed_B)
 
         func_body += vec_cleanup_loop
@@ -456,48 +493,63 @@ class UKernelCodegenBase:
         if len(name) > 0 and name[0] != '_':
             name = '_' + name
 
-        acc_width_str = "max_acc"
         return f'''
-    __ALWAYS_INLINE static void _microkernel{name}_{acc_width_str}(
-        const int C_stride, 
-        const int B_stride,
+        
+    inline void vectorized(
+        {scalar} *__restrict__ C, const int C_stride,
+        {scalar} *__restrict__ C_out, const int C_out_stride, 
+        const {scalar} *__restrict__ B, const int B_stride,
         int* __restrict__ nkern_counts,
         uint32_t* __restrict__ col_indices,
         {scalar}* __restrict__ values,
-        const {scalar} *__restrict__ B,
-        {scalar} *__restrict__ C,
-        const bool load_c)
+        const bool load_c,
+        const bool apply_activation,
+        const {scalar} *__restrict__ bias = nullptr)
     {{\n{main_body(Nr=Nr, scalar=scalar).emit(6)}
     }}\n\n
-
-    __ALWAYS_INLINE static void microkernel{name}_{acc_width_str}(
-        const int C_stride, 
-        const int B_stride,
-        const sop::MicroKernelPackedData& panel_desc,
-        const {scalar} *__restrict__ B,
-        {scalar} *__restrict__ C,
-        const bool load_c) {{
-    
-        uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
-        float* __restrict__     values = panel_desc.values;
-        int* __restrict__       nkern_counts = panel_desc.nkern_counts;
-
-        _microkernel{name}_{acc_width_str}(
-            C_stride, B_stride, nkern_counts, col_indices, values, B, C,{mask_str} load_c
-        );
-    }}
-    
-    __ALWAYS_INLINE static void _microkernel_cleanup{name}_{acc_width_str}(
-        const int C_stride, 
-        const int B_stride,
+        
+    inline void vectorized(
+        {scalar} *__restrict__ C, const int C_stride, 
+        const {scalar} *__restrict__ B, const int B_stride,
         int* __restrict__ nkern_counts,
         uint32_t* __restrict__ col_indices,
         {scalar}* __restrict__ values,
-        const {scalar} *__restrict__ B,
-        {scalar} *__restrict__ C,
         const bool load_c,
-        int  elements_remaining,
-        Mask precomp_mask)
+        const bool apply_activation,
+        const {scalar} *__restrict__ bias = nullptr)
+    {{\n
+        vectorized(C, C_stride, C, C_stride, B, B_stride,
+                   nkern_counts, col_indices, values, 
+                   load_c, apply_activation, bias);
+    }}\n\n
+    
+    inline void cleanup(
+        int elements_remaining,
+        {scalar} *__restrict__ C, const int C_stride,
+        {scalar} *__restrict__ C_out, const int C_out_stride, 
+        const {scalar} *__restrict__ B, const int B_stride,
+        int* __restrict__ nkern_counts,
+        uint32_t* __restrict__ col_indices,
+        {scalar}* __restrict__ values,
+        const bool load_c,
+        const bool apply_activation,
+        const {scalar} *__restrict__ bias = nullptr)
     {{\n{cleanup_body(Nr=Nr, scalar=scalar).emit(6)}
+    }}\n\n
+    
+    inline void cleanup(
+        int elements_remaining,
+        {scalar} *__restrict__ C, const int C_stride, 
+        const {scalar} *__restrict__ B, const int B_stride,
+        int* __restrict__ nkern_counts,
+        uint32_t* __restrict__ col_indices,
+        {scalar}* __restrict__ values,
+        const bool load_c,
+        const bool apply_activation,
+        const {scalar} *__restrict__ bias = nullptr)
+    {{\n
+        cleanup(elements_remaining,C, C_stride, C, C_stride, B, B_stride,
+                nkern_counts, col_indices, values,
+                load_c, apply_activation, bias);
     }}\n\n
     '''

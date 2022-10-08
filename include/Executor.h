@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <omp.h>
 #include <chrono>
+#include <numeric>
 //#include <aligned_new>
 
 #include "utils/Vec.h"
@@ -73,10 +74,6 @@ namespace sop {
         const Scalar* __restrict__ B;
         Scalar* __restrict__ C;
 
-        Scalar* __restrict__ C_packed = nullptr;
-        Scalar* __restrict__ C_packed_partial_global = nullptr;
-        Scalar* __restrict__ B_packed = nullptr;
-
         Packer<KernelDesc, MicroKernelDesc>* packer = nullptr;
 
         int M, K, N;
@@ -103,17 +100,27 @@ namespace sop {
         int final_N_r_loop_rem = 0;
         typename MicroKernel::Mask final_N_r_rem_mask;
 
+        MicroKernel ukernel;
+
+        const Scalar* __restrict__ bias = nullptr;
+        Scalar min = std::numeric_limits<Scalar>::min();
+        Scalar max = std::numeric_limits<Scalar>::max();
+
         bool report_packing_time = false;
 
         ExecutorSpecialized(
-                int M, int K, int N,
-                const vector<vector<PackedTile>>& tiles,
-                const vector<int>& upanel_swizzle,
-                const Scalar* __restrict__ B,
-                Scalar* __restrict__ C,
-                int batch_size,
-                int num_threads,
-                const TileConfig& config
+            int M, int K, int N,
+            const vector<vector<PackedTile>>& tiles,
+            const vector<int>& upanel_swizzle,
+            const Scalar* __restrict__ B,
+            Scalar* __restrict__ C,
+            int batch_size,
+            int num_threads,
+            const TileConfig& config,
+            const Scalar* __restrict__ bias = nullptr,
+            enum Activation activation = NONE,
+            Scalar min = std::numeric_limits<Scalar>::min(),
+            Scalar max = std::numeric_limits<Scalar>::max()
         ): M(M), K(K), N(N),
            tiles(tiles),
            upanel_swizzle(upanel_swizzle),
@@ -123,7 +130,9 @@ namespace sop {
            config(config),
            td(M, K, N, config.M_c, config.K_c,
               std::max(config.N_c, N_r), num_threads),
-           M_c(td.M_c), K_c(td.K_c), N_c(td.N_c)
+           M_c(td.M_c), K_c(td.K_c), N_c(td.N_c),
+           bias(bias),
+           ukernel(MicroKernel(activation, min, max))
         {
             int N_c_rem = (N % N_c);
             int N_r_rem = (N % N_r);
@@ -143,18 +152,7 @@ namespace sop {
         }
 
         ~ExecutorSpecialized() {
-            // Clean-up!
-//            if (C_PACKING == PREPACK) {
-//                ::operator delete[](C_packed, std::align_val_t(4096));
-//            }
-//
-//            if (C_PACKING == PARTIAL_PACKING) {
-//                ::operator delete[](C_packed_partial_global, std::align_val_t(4096));
-//            }
-//
-//            if (B_PACKING == PREPACK || B_PACKING == PARTIAL_PACKING) {
-//                ::operator delete[](B_packed, std::align_val_t(4096));
-//            }
+            if (packer) delete packer;
         }
 
         inline void _inner_mn_loop(
@@ -185,12 +183,13 @@ namespace sop {
                         global_upanel_id = upanel_swizzle[global_upanel_id];
                     }
 
-                    MicroKernel::_microkernel_max_acc(
-                        N, N,
-                        pattern_counts, col_indices, values, num_col_indices,
-                        B + jj,
-                        C + jj + (global_upanel_id * M_r) * N,
-                        pt.load_c
+                    int ii = (global_upanel_id * M_r); // Row start of ukernel
+                    ukernel.vectorized(
+                        C + jj + (global_upanel_id * M_r) * N, N,
+                        B + jj, N,
+                        pattern_counts, col_indices, values,
+                        pt.load_c,
+                        bias ? bias + ii : nullptr
                     );
                 }
             }
@@ -209,14 +208,14 @@ namespace sop {
                         global_upanel_id = upanel_swizzle[global_upanel_id];
                     }
 
-                    MicroKernel::_microkernel_cleanup_max_acc(
-                        N, N,
-                        pattern_counts, col_indices, values, num_col_indices,
-                        B + jj,
-                        C + jj + (global_upanel_id * M_r) * N,
+                    int ii = (global_upanel_id * M_r); // Row start of ukernel
+                    ukernel.cleanup(
+                        final_N_r_rem_mask,
+                        C + jj + ii * N, N,
+                        B + jj, N,
+                        pattern_counts, col_indices, values,
                         pt.load_c,
-                        final_N_r_loop_rem,
-                        final_N_r_rem_mask
+                        bias ? bias + ii : nullptr
                     );
                 }
             }
@@ -228,9 +227,9 @@ namespace sop {
                 const Scalar* __restrict__ B_p,
                 int tii, int jjj,
                 const PackedTile& pt,
-                const bool partial_final_loop,
-                const bool unpack) {
-            int _c_N_r = (partial_final_loop) ? final_N_c_loop_N_r_count : c_N_r;
+                const bool partial_Nc_loop,
+                const bool final_store) {
+            int _c_N_r = (partial_Nc_loop) ? final_N_c_loop_N_r_count : c_N_r;
             Scalar* __restrict__ C_p_base = C_p;
 
             // M_r loop
@@ -249,16 +248,21 @@ namespace sop {
                 int global_upanel_id = tii * c_M_r + pi;
                 if constexpr(UPanelOrder != NO_REORDERING && !packed_C)
                     global_upanel_id = upanel_swizzle[global_upanel_id];
+                int ii = (global_upanel_id * M_r); // Row start of ukernel
 
                 for (; tj < _c_N_r; tj++, jj += N_r) { // N_r loop
                     if constexpr(packed_C && !packed_B) {
                         B_p = B + jj;
 
-                        MicroKernel::_microkernel_max_acc(
-                            N_r, N, nkern_counts, col_inds, values, B_p, C_p, pt.load_c
+                        ukernel.vectorized(
+                            C_p, N_r,
+                            B_p, N,
+                            nkern_counts, col_inds, values,
+                            pt.load_c, final_store,
+                            bias ? bias + ii : nullptr
                         );
 
-                        if (unpack)
+                        if (final_store)
                             packer->unpack_C_reg_tile(C + jj + (global_upanel_id * M_r) * N, C_p);
 
                         C_p = packer->seek_to_next_reg_tile(C_p);
@@ -267,25 +271,33 @@ namespace sop {
                     } else if constexpr(packed_C && packed_B) {
                         ERROR_AND_EXIT("Not implemented");
                     } else {
-                        C_p = C + jj + (global_upanel_id * M_r) * N;
+                        C_p = C + jj + ii * N;
                         B_p = B + jj;
 
-                        MicroKernel::_microkernel_max_acc(
-                            N, N, nkern_counts, col_inds, values, B_p, C_p, pt.load_c
+                        ukernel.vectorized(
+                            C_p, N,
+                            B_p, N,
+                            nkern_counts, col_inds, values,
+                            pt.load_c, final_store,
+                            bias ? bias + ii : nullptr
                         );
                     }
                 }
 
-                if (partial_final_loop && partial_N_r_loop) {
+                if (partial_Nc_loop && partial_N_r_loop) {
                     if constexpr(packed_C && !packed_B) {
                         B_p = B + jj;
 
-                        MicroKernel::_microkernel_cleanup_max_acc(
-                            N_r, N, nkern_counts, col_inds, values, B_p, C_p, pt.load_c,
-                            final_N_r_loop_rem, final_N_r_rem_mask
+                        ukernel.cleanup(
+                            final_N_r_loop_rem,
+                            C_p, N_r,
+                            B_p, N,
+                            nkern_counts, col_inds, values,
+                            pt.load_c, final_store,
+                            bias ? bias + ii : nullptr
                         );
 
-                        if (unpack)
+                        if (final_store)
                             packer->unpack_C_reg_tile(C + jj + (global_upanel_id * M_r) * N, C_p, final_N_r_loop_rem);
 
                         // We don't know if we've traversed the entire row of B,
@@ -296,12 +308,16 @@ namespace sop {
                     } else if constexpr(packed_C && packed_B) {
                         ERROR_AND_EXIT("Not implemented");
                     } else {
-                        C_p = C + jj + (global_upanel_id * M_r) * N;
+                        C_p = C + jj + ii * N;
                         B_p = B + jj;
 
-                        MicroKernel::_microkernel_cleanup_max_acc(
-                            N, N, nkern_counts, col_inds, values, B_p, C_p, pt.load_c,
-                            final_N_r_loop_rem, final_N_r_rem_mask
+                        ukernel.cleanup(
+                            final_N_r_loop_rem,
+                            C_p, N,
+                            B_p, N,
+                            nkern_counts, col_inds, values,
+                            pt.load_c, final_store,
+                            bias ? bias + ii : nullptr
                         );
                     }
                 }

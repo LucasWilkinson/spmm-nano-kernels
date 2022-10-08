@@ -66,6 +66,18 @@ class Arch:
     def broadcast_intrin(self, scalar, vec_width_bits):
         pass
 
+    @abstractmethod
+    def broadcast_from_ptr_intrin(self, scalar, vec_width_bits):
+        pass
+
+    @abstractmethod
+    def min_intrin(self, scalar, vec_width_bits):
+        pass
+
+    @abstractmethod
+    def max_intrin(self, scalar, vec_width_bits):
+        pass
+
 
 class ArchIntrinGenerator:
     def __init__(self, arch: Arch, vec_width_bits: int, scalar: str):
@@ -107,6 +119,15 @@ class ArchIntrinGenerator:
     def broadcast_intrin(self, val):
         return self.arch.broadcast_intrin(self.scalar, self.vec_width_bits)(val)
 
+    def broadcast_from_ptr_intrin(self, ptr):
+        return self.arch.broadcast_from_ptr_intrin(self.scalar, self.vec_width_bits)(ptr)
+
+    def min_intrin(self, a, b):
+        return self.arch.min_intrin(self.scalar, self.vec_width_bits)(a, b)
+
+    def max_intrin(self, a, b):
+        return self.arch.max_intrin(self.scalar, self.vec_width_bits)(a, b)
+
 
 class AVX(Arch, ABC):
     scalar_char = {
@@ -118,13 +139,13 @@ class AVX(Arch, ABC):
         super(AVX, self).__init__()
 
     @staticmethod
-    def _intrin(*args, vec_width_bits, scalar, func, masked=False, **kwargs):
+    def _intrin(*args, vec_width_bits, scalar, func, masked=False, deref=False, **kwargs):
         args = list(args)
         m_reg_char, mm_func_char = AVX.scalar_char[scalar]
         mm = f'_mm{vec_width_bits}{m_reg_char}'
 
-        if func == 'set1':
-            args[0] = '*' + args[0]
+        if deref:
+            args[0] = '*(' + args[0] + ')'
 
         mask_prefix = ""
         if masked:
@@ -160,6 +181,15 @@ class AVX(Arch, ABC):
 
     def broadcast_intrin(self, scalar, vec_width_bits):
         return partial(AVX._intrin, func='set1', vec_width_bits=vec_width_bits, scalar=scalar)
+
+    def broadcast_from_ptr_intrin(self, scalar, vec_width_bits):
+        return partial(AVX._intrin, func='set1', vec_width_bits=vec_width_bits, scalar=scalar, deref=True)
+
+    def max_intrin(self, scalar, vec_width_bits):
+        return partial(AVX._intrin, func='max', vec_width_bits=vec_width_bits, scalar=scalar)
+
+    def min_intrin(self, scalar, vec_width_bits):
+        return partial(AVX._intrin, func='min', vec_width_bits=vec_width_bits, scalar=scalar)
 
 
 class AVX512(AVX):
@@ -263,7 +293,16 @@ class NEON(Arch, ABC):
         return lambda: f'vmovq_n_{NEON.instruction_suffix[scalar]}(0)'
 
     def broadcast_intrin(self, scalar, vec_width_bits):
+        return lambda src: f'vld1q_dup_{NEON.instruction_suffix[scalar]}(*({src}))'
+
+    def broadcast_from_ptr_intrin(self, scalar, vec_width_bits):
         return lambda src: f'vld1q_dup_{NEON.instruction_suffix[scalar]}({src})'
+
+    def max_intrin(self, scalar, vec_width_bits):
+        return lambda a, b: f'vmaxq_{NEON.instruction_suffix[scalar]}({a}, {b})'
+
+    def min_intrin(self, scalar, vec_width_bits):
+        return lambda a, b: f'vminq_{NEON.instruction_suffix[scalar]}({a}, {b})'
 
 
 instruction_set_reg_width = {
