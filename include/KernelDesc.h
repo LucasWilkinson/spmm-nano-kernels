@@ -21,7 +21,7 @@ namespace sop {
 
 enum PackingStrategy {
   PREPACK,
-  PARTIAL_PACKING,
+  PACK,
   NO_PACKING
 };
 
@@ -94,7 +94,6 @@ using KD_PIFloatLoadBalancedSplitM =
         LOAD_BALANCING
     >;
 
-
 using KD_IntelFloatNKM=
     KernelDesc<
         float,
@@ -112,16 +111,6 @@ using KD_IntelFloatLoadBalancedNKM =
         C3_nmNKM,
         LOAD_BALANCING
     >;
-
-using KD_IntelFloatCPartialPackingNKM =
-    KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
-        PackingDesc<PARTIAL_PACKING, NO_PACKING>,
-        C3_nmNKM,
-        LOAD_BALANCING
-    >;
-
 
 using KD_IntelFloatKNM=
     KernelDesc<
@@ -141,12 +130,41 @@ using KD_IntelFloatLoadBalancedKNM =
         LOAD_BALANCING
     >;
 
-using KD_IntelFloatCPartialPackingKNM =
+using KD_IntelFloatCPackedKNM =
     KernelDesc<
         float,
         CSRStorageTypes<float*, int>,
-        PackingDesc<PARTIAL_PACKING, NO_PACKING>,
+        PackingDesc<PACK, NO_PACKING>,
+        C3_nmKNM,
+        NO_REORDERING
+    >;
+
+using KD_IntelFloatCPackedNKM =
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<PACK, NO_PACKING>,
+        C3_nmNKM,
+        NO_REORDERING
+    >;
+
+using KD_IntelFloatLoadBalancedCPackedKNM =
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<PACK, NO_PACKING>,
         C3_nmKNM,
         LOAD_BALANCING
     >;
+
+
+using KD_IntelFloatLoadBalancedCPackedNKM =
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<PACK, NO_PACKING>,
+        C3_nmNKM,
+        LOAD_BALANCING
+    >;
+
 };

@@ -177,9 +177,9 @@ class UKernelCodegenBase:
             cleanup_body = partial(self._emit_executor_body_cleanup, **common_args)
             f.write(self._emit_microkernels(main_body, cleanup_body, Nr, scalar, name=""))
 
-            main_body = partial(self._emit_executor_body_vectorized, **common_args, packed_C=True)
-            cleanup_body = partial(self._emit_executor_body_cleanup, **common_args, packed_C=True)
-            f.write(self._emit_microkernels(main_body, cleanup_body, Nr, scalar, name="packed_C"))
+            # main_body = partial(self._emit_executor_body_vectorized, **common_args, packed_C=True)
+            # cleanup_body = partial(self._emit_executor_body_cleanup, **common_args, packed_C=True)
+            # f.write(self._emit_microkernels(main_body, cleanup_body, Nr, scalar, name="packed_C"))
 
             f.write(f'\n}};\n\n')
             f.write(f'}} // {self.namespace}\n')
@@ -284,7 +284,7 @@ class UKernelCodegenBase:
         if packed_B:
             case_body += f'B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;'
         else:
-            case_body += f'B_curr = (*col_indices_curr) * N + B; col_indices_curr++;'
+            case_body += f'B_curr = (*col_indices_curr) * B_stride + B; col_indices_curr++;'
 
         for _, loc in self.nnz_iterator(pat):
             case_body += f'{reg_t} a{loc} = {intrinsics.broadcast(f"curr_value_ptr")};'
@@ -309,7 +309,7 @@ class UKernelCodegenBase:
         if packed_B:
             case_body += f'B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;'
         else:
-            case_body += f'B_curr = (*col_indices_curr) * N + B; col_indices_curr++;'
+            case_body += f'B_curr = (*col_indices_curr) * B_stride + B; col_indices_curr++;'
 
         return case_body.sub_elements
 
@@ -335,7 +335,7 @@ class UKernelCodegenBase:
             c_row = lambda i: f' C + {i * Nr * vec_width_ele}; // Row: {i}'
             c_load = lambda i, k: intrinsics.load_aligned(f'C{i} + {i * Nr * vec_width_ele + k * vec_width_ele}')
         else:
-            c_row = lambda i: f' C + {i} * N'
+            c_row = lambda i: f' C + {i} * C_stride'
             c_load = lambda i, k: intrinsics.load(f'C{i} + {k} * {vec_width_ele}')
 
         body += 'if (load_c) {'
@@ -350,7 +350,7 @@ class UKernelCodegenBase:
         if packed_B:
             body += f'const {scalar} *__restrict__ B_curr = col_indices[0] * (N_r) + B;'
         else:
-            body += f'const {scalar} *__restrict__ B_curr = col_indices[0] * N + B;'
+            body += f'const {scalar} *__restrict__ B_curr = col_indices[0] * B_stride + B;'
 
         body += 'uint32_t * col_indices_curr = col_indices + 1;'
 
@@ -369,7 +369,7 @@ class UKernelCodegenBase:
             c_store = lambda i, k: intrinsics.store_aligned(
                 f'(C + {i * Nr * vec_width_ele + k * vec_width_ele})', f'c{i}{k}')
         else:
-            c_store = lambda i, k: intrinsics.store(f'C + {i} * N + {k * vec_width_ele}', f'c{i}{k}')
+            c_store = lambda i, k: intrinsics.store(f'C + {i} * C_stride + {k * vec_width_ele}', f'c{i}{k}')
 
         body += [f'{c_store(i, k)};' for i in range(self.Mr) for k in range(Nr)]
         sop_panel_executor += body.sub_elements
@@ -459,11 +459,11 @@ class UKernelCodegenBase:
         acc_width_str = "max_acc"
         return f'''
     __ALWAYS_INLINE static void _microkernel{name}_{acc_width_str}(
-        int M, int K, int N,
-        int* __restrict__            nkern_counts,
-        uint32_t* __restrict__       col_indices,
-        {scalar}* __restrict__       values,
-        int                          num_col_indices,
+        const int C_stride, 
+        const int B_stride,
+        int* __restrict__ nkern_counts,
+        uint32_t* __restrict__ col_indices,
+        {scalar}* __restrict__ values,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         const bool load_c)
@@ -471,7 +471,8 @@ class UKernelCodegenBase:
     }}\n\n
 
     __ALWAYS_INLINE static void microkernel{name}_{acc_width_str}(
-        int M, int K, int N,
+        const int C_stride, 
+        const int B_stride,
         const sop::MicroKernelPackedData& panel_desc,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
@@ -480,20 +481,18 @@ class UKernelCodegenBase:
         uint32_t* __restrict__  col_indices = (uint32_t*) panel_desc.col_indices;
         float* __restrict__     values = panel_desc.values;
         int* __restrict__       nkern_counts = panel_desc.nkern_counts;
-        int                     num_nkern = panel_desc.num_nkern;
-        int                     num_col_indices = panel_desc.num_col_indices;
-      
+
         _microkernel{name}_{acc_width_str}(
-            M, K, N, nkern_counts, col_indices, values, num_col_indices, B, C,{mask_str} load_c
+            C_stride, B_stride, nkern_counts, col_indices, values, B, C,{mask_str} load_c
         );
     }}
     
     __ALWAYS_INLINE static void _microkernel_cleanup{name}_{acc_width_str}(
-        int M, int K, int N,
-        int* __restrict__            nkern_counts,
-        uint32_t* __restrict__       col_indices,
-        {scalar}* __restrict__       values,
-        int                          num_col_indices,
+        const int C_stride, 
+        const int B_stride,
+        int* __restrict__ nkern_counts,
+        uint32_t* __restrict__ col_indices,
+        {scalar}* __restrict__ values,
         const {scalar} *__restrict__ B,
         {scalar} *__restrict__ C,
         const bool load_c,

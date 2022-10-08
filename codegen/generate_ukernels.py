@@ -16,18 +16,22 @@ kernel_descs = {
     "AVX512": [
         'KD_IntelFloatNKM',
         'KD_IntelFloatLoadBalancedNKM',
+        'KD_IntelFloatCPackedNKM',
+        'KD_IntelFloatLoadBalancedCPackedNKM',
         'KD_IntelFloatKNM',
         'KD_IntelFloatLoadBalancedKNM',
-        #'KD_IntelFloatCPartialPacking',
-
+        'KD_IntelFloatCPackedKNM',
+        'KD_IntelFloatLoadBalancedCPackedKNM'
     ],
     "AVX2": [
         'KD_IntelFloatNKM',
         'KD_IntelFloatLoadBalancedNKM',
+        'KD_IntelFloatCPackedNKM',
+        'KD_IntelFloatLoadBalancedCPackedNKM',
         'KD_IntelFloatKNM',
         'KD_IntelFloatLoadBalancedKNM',
-        #'KD_IntelFloatCPartialPacking',
-
+        'KD_IntelFloatCPackedKNM',
+        'KD_IntelFloatLoadBalancedCPackedKNM'
     ],
     "NEON": [
         'KD_PIFloatSplitN',
