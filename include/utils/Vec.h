@@ -5,7 +5,9 @@
 #ifndef DNN_SPMM_BENCH_VEC_TYPE_UTILS_H
 #define DNN_SPMM_BENCH_VEC_TYPE_UTILS_H
 
-#if defined(__AVX512F__) || defined(__AVX2__)
+// ENABLE_AVX2 and ENABLE_AVX512 as an alternative to __AVX2__ and __AVX512F__ for now as a hack for XNNPACK test
+//  files not being built with -mavx2 or -mavx512f
+#if defined(__AVX512F__) || defined(__AVX2__) || defined(SPNANO_AVX) && SPNANO_AVX
 #include "vectorclass.h"
 #define VECTORCLASS_ENABLED 1
 

@@ -130,11 +130,27 @@ class MatMul {
   int require_storage = 0;
 
   MatMul(
-      int m, int k,
+    int m, int k,
+    int           b_col_predict,
+    const Scalar* values,
+    const int*    row_offsets,
+    const int*    column_indices,
+    TileConfig    config_,
+    int           num_threads,
+    std::string   executor_id,
+    std::string   mapping_id,
+    const Scalar* bias = nullptr,
+    enum Activation activation = NONE,
+    Scalar min = std::numeric_limits<Scalar>::min(),
+    Scalar max = std::numeric_limits<Scalar>::max()
+  ) {
+    coo = new COO<Scalar>(m, k, row_offsets, column_indices, values);
+    MatMul(coo, m, k, b_col_predict, config_, num_threads, executor_id, mapping_id, bias, activation, min, max);
+  }
+
+  MatMul(
+      COO<Scalar>* coo,
       int           b_col_predict,
-      const Scalar* values,
-      const int*    row_offsets,
-      const int*    column_indices,
       TileConfig    config_,
       int           num_threads,
       std::string   executor_id,
@@ -143,8 +159,8 @@ class MatMul {
       enum Activation activation = NONE,
       Scalar min = std::numeric_limits<Scalar>::min(),
       Scalar max = std::numeric_limits<Scalar>::max()
-  ):
-      m(m), k(k), config(config_),
+  ):  coo(coo),
+      m(coo->rows()), k(coo->cols()), config(config_),
       num_threads(num_threads),
       executor_id(executor_id),
       executor_factory(ExecutorFactory<KernelDesc>::get_factory(executor_id)),
@@ -153,7 +169,6 @@ class MatMul {
       bias(bias),
       activation(activation),
       min(min), max(max) {
-    coo = new COO<Scalar>(m, k, row_offsets, column_indices, values);
 
     ERROR_AND_EXIT_IF(!executor_factory,
       "Executor factory not found: " << executor_id <<
