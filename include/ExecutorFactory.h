@@ -25,19 +25,12 @@ public:
   ExecutorFactory(int M_r = 0, int N_r = 0): M_r(M_r), N_r(N_r) {}
   virtual ~ExecutorFactory() = default;
 
-  virtual Executor* create_specialized_executor(
-      int M, int K, int N,
+  virtual Executor<Scalar>* create_specialized_executor(
+      int M, int K, int N, int batch_size,
       const vector<vector<PackedTile<Scalar>>>& tiles,
       const vector<int>& upanel_swizzle,
-      const Scalar* __restrict__ B,
-      Scalar* __restrict__ C,
-      int batch_size,
       int num_threads,
-      const TileConfig& config,
-      const float* bias,
-      enum Activation activation,
-      const float min,
-      const float max
+      const TileConfig& config
   ) { return nullptr; };
 
   // Hack for now to enforce initialization order, only works within
@@ -76,23 +69,15 @@ class ExecutorFactorySpecialized: public ExecutorFactory<_KernelDesc> {
  public:
   ExecutorFactorySpecialized(int M_r, int N_r): Super(M_r, N_r) {}
 
-  Executor* create_specialized_executor(
-    int M, int K, int N,
+  Executor<Scalar>* create_specialized_executor(
+    int M, int K, int N, int batch_size,
     const vector<vector<PackedTile<Scalar>>>& tiles,
     const vector<int>& upanel_swizzle,
-    const Scalar* __restrict__ B,
-    Scalar* __restrict__ C,
-    int batch_size,
     int num_threads,
-    const TileConfig& config,
-    const Scalar* bias,
-    enum Activation activation,
-    const Scalar min,
-    const Scalar max
+    const TileConfig& config
   ) override {
     return new ExecutorSpecialized<_KernelDesc, MicroKernelDesc<_MircoKernel>>(
-      M, K, N, tiles, upanel_swizzle, B, C, batch_size, num_threads, config,
-      bias, activation, min, max);
+      M, K, N, batch_size, tiles, upanel_swizzle, num_threads, config);
   }
 };
 

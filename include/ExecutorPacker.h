@@ -38,40 +38,45 @@ struct Packer {
 
     int M_c, K_c, N_c;
     int M, K, N;
-    int M_p, N_p;
+    int K_p, N_p;
     int nThreads;
-    int c_M_r, c_N_r;
+    int c_N_r;
 
     static constexpr int M_r = TileDims::M_r;
     static constexpr int N_r = TileDims::N_r;
 
     Scalar __restrict__ *C_packed = nullptr;
+    Scalar __restrict__ *B_packed = nullptr;
 
     Packer(
-            int M, int K, int N,
-            int M_c, int K_c, int N_c,
-            int nThreads
+        int M, int K, int N,
+        int M_c, int K_c, int N_c,
+        int nThreads
     ) : M(M), K(K), N(N), M_c(M_c), K_c(K_c), N_c(N_c), nThreads(nThreads) {
-        N_p = next_largest_multiple(M_c, N_r);
-        M_p = next_largest_multiple(N_c, M_r);
-        c_N_r = N_p / N_r;
-        c_M_r = M_p / M_r;
+        N_p = next_largest_multiple(N, N_c);
+        K_p = next_largest_multiple(K, 16);
+        c_N_r = N_c / N_r;
     }
 
     ~Packer() {
-        ::operator delete[](C_packed, std::align_val_t(4096));
+        if (C_packed) operator delete[](C_packed, std::align_val_t(64));
+        if (B_packed) operator delete[](B_packed, std::align_val_t(64));
     }
 
     void allocate_C_buffers() {
-        C_packed = new(std::align_val_t(4096)) Scalar[M_p * N_p * nThreads];
+        C_packed = new(std::align_val_t(64)) Scalar[M_c * N_c * nThreads];
+    }
+
+    void allocate_B_buffers() {
+        B_packed = new(std::align_val_t(64)) Scalar[K_p * N_p];
     }
 
     _ai Scalar __restrict__ *get_C_packed_buffer(int threadId, int m, int n) {
-        return C_packed + (threadId * M_p * N_p) + (m * N_p) + n;
+        return C_packed + (threadId * M_c * N_c) + (m * N_p) + n;
     }
 
     _ai Scalar __restrict__ *get_C_packed_buffer(int threadId) {
-        return C_packed + (threadId * M_p * N_p);
+        return C_packed + (threadId * M_c * N_c);
     }
 
     _ai Scalar __restrict__ *seek_to_next_reg_tile(Scalar __restrict__ *buffer) {
@@ -82,6 +87,7 @@ struct Packer {
         return buffer + (M_r * N_r) * c_N_r * row;
     }
 
+/*  NOT NEEDED SINCE WE FUSED C UNPACKING INTO THE MICROKERNEL
     void unpack_C_reg_tile(Scalar __restrict__ *C, Scalar __restrict__ *C_packed_tile) {
         Scalar __restrict__ *C_packed_tile_a = (Scalar*) __builtin_assume_aligned(C_packed_tile, 16);
         for (int i = 0; i < M_r; i++) {
@@ -137,6 +143,7 @@ struct Packer {
             }
         }
     }
+*/
 
 };
 

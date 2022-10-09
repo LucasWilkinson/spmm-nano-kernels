@@ -23,11 +23,16 @@ namespace sop {
 
     using std::vector;
 
+    template<typename Scalar>
     struct Executor {
         Executor() = default;
         virtual ~Executor() = default;
         virtual void execute_thread(int p_tile, int thread_id) = 0;
-        virtual void operator()() = 0;
+        virtual void operator()(Scalar* __restrict__ _C, const Scalar* __restrict__ _B,
+                                const Scalar* _bias,
+                                enum Activation activation = NONE,
+                                const Scalar min = std::numeric_limits<Scalar>::min(),
+                                const Scalar max = std::numeric_limits<Scalar>::max()) = 0;
     };
 
     template <typename F, typename ... Ts>
@@ -50,7 +55,7 @@ namespace sop {
     }
 
     template <typename KernelDesc, typename MicroKernelDesc>
-    struct ExecutorSpecialized: Executor {
+    class ExecutorSpecialized: public Executor<typename KernelDesc::Scalar> {
         using Scalar = typename KernelDesc::Scalar;
 
         using RegTile = typename MicroKernelDesc::RegTile;
@@ -70,7 +75,8 @@ namespace sop {
         const vector<int>& upanel_swizzle;
 
         const Scalar* __restrict__ B;
-        Scalar* __restrict__ C;
+        Scalar* __restrict__ C = nullptr;
+        const Scalar* __restrict__ bias = nullptr;
 
         Packer<KernelDesc, MicroKernelDesc>* packer = nullptr;
 
@@ -100,37 +106,24 @@ namespace sop {
 
         MicroKernel ukernel;
 
-        const Scalar* __restrict__ bias = nullptr;
-        Scalar min = std::numeric_limits<Scalar>::min();
-        Scalar max = std::numeric_limits<Scalar>::max();
-
         bool report_packing_time = false;
 
+    public:
         ExecutorSpecialized(
-            int M, int K, int N,
+            int M, int K, int N, int batch_size,
             const vector<vector<PackedTile>>& tiles,
             const vector<int>& upanel_swizzle,
-            const Scalar* __restrict__ B,
-            Scalar* __restrict__ C,
-            int batch_size,
             int num_threads,
-            const TileConfig& config,
-            const Scalar* __restrict__ bias = nullptr,
-            enum Activation activation = NONE,
-            Scalar min = std::numeric_limits<Scalar>::min(),
-            Scalar max = std::numeric_limits<Scalar>::max()
+            const TileConfig& config
         ): M(M), K(K), N(N),
            tiles(tiles),
            upanel_swizzle(upanel_swizzle),
-           B(B), C(C),
            batch_size(batch_size),
            num_threads(num_threads),
            config(config),
            td(M, K, N, config.M_c, config.K_c,
               std::max(config.N_c, N_r), num_threads),
-           M_c(td.M_c), K_c(td.K_c), N_c(td.N_c),
-           bias(bias),
-           ukernel(MicroKernel(activation, min, max))
+           M_c(td.M_c), K_c(td.K_c), N_c(td.N_c)
         {
             int N_c_rem = (N % N_c);
             int N_r_rem = (N % N_r);
@@ -229,6 +222,7 @@ namespace sop {
                 const bool final_store) {
             int _c_N_r = (partial_Nc_loop) ? final_N_c_loop_N_r_count : c_N_r;
             Scalar* __restrict__ C_p_base = C_p;
+            Scalar* __restrict__ C_o = nullptr;
 
             // M_r loop
             for (int pi = 0; pi < pt.sop.num_panels; pi++) {
@@ -251,17 +245,16 @@ namespace sop {
                 for (; tj < _c_N_r; tj++, jj += N_r) { // N_r loop
                     if constexpr(packed_C && !packed_B) {
                         B_p = B + jj;
+                        C_o = (!final_store) ? C_p : C + jj + ii * N;
 
                         ukernel.vectorized(
                             C_p, N_r,
+                            C_o, (!final_store) ? N_r : N,
                             B_p, N,
                             nkern_counts, col_inds, values,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
                         );
-
-                        if (final_store)
-                            packer->unpack_C_reg_tile(C + jj + (global_upanel_id * M_r) * N, C_p);
 
                         C_p = packer->seek_to_next_reg_tile(C_p);
                     } else if constexpr(!packed_C && packed_B) {
@@ -285,18 +278,17 @@ namespace sop {
                 if (partial_Nc_loop && partial_N_r_loop) {
                     if constexpr(packed_C && !packed_B) {
                         B_p = B + jj;
+                        C_o = (!final_store) ? C_p : C + jj + ii * N;
 
                         ukernel.cleanup(
                             final_N_r_loop_rem,
                             C_p, N_r,
+                            C_o, (!final_store) ? N_r : N,
                             B_p, N,
                             nkern_counts, col_inds, values,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
                         );
-
-                        if (final_store)
-                            packer->unpack_C_reg_tile(C + jj + (global_upanel_id * M_r) * N, C_p, final_N_r_loop_rem);
 
                         // We don't know if we've traversed the entire row of B,
                         //    reset from the base pointer for the next panel
@@ -409,8 +401,8 @@ namespace sop {
             int tjj = 0, jjj = 0;
             for (; tjj < Nb_full; tjj++, jjj += N_c) {
                 for (int tkk = 0; tkk < Kb; tkk++) {
-                    const bool unpack = tkk == Kb - 1;
-                    _inner_nm_loop<true, false>(C_p, nullptr, tii, jjj, tiles[tii][tkk], false, unpack);
+                    const bool final_store = tkk == Kb - 1;
+                    _inner_nm_loop<true, false>(C_p, nullptr, tii, jjj, tiles[tii][tkk], false, final_store);
                 }
 
                 //packer->unpack_C_cache_tile(C + jjj + (tii) * M_c * N,  C_p, N_c);
@@ -418,8 +410,8 @@ namespace sop {
 
             if (partial_N_c_loop || partial_N_r_loop) {
                 for (int tkk = 0; tkk < Kb; tkk++) {
-                    const bool unpack = tkk == Kb - 1;
-                    _inner_nm_loop<true, false>(C_p, nullptr, tii, jjj, tiles[tii][tkk], true, unpack);
+                    const bool final_store = tkk == Kb - 1;
+                    _inner_nm_loop<true, false>(C_p, nullptr, tii, jjj, tiles[tii][tkk], true, final_store);
                 }
 
                 //packer->unpack_C_cache_tile(C + jjj + (tii) * M_c * N,  C_p, final_N_c_size);
@@ -499,7 +491,15 @@ namespace sop {
             }
         }
 
-        void operator()() {
+        void operator()(Scalar* __restrict__ _C, const Scalar* __restrict__ _B,
+                        const Scalar* _bias,
+                        enum Activation activation = NONE,
+                        const Scalar min = std::numeric_limits<Scalar>::min(),
+                        const Scalar max = std::numeric_limits<Scalar>::max()) {
+            // TODO: go back and follow _ member naming convention
+            C = _C; B = _B; bias = _bias;
+            ukernel = MicroKernel(activation, min, max);
+
             // TODO: Reimplement B packing
             static_assert(B_PACKING == NO_PACKING,
                           "B packing not implemented (needs to reimplemeted)");

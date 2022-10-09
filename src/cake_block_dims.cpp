@@ -4,6 +4,7 @@
 //
 
 #include "cake_block_dims.h"
+#include "utils/bmath.h"
 
 #include <iostream>
 
@@ -788,6 +789,11 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
     while (M % blk_ret->m_c) {
       blk_ret->m_c--;
     }
+  }
+
+
+  if (blk_ret->n_c >= N) {
+    blk_ret->n_c = next_largest_multiple(N, 16);
   }
 
 //  if (nc_must_divide_N) {

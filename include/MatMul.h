@@ -65,6 +65,7 @@ class MatMul {
   std::string mapping_id;
 
   ExecutorFactory<KernelDesc>* executor_factory;
+  Executor<Scalar>* executor = nullptr;
   MicroKernelPackerFactory<Scalar>* packer_factory;
   std::shared_ptr<MicroKernelPacker<Scalar>> packer;
 
@@ -77,12 +78,6 @@ class MatMul {
   DenseMatrix<double> tile_densities;
   DenseMatrix<bool> tile_is_dense;
   DenseMatrix<TileType> tile_type;
-
-  const Scalar* bias = nullptr;
-  enum Activation activation = NONE;
-  Scalar min = std::numeric_limits<Scalar>::min();
-  Scalar max = std::numeric_limits<Scalar>::max();
-
 
   struct Stats {
     int total_tile_count = 0;
@@ -130,46 +125,20 @@ class MatMul {
   int require_storage = 0;
 
   MatMul(
-    int m, int k,
-    int           b_col_predict,
-    const Scalar* values,
-    const int*    row_offsets,
-    const int*    column_indices,
-    TileConfig    config_,
-    int           num_threads,
-    std::string   executor_id,
-    std::string   mapping_id,
-    const Scalar* bias = nullptr,
-    enum Activation activation = NONE,
-    Scalar min = std::numeric_limits<Scalar>::min(),
-    Scalar max = std::numeric_limits<Scalar>::max()
-  ) {
-    coo = new COO<Scalar>(m, k, row_offsets, column_indices, values);
-    MatMul(coo, m, k, b_col_predict, config_, num_threads, executor_id, mapping_id, bias, activation, min, max);
-  }
-
-  MatMul(
       COO<Scalar>* coo,
       int           b_col_predict,
       TileConfig    config_,
       int           num_threads,
       std::string   executor_id,
-      std::string   mapping_id,
-      const Scalar* bias = nullptr,
-      enum Activation activation = NONE,
-      Scalar min = std::numeric_limits<Scalar>::min(),
-      Scalar max = std::numeric_limits<Scalar>::max()
+      std::string   mapping_id
   ):  coo(coo),
       m(coo->rows()), k(coo->cols()), config(config_),
       num_threads(num_threads),
       executor_id(executor_id),
-      executor_factory(ExecutorFactory<KernelDesc>::get_factory(executor_id)),
-      packer_factory(MicroKernelPackerFactory<Scalar>::get_factory(executor_id)),
       mapping_id(mapping_id),
-      bias(bias),
-      activation(activation),
-      min(min), max(max) {
-
+      executor_factory(ExecutorFactory<KernelDesc>::get_factory(executor_id)),
+      packer_factory(MicroKernelPackerFactory<Scalar>::get_factory(executor_id))
+  {
     ERROR_AND_EXIT_IF(!executor_factory,
       "Executor factory not found: " << executor_id <<
       " for kernel desc: " << type_name<KernelDesc>() <<
@@ -239,6 +208,20 @@ class MatMul {
     }
 
     inspect_and_pack();
+    delete coo;
+  }
+
+  MatMul(
+      int m, int k, int b_col_predict,
+      const Scalar* values,
+      const int*    row_offsets,
+      const int*    column_indices,
+      TileConfig    config_,
+      int           num_threads,
+      std::string   executor_id,
+      std::string   mapping_id
+  ): MatMul(new COO<Scalar>(m, k, row_offsets, column_indices, values),
+            b_col_predict, config_, num_threads, executor_id, mapping_id) {
   }
 
   TileConfig get_config() const {
@@ -247,24 +230,30 @@ class MatMul {
   }
 
   ~MatMul() {
-    delete coo;
+    if (executor) delete executor;
     free(linear_buffer);
   }
 
   // This operator overloading enables calling
   // operator function () on objects of increment
-  void operator()(Scalar* C, const Scalar* B, int b_cols) const {
-    struct Executor* executor = create_executor(C, B, b_cols) ;
-    (*executor)();
-    delete executor;
+  void operator()(Scalar* C, const Scalar* B,
+                  const Scalar* bias = nullptr,
+                  enum Activation activation = NONE,
+                  const Scalar min = std::numeric_limits<Scalar>::min(),
+                  const Scalar max = std::numeric_limits<Scalar>::max()) const {
+    if (!executor) { ERROR_AND_EXIT("Executor not initialized"); }
+    (*executor)(C, B, bias, activation, min, max);
   }
 
   // This operator overloading enables calling
   // operator function () on objects of increment
-  struct Executor* create_executor(Scalar* C, const Scalar* B, int b_cols) const {
-    return executor_factory->create_specialized_executor(
-      m, k, b_cols, packed_tiles, upanel_swizzle, B, C, 1, num_threads, config,
-      bias, activation, min, max);
+  void allocate_executor(int b_cols) {
+      if (executor)  delete executor;
+      executor = executor_factory->create_specialized_executor(
+          m, k, b_cols, 1,
+          packed_tiles, upanel_swizzle,
+          num_threads, config
+      );
   }
 
 
