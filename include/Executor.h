@@ -13,8 +13,6 @@
 #include "utils/Vec.h"
 #include "utils/error.h"
 
-#include "boost/preprocessor/repetition/repeat.hpp"
-
 #include "Config.h"
 #include "KernelDesc.h"
 #include "MicroKernelDesc.h"

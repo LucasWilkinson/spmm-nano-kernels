@@ -44,7 +44,7 @@ kernel_descs = {
 mappings_to_generate = ["61fee", "da01e", "400fa", "747f9"]
 
 shutil.rmtree(output_root, ignore_errors=True)
-os.makedirs(output_root)
+os.makedirs(output_root, exist_ok=True)
 
 mapping_to_executor = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: [])))
 

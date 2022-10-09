@@ -16,9 +16,6 @@
 #include "utils/error.h"
 #include "utils/bmath.h"
 
-
-#include "boost/preprocessor/repetition/repeat.hpp"
-
 #include "Enums.h"
 #include "Config.h"
 #include "KernelDesc.h"
