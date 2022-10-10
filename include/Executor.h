@@ -27,12 +27,20 @@ namespace sop {
     struct Executor {
         Executor() = default;
         virtual ~Executor() = default;
-        virtual void execute_thread(int p_tile, int thread_id) = 0;
         virtual void operator()(Scalar* __restrict__ _C, const Scalar* __restrict__ _B,
                                 const Scalar* _bias,
                                 enum Activation activation = NONE,
                                 const Scalar min = std::numeric_limits<Scalar>::min(),
                                 const Scalar max = std::numeric_limits<Scalar>::max()) = 0;
+
+        virtual void begin_threaded(Scalar* __restrict__ _C, const Scalar* __restrict__ _B,
+                                    const Scalar* _bias,
+                                    enum Activation activation = NONE,
+                                    const Scalar min = std::numeric_limits<Scalar>::min(),
+                                    const Scalar max = std::numeric_limits<Scalar>::max()) = 0;
+        virtual void execute_thread(int p_tile, int thread_id) = 0;
+        virtual int num_parallel_tile() const = 0;
+
     };
 
     template <typename F, typename ... Ts>
@@ -524,7 +532,7 @@ namespace sop {
          *    Outer Loop
          ******************************************/
 
-        constexpr int num_parallel_tile() {
+        int num_parallel_tile() const {
             if constexpr(
                     KernelDesc::Sched == C1_NmKM
                     || KernelDesc::Sched == C3_nmKNM
@@ -596,20 +604,26 @@ namespace sop {
             }
         }
 
+
+        void begin_threaded(Scalar* __restrict__ _C, const Scalar* __restrict__ _B,
+                            const Scalar* _bias,
+                            enum Activation activation = NONE,
+                            const Scalar min = std::numeric_limits<Scalar>::min(),
+                            const Scalar max = std::numeric_limits<Scalar>::max()) {
+
+            C = _C; B = _B; bias = _bias;
+            ukernel = MicroKernel(activation, min, max);
+
+            if constexpr(B_PACKING != NO_PACKING) packer->reset_B_packed_flags();
+        }
+
         void operator()(Scalar* __restrict__ _C, const Scalar* __restrict__ _B,
                         const Scalar* _bias,
                         enum Activation activation = NONE,
                         const Scalar min = std::numeric_limits<Scalar>::min(),
                         const Scalar max = std::numeric_limits<Scalar>::max()) {
             // TODO: go back and follow _ member naming convention
-            C = _C; B = _B; bias = _bias;
-            ukernel = MicroKernel(activation, min, max);
-
-            if constexpr(B_PACKING != NO_PACKING) packer->reset_B_packed_flags();
-
-            // TODO: Reimplement B packing
-//            static_assert(B_PACKING == NO_PACKING,
-//                          "B packing not implemented (needs to reimplemeted)");
+            begin_threaded(_C, _B, _bias, activation, min, max);
 
             #pragma omp parallel for schedule(static)
             for (int p = 0; p < num_parallel_tile(); p++) {

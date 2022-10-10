@@ -34,8 +34,22 @@ using std::vector;
 
 namespace sop {
 
-template <typename KernelDesc>
+template<typename Scalar>
 class MatMul {
+
+public:
+  virtual void operator()(Scalar* C, const Scalar* B,
+                  const Scalar* bias = nullptr,
+                  enum Activation activation = NONE,
+                  const Scalar min = std::numeric_limits<Scalar>::min(),
+                  const Scalar max = std::numeric_limits<Scalar>::max()) const = 0;
+  virtual void allocate_executor(int b_cols) = 0;
+  virtual Executor<Scalar>* get_executor() const = 0;
+
+};
+
+template <typename KernelDesc>
+class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
   using Scalar = typename KernelDesc::Scalar;
   static const Schedule schedule = KernelDesc::Sched;
 
@@ -124,7 +138,7 @@ class MatMul {
  public:
   int require_storage = 0;
 
-  MatMul(
+  MatMulSpecialized(
       COO<Scalar>* coo,
       int           b_col_predict,
       TileConfig    config_,
@@ -211,7 +225,7 @@ class MatMul {
     delete coo;
   }
 
-  MatMul(
+  MatMulSpecialized(
       int m, int k, int b_col_predict,
       const Scalar* values,
       const int*    row_offsets,
@@ -220,7 +234,7 @@ class MatMul {
       int           num_threads,
       std::string   executor_id,
       std::string   mapping_id
-  ): MatMul(new COO<Scalar>(m, k, row_offsets, column_indices, values),
+  ): MatMulSpecialized(new COO<Scalar>(m, k, row_offsets, column_indices, values),
             b_col_predict, config_, num_threads, executor_id, mapping_id) {
   }
 
@@ -229,7 +243,7 @@ class MatMul {
     return config;
   }
 
-  ~MatMul() {
+  ~MatMulSpecialized() {
     if (executor) delete executor;
     free(linear_buffer);
   }
@@ -243,6 +257,11 @@ class MatMul {
                   const Scalar max = std::numeric_limits<Scalar>::max()) const {
     if (!executor) { ERROR_AND_EXIT("Executor not initialized"); }
     (*executor)(C, B, bias, activation, min, max);
+  }
+
+  Executor<Scalar>* get_executor() const {
+    if (!executor) { ERROR_AND_EXIT("Executor not initialized"); }
+    return executor;
   }
 
   // This operator overloading enables calling

@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "Enums.h"
-#include "Storage.h"
 #include "Config.h"
-#include "Tile.h"
+#include "Enums.h"
 #include "Executor.h"
-#include "MatMul.h"
+#include "MatMulSpecialized.h"
+#include "Storage.h"
+#include "Tile.h"

@@ -388,6 +388,8 @@ rte_is_aligned(void *ptr, unsigned align)
 	(RTE_CACHE_LINE_SIZE * ((size + RTE_CACHE_LINE_SIZE - 1) / \
 	RTE_CACHE_LINE_SIZE))
 
+#define RTE_CACHE_LINE_SIZE 64 /* cache line size */
+
 /** Cache line size in terms of log2 */
 #if RTE_CACHE_LINE_SIZE == 64
 #define RTE_CACHE_LINE_SIZE_LOG2 6
