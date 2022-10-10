@@ -6,6 +6,18 @@
 
 template<typename T>
 inline __attribute__((__always_inline__))
-T next_largest_multiple(T x, T multiple) {
-    return ((x + multiple - 1) / multiple) * multiple;
+T ceil_div(T x, T y) {
+    return ((x + y - 1) / y);
+}
+
+template<typename T>
+inline __attribute__((__always_inline__))
+T next_multiple(T x, T multiple) {
+    return ceil_div(x, multiple) * multiple;
+}
+
+template<typename T>
+inline __attribute__((__always_inline__))
+T largest_multiple_leq(T x, T multiple) {
+  return (x / multiple) * multiple;
 }

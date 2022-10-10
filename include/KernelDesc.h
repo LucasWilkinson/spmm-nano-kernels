@@ -157,12 +157,48 @@ using KD_IntelFloatLoadBalancedCPackedKNM =
         LOAD_BALANCING
     >;
 
+using KD_IntelFloatPackedKNM =
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<PACK, PACK>,
+        C3_nmKNM,
+        NO_REORDERING
+    >;
+
+using KD_IntelFloatPackedNKM =
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<PACK, PACK>,
+        C3_nmNKM,
+        NO_REORDERING
+    >;
+
 
 using KD_IntelFloatLoadBalancedCPackedNKM =
     KernelDesc<
         float,
         CSRStorageTypes<float*, int>,
-        PackingDesc<PACK, NO_PACKING>,
+        PackingDesc<PACK, PACK>,
+        C3_nmNKM,
+        LOAD_BALANCING
+    >;
+
+using KD_IntelFloatLoadBalancedPackedKNM =
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<PACK, PACK>,
+        C3_nmKNM,
+        LOAD_BALANCING
+    >;
+
+using KD_IntelFloatLoadBalancedPackedNKM =
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<PACK, PACK>,
         C3_nmNKM,
         LOAD_BALANCING
     >;

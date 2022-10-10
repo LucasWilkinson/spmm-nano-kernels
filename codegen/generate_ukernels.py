@@ -18,20 +18,28 @@ kernel_descs = {
         'KD_IntelFloatLoadBalancedNKM',
         'KD_IntelFloatCPackedNKM',
         'KD_IntelFloatLoadBalancedCPackedNKM',
+        'KD_IntelFloatPackedNKM',
+        'KD_IntelFloatLoadBalancedPackedNKM',
         'KD_IntelFloatKNM',
         'KD_IntelFloatLoadBalancedKNM',
         'KD_IntelFloatCPackedKNM',
-        'KD_IntelFloatLoadBalancedCPackedKNM'
+        'KD_IntelFloatLoadBalancedCPackedKNM',
+        'KD_IntelFloatPackedKNM',
+        'KD_IntelFloatLoadBalancedPackedKNM'
     ],
     "AVX2": [
         'KD_IntelFloatNKM',
         'KD_IntelFloatLoadBalancedNKM',
         'KD_IntelFloatCPackedNKM',
         'KD_IntelFloatLoadBalancedCPackedNKM',
+        'KD_IntelFloatPackedNKM',
+        'KD_IntelFloatLoadBalancedPackedNKM',
         'KD_IntelFloatKNM',
         'KD_IntelFloatLoadBalancedKNM',
         'KD_IntelFloatCPackedKNM',
-        'KD_IntelFloatLoadBalancedCPackedKNM'
+        'KD_IntelFloatLoadBalancedCPackedKNM',
+        'KD_IntelFloatPackedKNM',
+        'KD_IntelFloatLoadBalancedPackedKNM'
     ],
     "NEON": [
         'KD_PIFloatSplitN',
@@ -75,7 +83,7 @@ for mapping_file in [f'{SCRIPT_DIR}/../mappings/mapping_{mapping_id}.txt' for ma
 
     Nrs_to_generate = {
         "AVX512": {4: [6, 4], 8: [3, 2]},
-        "AVX2":   {4: [6, 4], 8: [1, 2]},
+        "AVX2":   {4: [3, 2], 8: [2, 1]},
         "NEON":   {4: [4, 3, 2], 8: [4, 3, 2, 1]},
     }
 

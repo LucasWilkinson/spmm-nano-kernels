@@ -138,7 +138,8 @@ namespace sop {
 
             if (C_PACKING != NO_PACKING || B_PACKING != NO_PACKING) {
                 packer = new Packer<KernelDesc, MicroKernelDesc>(M, K, N, M_c, K_c, N_c, num_threads);
-                packer->allocate_C_buffers();
+                if (C_PACKING != NO_PACKING) packer->allocate_C_buffers();
+                if (B_PACKING != NO_PACKING) packer->allocate_B_buffers();
             }
         }
 
@@ -221,6 +222,7 @@ namespace sop {
                 const bool partial_Nc_loop,
                 const bool final_store) {
             int _c_N_r = (partial_Nc_loop) ? final_N_c_loop_N_r_count : c_N_r;
+            const Scalar* __restrict__ B_p_base = B_p;
             Scalar* __restrict__ C_p_base = C_p;
             Scalar* __restrict__ C_o = nullptr;
 
@@ -232,6 +234,9 @@ namespace sop {
                 // Just to be safe for now
                 if constexpr(packed_C)
                     C_p = packer->advance_to_row(C_p_base, pi);
+
+                if constexpr(packed_B)
+                    B_p = B_p_base;
 
                 uint32_t* __restrict__  col_inds = (uint32_t*) panel_desc.col_indices;
                 float* __restrict__     values = panel_desc.values;
@@ -258,9 +263,31 @@ namespace sop {
 
                         C_p = packer->seek_to_next_reg_tile(C_p);
                     } else if constexpr(!packed_C && packed_B) {
-                        ERROR_AND_EXIT("Not implemented");
+                        B_p = B_p_base + tj * N_r;
+                        C_p = C + jj + ii * N;
+
+                        ukernel.vectorized(
+                            C_p, N,
+                            B_p, N_c,
+                            nkern_counts, col_inds, values,
+                            pt.load_c, final_store,
+                            bias ? bias + ii : nullptr
+                        );
                     } else if constexpr(packed_C && packed_B) {
-                        ERROR_AND_EXIT("Not implemented");
+                        B_p = B_p_base + tj * N_r;
+                        C_o = (!final_store) ? C_p : C + jj + ii * N;
+
+                        ukernel.vectorized(
+                            C_p, N_r,
+                            C_o, (!final_store) ? N_r : N,
+                            B_p, N_c,
+                            nkern_counts, col_inds, values,
+                            pt.load_c, final_store,
+                            bias ? bias + ii : nullptr
+                        );
+
+                        //B_p = packer->seek_to_next_B_tile(B_p);
+                        C_p = packer->seek_to_next_reg_tile(C_p);
                     } else {
                         C_p = C + jj + ii * N;
                         B_p = B + jj;
@@ -276,6 +303,11 @@ namespace sop {
                 }
 
                 if (partial_Nc_loop && partial_N_r_loop) {
+
+                    if constexpr(packed_B) {
+
+                    }
+
                     if constexpr(packed_C && !packed_B) {
                         B_p = B + jj;
                         C_o = (!final_store) ? C_p : C + jj + ii * N;
@@ -294,9 +326,34 @@ namespace sop {
                         //    reset from the base pointer for the next panel
                         //C_p = packer->advance_to_row(C_p_base, pi + 1);
                     } else if constexpr(!packed_C && packed_B) {
-                        ERROR_AND_EXIT("Not implemented");
+                        B_p = B_p_base + tj * N_r;
+                        C_p = C + jj + ii * N;
+
+                        ukernel.cleanup(
+                            final_N_r_loop_rem,
+                            C_p, N,
+                            B_p, N_c,
+                            nkern_counts, col_inds, values,
+                            pt.load_c, final_store,
+                            bias ? bias + ii : nullptr
+                        );
                     } else if constexpr(packed_C && packed_B) {
-                        ERROR_AND_EXIT("Not implemented");
+                        B_p = B_p_base + tj * N_r;
+                        C_o = (!final_store) ? C_p : C + jj + ii * N;
+
+                        ukernel.cleanup(
+                            final_N_r_loop_rem,
+                            C_p, N_r,
+                            C_o, (!final_store) ? N_r : N,
+                            B_p, N_c,
+                            nkern_counts, col_inds, values,
+                            pt.load_c, final_store,
+                            bias ? bias + ii : nullptr
+                        );
+
+                        // We don't know if we've traversed the entire row of B,
+                        //    reset from the base pointer for the next panel
+                        //C_p = packer->advance_to_row(C_p_base, pi + 1);
                     } else {
                         C_p = C + jj + ii * N;
                         B_p = B + jj;
@@ -418,6 +475,51 @@ namespace sop {
             }
         }
 
+        template<bool packed_C, bool packed_B>
+        void _execute_row_panel_packed_KN(int tii, int thread_id) {
+          using std::min;
+
+          ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
+          int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
+          const int iii = tii * M_c;
+
+          Scalar* __restrict__ C_p = nullptr;
+          Scalar* __restrict__ B_p = nullptr;
+
+          if constexpr(packed_C) C_p = packer->get_C_packed_buffer(thread_id);
+          if constexpr(packed_B) B_p = packer->get_B_packed_buffer(0);
+
+          // K_c loop
+          int tjj = 0, jjj = 0;
+          for (; tjj < Nb_full; tjj++, jjj += N_c) {
+            if constexpr(packed_B) {
+              if (!packer->is_B_packed(tjj)) {
+                packer->pack_B(B_p, B + jjj, thread_id, N_c);
+                packer->mark_B_packed(tjj);
+              }
+            }
+
+            for (int tkk = 0; tkk < Kb; tkk++) {
+              const bool final_store = tkk == Kb - 1;
+              _inner_nm_loop<packed_C, packed_B>(C_p, B_p, tii, jjj, tiles[tii][tkk], false, final_store);
+            }
+
+            if constexpr(packed_B) B_p = packer->seek_to_next_B_tile(B_p);
+            //packer->unpack_C_cache_tile(C + jjj + (tii) * M_c * N,  C_p, N_c);
+          }
+
+          if (partial_N_c_loop || partial_N_r_loop) {
+            if constexpr(packed_B) packer->pack_B(B_p, B + jjj, thread_id, N - tjj * N_c);
+
+            for (int tkk = 0; tkk < Kb; tkk++) {
+              const bool final_store = tkk == Kb - 1;
+              _inner_nm_loop<packed_C, packed_B>(C_p, B_p, tii, jjj, tiles[tii][tkk], true, final_store);
+            }
+
+            //packer->unpack_C_cache_tile(C + jjj + (tii) * M_c * N,  C_p, final_N_c_size);
+          }
+        }
+
         /******************************************
          *    Outer Loop
          ******************************************/
@@ -439,7 +541,10 @@ namespace sop {
         void execute_thread(int p_tile, int thread_id) {
             ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
 
-            if constexpr(C_PACKING == PACK) {
+            static constexpr bool packed_C = C_PACKING == PACK;
+            static constexpr bool packed_B = B_PACKING == PACK;
+
+            if constexpr(packed_C || packed_B) {
                 switch (KernelDesc::Sched) {
                     case C1_NmKM: {
                         ERROR_AND_EXIT("Not implemented");
@@ -450,7 +555,7 @@ namespace sop {
                         break;
                     }
                     case C3_nmKNM:
-                        _execute_row_panel_packed_C_KN(p_tile, thread_id);
+                        _execute_row_panel_packed_KN<packed_C, packed_B>(p_tile, thread_id);
                         break;
                     case C3_nmNKM:
                         ERROR_AND_EXIT("Not implemented");
@@ -500,9 +605,11 @@ namespace sop {
             C = _C; B = _B; bias = _bias;
             ukernel = MicroKernel(activation, min, max);
 
+            if constexpr(B_PACKING != NO_PACKING) packer->reset_B_packed_flags();
+
             // TODO: Reimplement B packing
-            static_assert(B_PACKING == NO_PACKING,
-                          "B packing not implemented (needs to reimplemeted)");
+//            static_assert(B_PACKING == NO_PACKING,
+//                          "B packing not implemented (needs to reimplemeted)");
 
             #pragma omp parallel for schedule(static)
             for (int p = 0; p < num_parallel_tile(); p++) {

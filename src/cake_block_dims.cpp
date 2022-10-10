@@ -793,7 +793,7 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
 
 
   if (blk_ret->n_c >= N) {
-    blk_ret->n_c = next_largest_multiple(N, 16);
+    blk_ret->n_c = N; // next_largest_multiple(N, 16);
   }
 
 //  if (nc_must_divide_N) {
@@ -802,8 +802,11 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
 //    }
 //  }
 
-  blk_ret->n_c  = std::max(blk_ret->n_c / cake_cntx->nr, 1) * cake_cntx->nr;
+  blk_ret->n_c  = std::max(next_multiple(blk_ret->n_c, cake_cntx->nr), cake_cntx->nr);
   blk_ret->m_c  = std::max(blk_ret->m_c / cake_cntx->mr, 1) * cake_cntx->mr;
+
+  //blk_ret->n_c = std::min(blk_ret->n_c, 128);
+  //std::cout << "N_c: " << blk_ret->n_c << std::endl;
 
   return blk_ret;
 }
