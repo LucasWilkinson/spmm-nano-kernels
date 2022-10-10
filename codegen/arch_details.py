@@ -78,6 +78,10 @@ class Arch:
     def max_intrin(self, scalar, vec_width_bits):
         pass
 
+    @abstractmethod
+    def alignr_intrin(self, scalar, vec_width_bits):
+        pass
+
 
 class ArchIntrinGenerator:
     def __init__(self, arch: Arch, vec_width_bits: int, scalar: str):
@@ -127,6 +131,9 @@ class ArchIntrinGenerator:
 
     def max_intrin(self, a, b):
         return self.arch.max_intrin(self.scalar, self.vec_width_bits)(a, b)
+
+    def alignr_intrin(self, a, b, offset):
+        return self.arch.alignr_intrin(self.scalar, self.vec_width_bits)(a, b, offset)
 
 
 class AVX(Arch, ABC):
@@ -190,6 +197,9 @@ class AVX(Arch, ABC):
 
     def min_intrin(self, scalar, vec_width_bits):
         return partial(AVX._intrin, func='min', vec_width_bits=vec_width_bits, scalar=scalar)
+
+    def alignr_intrin(self, scalar, vec_width_bits):
+        return partial(AVX._intrin, func='alignr', vec_width_bits=vec_width_bits, scalar=scalar)
 
 
 class AVX512(AVX):

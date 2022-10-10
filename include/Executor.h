@@ -503,6 +503,7 @@ namespace sop {
             if constexpr(packed_B) {
               if (!packer->is_B_packed(tjj)) {
                 packer->pack_B(B_p, B + jjj, thread_id, N_c);
+                #pragma omp barrier
                 packer->mark_B_packed(tjj);
               }
             }
@@ -626,7 +627,7 @@ namespace sop {
             begin_threaded(_C, _B, _bias, activation, min, max);
 
             #pragma omp parallel for schedule(static)
-            for (int p = 0; p < num_parallel_tile(); p++) {
+            for (int p = 0; p < num_threads; p++) {
 #if defined(_OPENMP)
                 int thread_id = omp_get_thread_num();
 #else

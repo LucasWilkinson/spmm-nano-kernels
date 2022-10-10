@@ -291,6 +291,16 @@ class UKernelCodegenBase:
         case_body = Block()
 
         b_load = lambda k: intrinsics.load(f'B_curr + {k} * {vec_width_ele}')
+        b_load_a = lambda k, mask: intrinsics.load(f'B_curr_aligned + {k} * {vec_width_ele}', mask=mask)
+
+        case_body += f'if (B_curr & ({vec_width_ele} - 1) && B_curr & (4-1)) {{'
+        case_body += f'    // B is not aligned to 16 bytes, but is aligned to 4 bytes'
+        case_body += f'    switch(B_curr & ~(16-1)) {{'
+        case_body += f'        case 4: {{'
+        case_body += f'            auto B_curr_aligned = B_curr - 4;'
+        case_body += f'            {reg_t} ba0 = {b_load_a(0, f"{4-1} << 12") };'
+        case_body += f'}}'
+        case_body += f'}}'
         case_body += [f'{reg_t} b{k} = {b_load(k)};' for k in range(Nr)]
 
         if packed_B:
