@@ -293,7 +293,7 @@ class NEON(Arch, ABC):
         return lambda: f'vmovq_n_{NEON.instruction_suffix[scalar]}(0)'
 
     def broadcast_intrin(self, scalar, vec_width_bits):
-        return lambda src: f'vld1q_dup_{NEON.instruction_suffix[scalar]}(*({src}))'
+        return lambda src: f'vld1q_dup_{NEON.instruction_suffix[scalar]}(&({src}))'
 
     def broadcast_from_ptr_intrin(self, scalar, vec_width_bits):
         return lambda src: f'vld1q_dup_{NEON.instruction_suffix[scalar]}({src})'

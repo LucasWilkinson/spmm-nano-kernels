@@ -84,7 +84,7 @@ for mapping_file in [f'{SCRIPT_DIR}/../mappings/mapping_{mapping_id}.txt' for ma
     Nrs_to_generate = {
         "AVX512": {4: [6, 4], 8: [3, 2]},
         "AVX2":   {4: [3, 2], 8: [2, 1]},
-        "NEON":   {4: [4, 3, 2], 8: [4, 3, 2, 1]},
+        "NEON":   {4: [3, 2], 8: [2, 1]},
     }
 
     vecwidths_to_generate = {

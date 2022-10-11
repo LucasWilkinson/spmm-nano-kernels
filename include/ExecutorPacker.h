@@ -16,7 +16,9 @@
 #include "utils/error.h"
 #include "utils/bmath.h"
 
+#if defined(__AVX512F__) || defined(__AVX2__)
 #include "rte_memcpy.h"
+#endif
 
 #include "Enums.h"
 #include "Config.h"
@@ -49,8 +51,8 @@ struct Packer {
     static constexpr int M_r = TileDims::M_r;
     static constexpr int N_r = TileDims::N_r;
 
-    Scalar __restrict__ *C_packed = nullptr;
-    Scalar __restrict__ *B_packed = nullptr;
+    Scalar *__restrict__ C_packed = nullptr;
+    Scalar *__restrict__ B_packed = nullptr;
     bool* B_packed_flags = nullptr;
 
     Packer(
@@ -91,7 +93,7 @@ struct Packer {
         B_packed_flags[tjj] = true;
     }
 
-    _ai void memcpy_Nr(Scalar __restrict__ *B_packed, const Scalar __restrict__ *B) {
+    _ai void memcpy_Nr(Scalar *__restrict__ B_packed, const Scalar *__restrict__ B) {
         static_assert(N_r >= 16, "N_r must be at least 16 for the current mempcy implementation");
 
 
@@ -101,7 +103,7 @@ struct Packer {
 
     }
 
-    _ai void pack_B(Scalar __restrict__ *B_packed, const Scalar __restrict__ *B, int thread_id, int n) {
+    _ai void pack_B(Scalar *__restrict__ B_packed, const Scalar *__restrict__ B, int thread_id, int n) {
         int start_row = thread_id * rows_of_B_per_thread;
         int end_row = std::min(start_row + rows_of_B_per_thread, K);
 
@@ -121,31 +123,31 @@ struct Packer {
         }
     }
 
-    _ai Scalar __restrict__ *get_B_packed_buffer(int tjj) {
+    _ai Scalar *__restrict__ get_B_packed_buffer(int tjj) {
       return B_packed + (tjj * K_p * N_c);
     }
 
-    _ai Scalar* __restrict__ seek_to_next_B_tile(Scalar* __restrict__ B_p) {
+    _ai Scalar *__restrict__ seek_to_next_B_tile(Scalar *__restrict__ B_p) {
       return B_p + (K_p * N_c);
     }
 
-    _ai const Scalar* __restrict__ seek_to_next_B_tile(const Scalar* __restrict__ B_p) {
+    _ai const Scalar *__restrict__ seek_to_next_B_tile(const Scalar *__restrict__ B_p) {
       return B_p + (K_p * N_c);
     }
 
-    _ai Scalar __restrict__ *get_C_packed_buffer(int threadId, int m, int n) {
+    _ai Scalar *__restrict__ get_C_packed_buffer(int threadId, int m, int n) {
         return C_packed + (threadId * M_c * N_c) + (m * N_p) + n;
     }
 
-    _ai Scalar __restrict__ *get_C_packed_buffer(int threadId) {
+    _ai Scalar *__restrict__ get_C_packed_buffer(int threadId) {
         return C_packed + (threadId * M_c * N_c);
     }
 
-    _ai Scalar __restrict__ *seek_to_next_reg_tile(Scalar __restrict__ *buffer) {
+    _ai Scalar *__restrict__ seek_to_next_reg_tile(Scalar *__restrict__ buffer) {
         return buffer + (M_r * N_r);
     }
 
-    _ai Scalar __restrict__ *advance_to_row(Scalar __restrict__ *buffer, int row) {
+    _ai Scalar *__restrict__ advance_to_row(Scalar *__restrict__ buffer, int row) {
         return buffer + (M_r * N_r) * c_N_r * row;
     }
 

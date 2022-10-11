@@ -81,7 +81,7 @@ using KD_PIFloatSplitM =
         float,
         CSRStorageTypes<float*, int>,
         PackingDesc<NO_PACKING, NO_PACKING>,
-        C1_MKN,
+        C1_NmKM,
         NO_REORDERING
     >;
 

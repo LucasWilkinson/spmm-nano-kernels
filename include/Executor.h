@@ -575,6 +575,7 @@ namespace sop {
                 switch (KernelDesc::Sched) {
                     case C1_NmKM: {
                         int tii = p_tile;
+                        //std::cout << "N " << N << " Nc " << N_c << std::endl;
                         for (int tkk = 0; tkk < Kb; tkk++) {
                             bool final_store = (tkk == Kb - 1);
                             bool partial_Nc_loop = partial_N_c_loop || partial_N_r_loop; // since Nc == N
