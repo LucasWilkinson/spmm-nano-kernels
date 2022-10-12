@@ -38,6 +38,7 @@ template<typename Scalar>
 class MatMul {
 
 public:
+  virtual ~MatMul() = default;
   virtual void operator()(Scalar* C, const Scalar* B,
                   const Scalar* bias = nullptr,
                   enum Activation activation = NONE,
