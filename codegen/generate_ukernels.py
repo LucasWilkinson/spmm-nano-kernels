@@ -6,10 +6,10 @@ import json
 import shutil
 
 from collections import defaultdict
-from .codegen_utils import *
-from .base_ukernel_codegen import UKernelCodegenBase
-from .generate_registration import generate_ukernel_registration
-from .generate_mapping import generate_mapping_to_executor
+from codegen.codegen_utils import *
+from codegen.base_ukernel_codegen import UKernelCodegenBase
+from codegen.generate_registration import generate_ukernel_registration
+from codegen.generate_mapping import generate_mapping_to_executor
 
 output_root = os.path.abspath(f"{SCRIPT_DIR}/../generated/")
 kernel_descs = {
