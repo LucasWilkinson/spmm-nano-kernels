@@ -274,6 +274,7 @@ class UKernelCodegenBase:
         broadcast: callable
         min: callable
         max: callable
+        alignr: callable
 
     @staticmethod
     def nnz_iterator(pat):
@@ -285,23 +286,82 @@ class UKernelCodegenBase:
             pat >>= 1
             loc += 1
 
-    def _gen_nano_kernel_preload_B(self, Nr, intrinsics: Intrinsics, pat, packed_B=False):
+    def _gen_nano_kernel_preload_B(self, Nr, intrinsics: Intrinsics, pat, packed_B=False, alignB=False):
         reg_t = intrinsics.vec_type
         vec_width_ele = intrinsics.vec_width_ele
         case_body = Block()
 
         b_load = lambda k: intrinsics.load(f'B_curr + {k} * {vec_width_ele}')
-        b_load_a = lambda k, mask: intrinsics.load(f'B_curr_aligned + {k} * {vec_width_ele}', mask=mask)
 
-        case_body += f'if (B_curr & ({vec_width_ele} - 1) && B_curr & (4-1)) {{'
+        b_load_a = lambda k, mask: intrinsics.load(f'B_curr_aligned + {k} * {vec_width_ele}', mask=mask) if vec_width_ele > 1 and alignB else intrinsics.load(f'B_curr + {k} * {vec_width_ele}')
+        # b_load_a = lambda k, mask: "B_LOAD_A"
+
+        # case_body += f'if (B_curr & ({vec_width_ele} - 1) && B_curr & (4-1)) {{'
+        # case_body += f'    // B is not aligned to 16 bytes, but is aligned to 4 bytes'
+        # case_body += f'    switch(B_curr & ~(16-1)) {{'
+        # case_body += f'        case 4: {{'
+        # case_body += f'            auto B_curr_aligned = B_curr - 4;'
+        # case_body += f'            {reg_t} ba0 = {b_load_a(0, f"{4-1} << 12") };'
+        # case_body += f'}}'
+        # case_body += f'}}'
+        for k in range(Nr):
+            case_body += f'{reg_t} b{k};'
+
+        case_body += f'if ((uintptr_t)B_curr & ({vec_width_ele * 4} - 1) && !( (uintptr_t)B_curr & (16-1))) {{'
         case_body += f'    // B is not aligned to 16 bytes, but is aligned to 4 bytes'
-        case_body += f'    switch(B_curr & ~(16-1)) {{'
-        case_body += f'        case 4: {{'
+        case_body += f'    switch((uintptr_t)B_curr & (64-1)) {{'
+        case_body += f'        case 48: {{'
+        case_body += f'            auto B_curr_aligned = B_curr - 12;'
+        case_body += f'            {reg_t} ba0 = {b_load_a(0, f"0b1111000000000000") };'  
+        for k in range(Nr - 1):
+            case_body += f'            {reg_t} ba{k + 1} = {b_load_a(k + 1, None)};'
+            if vec_width_ele > 1 and alignB:
+                case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k+1}", f"(__m512i)ba{k}", f"12")};'
+        case_body += f'            {reg_t} ba{Nr} = {b_load_a(Nr, f"0b0000111111111111") };'
+        if vec_width_ele > 1 and alignB:
+                case_body += f'            b{Nr-1} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{Nr}", f"(__m512i)ba{Nr-1}", f"12")};'
+        # if vec_width_ele > 1 and alignB:
+        #     for k in range(Nr):
+        #         case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k}", f"(__m512i)ba{k + 1}", f"12")};'
+        case_body += f'            break;'
+        case_body += f'        }}'
+        case_body += f'        case 32: {{'
+        case_body += f'            auto B_curr_aligned = B_curr - 8;'
+        case_body += f'            {reg_t} ba0 = {b_load_a(0, f"0b1111111100000000") };'  
+        for k in range(Nr - 1):
+            case_body += f'            {reg_t} ba{k + 1} = {b_load_a(k + 1, None)};'
+            if vec_width_ele > 1 and alignB:
+                case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k+1}", f"(__m512i)ba{k}", f"8")};'
+        case_body += f'            {reg_t} ba{Nr} = {b_load_a(Nr, f"0b0000000011111111") };'
+        if vec_width_ele > 1 and alignB:
+                case_body += f'            b{Nr-1} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{Nr}", f"(__m512i)ba{Nr-1}", f"8")};'
+        # if vec_width_ele > 1 and alignB:
+        #     for k in range(Nr):
+        #         case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k}", f"(__m512i)ba{k + 1}", f"8")};'
+        case_body += f'            break;'
+        case_body += f'        }}'
+        case_body += f'        case 16: {{'
         case_body += f'            auto B_curr_aligned = B_curr - 4;'
-        case_body += f'            {reg_t} ba0 = {b_load_a(0, f"{4-1} << 12") };'
+        case_body += f'            {reg_t} ba0 = {b_load_a(0, f"0b1111111111110000") };'  
+        for k in range(Nr - 1):
+            case_body += f'            {reg_t} ba{k + 1} = {b_load_a(k + 1, None)};'
+            if vec_width_ele > 1 and alignB:
+                case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k+1}", f"(__m512i)ba{k}", f"4")};'
+        case_body += f'            {reg_t} ba{Nr} = {b_load_a(Nr, f"0b0000000000001111") };'
+        if vec_width_ele > 1 and alignB:
+                case_body += f'            b{Nr-1} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{Nr}", f"(__m512i)ba{Nr-1}", f"4")};'
+        # if vec_width_ele > 1 and alignB:
+        #     for k in range(Nr):
+        #         case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k}", f"(__m512i)ba{k + 1}", f"4")};'
+        case_body += f'            break;'
+        case_body += f'        }}'
+        case_body += f'     }}'
         case_body += f'}}'
+
+        case_body += f'else {{'
+        for k in range(Nr):
+            case_body += f'b{k} = {intrinsics.load(f"B_curr + {k} * {vec_width_ele}")};'
         case_body += f'}}'
-        case_body += [f'{reg_t} b{k} = {b_load(k)};' for k in range(Nr)]
 
         if packed_B:
             case_body += f'B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;'
@@ -340,7 +400,8 @@ class UKernelCodegenBase:
                             scalar,
                             intrinsics: Intrinsics,
                             packed_C=False,
-                            packed_B=False):
+                            packed_B=False,
+                            alignB=False):
         reg_t = intrinsics.vec_type
         vec_width_ele = intrinsics.vec_width_ele
 
@@ -384,7 +445,7 @@ class UKernelCodegenBase:
         ##
         for id, pat in enumerate(self.nanokernels):
             nkern_loop = ForLoop(f'int pat_count = nkern_counts[{id}]', 'pat_count > 0', 'pat_count--')
-            nkern_loop += self._gen_nano_kernel_preload_B(Nr, intrinsics, pat, packed_B=packed_B)
+            nkern_loop += self._gen_nano_kernel_preload_B(Nr, intrinsics, pat, packed_B=packed_B, alignB=alignB)
             body += nkern_loop
 
         ##
@@ -415,10 +476,11 @@ class UKernelCodegenBase:
     def _emit_executor_body_vectorized(self, Nr, arch, vec_width_bits, scalar,
                                        packed_C=False, packed_B=False,
                                        mask=None):
+        arch_str = arch
         arch = self.supported_archs[arch]
         assert arch.supports_scalar(scalar)
 
-        arch_intrinsics = ArchIntrinGenerator(arch, vec_width_bits, scalar)
+        arch_intrinsics = ArchIntrinGenerator(arch, vec_width_bits, scalar) #
         vec_width_ele = int(vec_width_bits / SCALAR_SIZE_BITS[scalar])
         vector_intrinsics = self.Intrinsics(
             vec_type=arch_intrinsics.vec_type(),
@@ -432,10 +494,12 @@ class UKernelCodegenBase:
             fma=arch_intrinsics.fma_intrin,
             zero_reg=arch_intrinsics.setzero_intrin,
             min=arch_intrinsics.min_intrin,
-            max=arch_intrinsics.max_intrin
+            max=arch_intrinsics.max_intrin,
+            alignr=arch_intrinsics.alignr_intrin
         )
 
-        return self._emit_executor_body(Nr, scalar, vector_intrinsics, packed_C, packed_B)
+        return self._emit_executor_body(Nr, scalar, vector_intrinsics, packed_C, packed_B, \
+            alignB=True if arch_str == 'AVX512' or arch_str == 'AVX2' else False)
 
     def _emit_executor_body_cleanup(self, Nr, arch, vec_width_bits, scalar,
                                     packed_C=False, packed_B=False,
@@ -457,7 +521,8 @@ class UKernelCodegenBase:
             fma=arch_intrinsics.fma_intrin,
             zero_reg=arch_intrinsics.setzero_intrin,
             min=arch_intrinsics.min_intrin,
-            max=arch_intrinsics.max_intrin
+            max=arch_intrinsics.max_intrin,
+            alignr=arch_intrinsics.alignr_intrin
         )
 
         scalar_intrinsics = self.Intrinsics(
@@ -472,18 +537,19 @@ class UKernelCodegenBase:
             fma=lambda a, b, c: f'{a} * {b} + {c}',
             zero_reg=lambda: '0',
             min=lambda x, y: f'(({x} > {y}) ? {y} : {x})',
-            max=lambda x, y: f'(({x} > {y}) ? {x} : {y})'
+            max=lambda x, y: f'(({x} > {y}) ? {x} : {y})',
+            alignr=None
         )
 
         func_body = Block()
         vec_cleanup_loop = ForLoop(f'', f'elements_remaining >= {vec_width_ele}',
                                    f'elements_remaining -= {vec_width_ele}, '
                                    f'C += {vec_width_ele}, C_out += {vec_width_ele}, B += {vec_width_ele}')
-        vec_cleanup_loop += self._emit_executor_body(1, scalar, vector_intrinsics, packed_C, packed_B)
+        vec_cleanup_loop += self._emit_executor_body(1, scalar, vector_intrinsics, packed_C, packed_B, alignB=False)
 
         scalar_cleanup_loop = ForLoop(f'', f'elements_remaining', f'elements_remaining--, '
                                       f'C += 1, C_out += 1, B += 1')
-        scalar_cleanup_loop += self._emit_executor_body(1, scalar, scalar_intrinsics, packed_C, packed_B)
+        scalar_cleanup_loop += self._emit_executor_body(1, scalar, scalar_intrinsics, packed_C, packed_B, alignB=False)
 
         func_body += vec_cleanup_loop
         func_body += scalar_cleanup_loop

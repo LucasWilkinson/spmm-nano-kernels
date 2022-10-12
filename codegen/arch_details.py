@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import partial
+from re import T
 
 SCALAR_SIZE_BITS = {
     'float16': 16,
@@ -145,6 +146,9 @@ class AVX(Arch, ABC):
     def __init__(self):
         super(AVX, self).__init__()
 
+    def supports_masks(self) -> bool:
+        return True
+
     @staticmethod
     def _intrin(*args, vec_width_bits, scalar, func, masked=False, deref=False, **kwargs):
         args = list(args)
@@ -164,8 +168,11 @@ class AVX(Arch, ABC):
             if "store" in func:
                 args = (args[0],) + (kwargs["mask"],) + args[1:]
             else:
-                args = (kwargs["mask"],) + args[0:]
+                # print(args)
+                args = [kwargs["mask"]] + args[0:]
 
+        if "alignr" in func:
+            return f'{mm}_{mask_prefix}{func}_epi32({", ".join(args)})'
         return f'{mm}_{mask_prefix}{func}_p{mm_func_char}({", ".join(args)})'
 
     def intrin_include(self):
@@ -176,6 +183,9 @@ class AVX(Arch, ABC):
 
     def load_intrin(self, scalar, vec_width_bits, aligned=False):
         return partial(AVX._intrin, func='load' if aligned else 'loadu', vec_width_bits=vec_width_bits, scalar=scalar)
+    
+    def masked_load_intrin(self, scalar, vec_width_bits, aligned=False): #
+        return partial(AVX._intrin, func='load' if aligned else 'loadu', vec_width_bits=vec_width_bits, scalar=scalar, masked=True)
 
     def store_intrin(self, scalar, vec_width_bits, aligned=False):
         return partial(AVX._intrin, func='store' if aligned else 'storeu', vec_width_bits=vec_width_bits, scalar=scalar)
@@ -221,11 +231,17 @@ class AVX512(AVX):
     def mask_type(self, scalar, vec_width_bits):
         return f'__mmask{int(vec_width_bits / SCALAR_SIZE_BITS[scalar])}'
 
-    def masked_load_intrin(self, scalar, vec_width_bits, aligned=False):
+    def load_intrin(self, scalar, vec_width_bits, aligned=False):
+        return partial(AVX512._intrin, func='load' if aligned else 'loadu', vec_width_bits=vec_width_bits, scalar=scalar)
+    
+    def masked_load_intrin(self, scalar, vec_width_bits, aligned=False): #
         return partial(self.load_intrin(scalar, vec_width_bits, aligned=aligned), masked=True)
 
     def masked_store_intrin(self, scalar, vec_width_bits, aligned=False):
         return partial(self.store_intrin(scalar, vec_width_bits, aligned=aligned), masked=True)
+    
+    def alignr_intrin(self, scalar, vec_width_bits):
+        return partial(AVX512._intrin, func='alignr', vec_width_bits=vec_width_bits, scalar=scalar)
 
 
 class AVX2(AVX):
@@ -233,7 +249,7 @@ class AVX2(AVX):
         super(AVX, self).__init__()
 
     def supports_masks(self) -> bool:
-        return False
+        return True
 
     def supports_vec_width_bits(self, vec_width_bits) -> bool:
         return vec_width_bits in [128, 256]
@@ -248,10 +264,13 @@ class AVX2(AVX):
         return f'uint32_t'
 
     def masked_load_intrin(self, scalar, vec_width_bits, aligned=False):
-        raise NotImplementedError()
+        return partial(self.load_intrin(scalar, vec_width_bits, aligned=aligned), masked=True)
 
     def masked_store_intrin(self, scalar, vec_width_bits, aligned=False):
         raise NotImplementedError()
+    
+    def alignr_intrin(self, scalar, vec_width_bits):
+        return partial(AVX2._intrin, func='alignr', vec_width_bits=vec_width_bits, scalar=scalar)
 
 
 class NEON(Arch, ABC):
