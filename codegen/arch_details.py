@@ -297,7 +297,7 @@ class NEON(Arch, ABC):
         return False
 
     def preprocessor_guard(self):
-        return "#ifdef __ARM_NEON"
+        return "#if defined(__ARM_NEON) || defined(__ARM_NEON__)"
 
     def intrin_include(self):
         return '#include <arm_neon.h>'

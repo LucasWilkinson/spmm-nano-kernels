@@ -628,7 +628,7 @@ namespace sop {
             begin_threaded(_C, _B, _bias, activation, min, max);
 
             #pragma omp parallel for schedule(static)
-            for (int p = 0; p < num_threads; p++) {
+            for (int p = 0; p < num_parallel_tile(); p++) {
 #if defined(_OPENMP)
                 int thread_id = omp_get_thread_num();
 #else

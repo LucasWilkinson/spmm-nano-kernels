@@ -307,61 +307,65 @@ class UKernelCodegenBase:
         for k in range(Nr):
             case_body += f'{reg_t} b{k};'
 
-        case_body += f'if ((uintptr_t)B_curr & ({vec_width_ele * 4} - 1) && !( (uintptr_t)B_curr & (16-1))) {{'
-        case_body += f'    // B is not aligned to 16 bytes, but is aligned to 4 bytes'
-        case_body += f'    switch((uintptr_t)B_curr & (64-1)) {{'
-        case_body += f'        case 48: {{'
-        case_body += f'            auto B_curr_aligned = B_curr - 12;'
-        case_body += f'            {reg_t} ba0 = {b_load_a(0, f"0b1111000000000000") };'  
-        for k in range(Nr - 1):
-            case_body += f'            {reg_t} ba{k + 1} = {b_load_a(k + 1, None)};'
+        if alignB and False:
+            case_body += f'if ((uintptr_t)B_curr & ({vec_width_ele * 4} - 1) && !( (uintptr_t)B_curr & (16-1))) {{'
+            case_body += f'    // B is not aligned to 16 bytes, but is aligned to 4 bytes'
+            case_body += f'    switch((uintptr_t)B_curr & (64-1)) {{'
+            case_body += f'        case 48: {{'
+            case_body += f'            auto B_curr_aligned = B_curr - 12;'
+            case_body += f'            {reg_t} ba0 = {b_load_a(0, f"0b1111000000000000") };'
+            for k in range(Nr - 1):
+                case_body += f'            {reg_t} ba{k + 1} = {b_load_a(k + 1, None)};'
+                if vec_width_ele > 1 and alignB:
+                    case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k+1}", f"(__m512i)ba{k}", f"12")};'
+            case_body += f'            {reg_t} ba{Nr} = {b_load_a(Nr, f"0b0000111111111111") };'
             if vec_width_ele > 1 and alignB:
-                case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k+1}", f"(__m512i)ba{k}", f"12")};'
-        case_body += f'            {reg_t} ba{Nr} = {b_load_a(Nr, f"0b0000111111111111") };'
-        if vec_width_ele > 1 and alignB:
-                case_body += f'            b{Nr-1} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{Nr}", f"(__m512i)ba{Nr-1}", f"12")};'
-        # if vec_width_ele > 1 and alignB:
-        #     for k in range(Nr):
-        #         case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k}", f"(__m512i)ba{k + 1}", f"12")};'
-        case_body += f'            break;'
-        case_body += f'        }}'
-        case_body += f'        case 32: {{'
-        case_body += f'            auto B_curr_aligned = B_curr - 8;'
-        case_body += f'            {reg_t} ba0 = {b_load_a(0, f"0b1111111100000000") };'  
-        for k in range(Nr - 1):
-            case_body += f'            {reg_t} ba{k + 1} = {b_load_a(k + 1, None)};'
+                    case_body += f'            b{Nr-1} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{Nr}", f"(__m512i)ba{Nr-1}", f"12")};'
+            # if vec_width_ele > 1 and alignB:
+            #     for k in range(Nr):
+            #         case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k}", f"(__m512i)ba{k + 1}", f"12")};'
+            case_body += f'            break;'
+            case_body += f'        }}'
+            case_body += f'        case 32: {{'
+            case_body += f'            auto B_curr_aligned = B_curr - 8;'
+            case_body += f'            {reg_t} ba0 = {b_load_a(0, f"0b1111111100000000") };'
+            for k in range(Nr - 1):
+                case_body += f'            {reg_t} ba{k + 1} = {b_load_a(k + 1, None)};'
+                if vec_width_ele > 1 and alignB:
+                    case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k+1}", f"(__m512i)ba{k}", f"8")};'
+            case_body += f'            {reg_t} ba{Nr} = {b_load_a(Nr, f"0b0000000011111111") };'
             if vec_width_ele > 1 and alignB:
-                case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k+1}", f"(__m512i)ba{k}", f"8")};'
-        case_body += f'            {reg_t} ba{Nr} = {b_load_a(Nr, f"0b0000000011111111") };'
-        if vec_width_ele > 1 and alignB:
-                case_body += f'            b{Nr-1} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{Nr}", f"(__m512i)ba{Nr-1}", f"8")};'
-        # if vec_width_ele > 1 and alignB:
-        #     for k in range(Nr):
-        #         case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k}", f"(__m512i)ba{k + 1}", f"8")};'
-        case_body += f'            break;'
-        case_body += f'        }}'
-        case_body += f'        case 16: {{'
-        case_body += f'            auto B_curr_aligned = B_curr - 4;'
-        case_body += f'            {reg_t} ba0 = {b_load_a(0, f"0b1111111111110000") };'  
-        for k in range(Nr - 1):
-            case_body += f'            {reg_t} ba{k + 1} = {b_load_a(k + 1, None)};'
+                    case_body += f'            b{Nr-1} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{Nr}", f"(__m512i)ba{Nr-1}", f"8")};'
+            # if vec_width_ele > 1 and alignB:
+            #     for k in range(Nr):
+            #         case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k}", f"(__m512i)ba{k + 1}", f"8")};'
+            case_body += f'            break;'
+            case_body += f'        }}'
+            case_body += f'        case 16: {{'
+            case_body += f'            auto B_curr_aligned = B_curr - 4;'
+            case_body += f'            {reg_t} ba0 = {b_load_a(0, f"0b1111111111110000") };'
+            for k in range(Nr - 1):
+                case_body += f'            {reg_t} ba{k + 1} = {b_load_a(k + 1, None)};'
+                if vec_width_ele > 1 and alignB:
+                    case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k+1}", f"(__m512i)ba{k}", f"4")};'
+            case_body += f'            {reg_t} ba{Nr} = {b_load_a(Nr, f"0b0000000000001111") };'
             if vec_width_ele > 1 and alignB:
-                case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k+1}", f"(__m512i)ba{k}", f"4")};'
-        case_body += f'            {reg_t} ba{Nr} = {b_load_a(Nr, f"0b0000000000001111") };'
-        if vec_width_ele > 1 and alignB:
-                case_body += f'            b{Nr-1} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{Nr}", f"(__m512i)ba{Nr-1}", f"4")};'
-        # if vec_width_ele > 1 and alignB:
-        #     for k in range(Nr):
-        #         case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k}", f"(__m512i)ba{k + 1}", f"4")};'
-        case_body += f'            break;'
-        case_body += f'        }}'
-        case_body += f'     }}'
-        case_body += f'}}'
+                    case_body += f'            b{Nr-1} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{Nr}", f"(__m512i)ba{Nr-1}", f"4")};'
+            # if vec_width_ele > 1 and alignB:
+            #     for k in range(Nr):
+            #         case_body += f'            b{k} = ({reg_t}) {intrinsics.alignr(f"(__m512i)ba{k}", f"(__m512i)ba{k + 1}", f"4")};'
+            case_body += f'            break;'
+            case_body += f'        }}'
+            case_body += f'     }}'
+            case_body += f'}}'
 
-        case_body += f'else {{'
-        for k in range(Nr):
-            case_body += f'b{k} = {intrinsics.load(f"B_curr + {k} * {vec_width_ele}")};'
-        case_body += f'}}'
+            case_body += f'else {{'
+            for k in range(Nr):
+                case_body += f'b{k} = {intrinsics.load(f"B_curr + {k} * {vec_width_ele}")};'
+            case_body += f'}}'
+        else:
+            for k in range(Nr):
+                case_body += f'b{k} = {intrinsics.load(f"B_curr + {k} * {vec_width_ele}")};'
 
         if packed_B:
             case_body += f'B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;'

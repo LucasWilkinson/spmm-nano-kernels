@@ -21,7 +21,7 @@ template<> struct Vec<double, 128> { using Type = Vec2d;  using Scalar = double;
 template<> struct Vec<double, 256> { using Type = Vec4d;  using Scalar = double; static const int vec_width_bits = 256; };
 template<> struct Vec<double, 512> { using Type = Vec8d;  using Scalar = double; static const int vec_width_bits = 512; };
 
-#elif defined(__ARM_NEON)
+#elif defined(__ARM_NEON) || defined(__ARM_NEON__)
 #include "arm_neon.h"
 
 template<typename _Scalar, int vector_width>
