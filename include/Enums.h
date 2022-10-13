@@ -13,8 +13,8 @@ namespace sop {
 enum Schedule {
   C3_nmNKM,
   C3_nmKNM,
-  C1_NmKM,
-  C1_MKN
+  C1_nmKM,
+  C1_nmKN
 };
 
 enum TileType {

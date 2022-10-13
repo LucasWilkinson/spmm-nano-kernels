@@ -535,12 +535,12 @@ namespace sop {
 
         int num_parallel_tile() const {
             if constexpr(
-                    KernelDesc::Sched == C1_NmKM
+                    KernelDesc::Sched == C1_nmKM
                     || KernelDesc::Sched == C3_nmKNM
                     || KernelDesc::Sched == C3_nmNKM) {
                 return td.Mb;
             } else if constexpr(
-                    KernelDesc::Sched == C1_MKN) {
+                    KernelDesc::Sched == C1_nmKN) {
                 return td.Nb;
             } else {
                 ERROR_AND_EXIT("Not implemented");
@@ -555,11 +555,11 @@ namespace sop {
 
             if constexpr(packed_C || packed_B) {
                 switch (KernelDesc::Sched) {
-                    case C1_NmKM: {
+                    case C1_nmKM: {
                         ERROR_AND_EXIT("Not implemented");
                         break;
                     }
-                    case C1_MKN: {
+                    case C1_nmKN: {
                         ERROR_AND_EXIT("Not implemented");
                         break;
                     }
@@ -574,7 +574,7 @@ namespace sop {
                 }
             } else {
                 switch (KernelDesc::Sched) {
-                    case C1_NmKM: {
+                    case C1_nmKM: {
                         int tii = p_tile;
                         //std::cout << "N " << N << " Nc " << N_c << std::endl;
                         for (int tkk = 0; tkk < Kb; tkk++) {
@@ -585,7 +585,7 @@ namespace sop {
                         }
                         break;
                     }
-                    case C1_MKN: {
+                    case C1_nmKN: {
                         int tjj = p_tile;
                         bool partial_N_c_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == Nb - 1);
                         for (int tkk = 0; tkk < Kb; tkk++) {
@@ -615,6 +615,11 @@ namespace sop {
 
             C = _C; B = _B; bias = _bias;
             ukernel = MicroKernel(activation, min, max);
+
+            ERROR_AND_EXIT_IF(M_c % M_r, "M_c " << M_c << " must be a multiple of M_r " << M_r
+                                                << " schedule " << KernelDesc::Sched);
+            ERROR_AND_EXIT_IF(N_c % N_r, "N_c " << N_c << " must be a multiple of N_r " << N_r
+                                                << " schedule " << KernelDesc::Sched);
 
             if constexpr(B_PACKING != NO_PACKING) packer->reset_B_packed_flags();
         }

@@ -12,6 +12,7 @@
 #include <sstream>
 
 #include "utils/error.h"
+#include "utils/bmath.h"
 #include "utils/algorithmic.h"
 #include "utils/Vec.h"
 #include "utils/type_name.h"
@@ -173,11 +174,20 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
     M_r = executor_factory->M_r;
     N_r = executor_factory->N_r;
 
-    if (schedule == C1_NmKM) {
-        // Multiple of N_r and larger than or equal to N
-        config.N_c = ((b_col_predict + N_r - 1) / N_r) * N_r;
-    } else if (schedule == C1_MKN) {
-        config.M_c = m;
+    if (schedule == C1_nmKM) {
+      // We set N_c >= N since we do not have an Nc loop with this schedule,
+      //   instead the inner n loops over the entire N dimension.
+      //   Multiple of N_r and larger than or equal to N
+      config.N_c = next_multiple(b_col_predict, N_r);
+    } else if (schedule == C1_nmKN) {
+      // We set M_c >= M since we do not have an Mc loop with this schedule,
+      //   instead the inner n loops over the entire M dimension.
+      if (config.N_c % N_r && config.tiling_strategy == MANUAL_TILING) {
+        std::cout << "WARNING: N_c " << config.N_c << " should be a multiple of N_r " << N_r
+                  << " changing it to " << next_multiple(config.N_c, N_r) << std::endl;
+        config.N_c = next_multiple(config.N_c, N_r); // Just to avoid errors when manually setting N_c
+      }
+      config.M_c = m;
     } else if (config.tiling_strategy == CAKE_TILING ||
                config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
       cake_cntx_t* cake_cntx = cake_query_cntx();
@@ -221,6 +231,13 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
       free(cake_cntx);
       free(cache_dims);
     }
+
+    ERROR_AND_EXIT_IF(config.M_c % M_r, "M_c " << config.M_c << " must be a multiple of M_r " << M_r
+                                        << " schedule " << KernelDesc::Sched
+                                        << " K " << k << " M " << m);
+    ERROR_AND_EXIT_IF(config.N_c % N_r, "N_c " << config.N_c << " must be a multiple of N_r " << N_r
+                                        << " schedule " << KernelDesc::Sched
+                                        << " K " << k << " M " << m);
 
     inspect_and_pack();
     delete coo;
