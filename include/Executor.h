@@ -155,72 +155,6 @@ namespace sop {
             if (packer) delete packer;
         }
 
-        inline void _inner_mn_loop(
-                int tii, int jjj,
-                const PackedTile& pt,
-                const bool partial_final_loop) {
-
-            int _c_N_r = (partial_final_loop) ? final_N_c_loop_N_r_count : c_N_r;
-            int tj = 0, jj = jjj;
-
-//            if (first_run) {
-//                std::cout << pt.sop.num_panels << std::endl;
-//                first_run = false;
-//            }
-
-            // M_r loop
-            for (; tj < _c_N_r; tj++, jj += N_r) { // N_r loop
-                for (int pi = 0; pi < pt.sop.num_panels; pi++) {
-                    const auto &panel_desc = pt.sop.panel_descs[pi];
-
-                    uint32_t *__restrict__ col_indices = (uint32_t *) panel_desc.col_indices;
-                    float *__restrict__ values = panel_desc.values;
-                    int *__restrict__ pattern_counts = panel_desc.nkern_counts;
-                    int num_col_indices = panel_desc.num_col_indices;
-
-                    int global_upanel_id = tii * c_M_r + pi;
-                    if constexpr(UPanelOrder != NO_REORDERING) {
-                        global_upanel_id = upanel_swizzle[global_upanel_id];
-                    }
-
-                    int ii = (global_upanel_id * M_r); // Row start of ukernel
-                    ukernel.vectorized(
-                        C + jj + (global_upanel_id * M_r) * N, N,
-                        B + jj, N,
-                        pattern_counts, col_indices, values,
-                        pt.load_c,
-                        bias ? bias + ii : nullptr
-                    );
-                }
-            }
-
-            if (partial_final_loop && partial_N_r_loop) {
-                for (int pi = 0; pi < pt.sop.num_panels; pi++) {
-                    const auto &panel_desc = pt.sop.panel_descs[pi];
-
-                    uint32_t *__restrict__ col_indices = (uint32_t *) panel_desc.col_indices;
-                    float *__restrict__ values = panel_desc.values;
-                    int *__restrict__ pattern_counts = panel_desc.nkern_counts;
-                    int num_col_indices = panel_desc.num_col_indices;
-
-                    int global_upanel_id = tii * c_M_r + pi;
-                    if constexpr(UPanelOrder != NO_REORDERING) {
-                        global_upanel_id = upanel_swizzle[global_upanel_id];
-                    }
-
-                    int ii = (global_upanel_id * M_r); // Row start of ukernel
-                    ukernel.cleanup(
-                        final_N_r_rem_mask,
-                        C + jj + ii * N, N,
-                        B + jj, N,
-                        pattern_counts, col_indices, values,
-                        pt.load_c,
-                        bias ? bias + ii : nullptr
-                    );
-                }
-            }
-        }
-
         template<bool packed_C, bool packed_B>
         inline void _inner_nm_loop(
                 Scalar* __restrict__ C_p,
@@ -587,10 +521,10 @@ namespace sop {
                     }
                     case C1_nmKN: {
                         int tjj = p_tile;
-                        bool partial_N_c_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == Nb - 1);
+                        bool _partial_N_c_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == Nb - 1);
                         for (int tkk = 0; tkk < Kb; tkk++) {
                             bool final_store = (tkk == Kb - 1);
-                            _inner_nm_loop(0, tjj * N_c, tiles[0][tkk], partial_N_c_loop, final_store);
+                            _inner_nm_loop(0, tjj * N_c, tiles[0][tkk], _partial_N_c_loop, final_store);
                         }
                         break;
                     }

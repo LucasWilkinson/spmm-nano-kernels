@@ -232,6 +232,13 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
       free(cache_dims);
     }
 
+    ERROR_AND_EXIT_IF(config.M_c < M_r, "M_c " << config.M_c << " must be greater than or equal to M_r " << M_r
+                                               << " schedule " << KernelDesc::Sched
+                                               << " K " << k << " M " << m);
+    ERROR_AND_EXIT_IF(config.N_c < N_r, "N_c " << config.N_c << " must be greater than or equal to M_r " << N_r
+                                               << " schedule " << KernelDesc::Sched
+                                               << " K " << k << " M " << m);
+
     ERROR_AND_EXIT_IF(config.M_c % M_r, "M_c " << config.M_c << " must be a multiple of M_r " << M_r
                                         << " schedule " << KernelDesc::Sched
                                         << " K " << k << " M " << m);
