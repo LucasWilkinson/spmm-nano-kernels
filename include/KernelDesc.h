@@ -72,7 +72,7 @@ using KD_PIFloatSplitN =
         float,
         CSRStorageTypes<float*, int>,
         PackingDesc<NO_PACKING, NO_PACKING>,
-        C1_MKN,
+        C1_nmKN,
         NO_REORDERING
     >;
 
@@ -81,7 +81,7 @@ using KD_PIFloatSplitM =
         float,
         CSRStorageTypes<float*, int>,
         PackingDesc<NO_PACKING, NO_PACKING>,
-        C1_NmKM,
+        C1_nmKM,
         NO_REORDERING
     >;
 
@@ -90,7 +90,7 @@ using KD_PIFloatLoadBalancedSplitM =
         float,
         CSRStorageTypes<float*, int>,
         PackingDesc<NO_PACKING, NO_PACKING>,
-        C1_MKN,
+        C1_nmKM,
         LOAD_BALANCING
     >;
 

@@ -6,10 +6,10 @@ import json
 import shutil
 
 from collections import defaultdict
-from .codegen_utils import *
-from .base_ukernel_codegen import UKernelCodegenBase
-from .generate_registration import generate_ukernel_registration
-from .generate_mapping import generate_mapping_to_executor
+from codegen.codegen_utils import *
+from codegen.base_ukernel_codegen import UKernelCodegenBase
+from codegen.generate_registration import generate_ukernel_registration
+from codegen.generate_mapping import generate_mapping_to_executor
 
 output_root = os.path.abspath(f"{SCRIPT_DIR}/../generated/")
 kernel_descs = {
@@ -84,7 +84,7 @@ for mapping_file in [f'{SCRIPT_DIR}/../mappings/mapping_{mapping_id}.txt' for ma
     Nrs_to_generate = {
         "AVX512": {4: [6, 4], 8: [3, 2]},
         "AVX2":   {4: [3, 2], 8: [2, 1]},
-        "NEON":   {4: [3, 2], 8: [2, 1]},
+        "NEON":   {4: [6, 4, 3, 2], 8: [3, 2]},
     }
 
     vecwidths_to_generate = {
