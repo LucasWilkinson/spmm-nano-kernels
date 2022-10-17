@@ -35,23 +35,23 @@ using std::vector;
 
 namespace sop {
 
-template<typename Scalar>
-class MatMul {
-
-public:
-  virtual ~MatMul() = default;
-  virtual void operator()(Scalar* C, const Scalar* B,
-                  const Scalar* bias = nullptr,
-                  enum Activation activation = NONE,
-                  const Scalar min = std::numeric_limits<Scalar>::min(),
-                  const Scalar max = std::numeric_limits<Scalar>::max()) const = 0;
-  virtual void allocate_executor(int b_cols) = 0;
-  virtual Executor<Scalar>* get_executor() const = 0;
-
-};
+//template<typename Scalar>
+//class MatMul {
+//
+//public:
+//  virtual ~MatMul() = default;
+//  virtual void operator()(Scalar* C, const Scalar* B,
+//                  const Scalar* bias = nullptr,
+//                  enum Activation activation = NONE,
+//                  const Scalar min = std::numeric_limits<Scalar>::min(),
+//                  const Scalar max = std::numeric_limits<Scalar>::max()) const = 0;
+//  virtual void allocate_executor(int b_cols) = 0;
+//  virtual Executor<Scalar>* get_executor() const = 0;
+//
+//};
 
 template <typename KernelDesc>
-class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
+class MatMulMacro: public MatMul<typename KernelDesc::Scalar> {
   using Scalar = typename KernelDesc::Scalar;
   static const Schedule schedule = KernelDesc::Sched;
 
@@ -76,6 +76,11 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
   int total_num_tiles = 0;
   int num_threads = 0;
   int m = 0, k = 0;
+
+  const Scalar* csr_values;
+  const int*    csr_row_offsets;
+  const int*    csr_column_indices;
+  int csr_m, csr_k, csr_n;
 
   std::string executor_id;
   std::string mapping_id;
@@ -140,15 +145,14 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
  public:
   int require_storage = 0;
 
-  MatMulSpecialized(
+  MatMulMacro(
       COO<Scalar>* coo,
       int           b_col_predict,
-      TileConfig    config_,
       int           num_threads,
       std::string   executor_id,
       std::string   mapping_id
   ):  coo(coo),
-      m(coo->rows()), k(coo->cols()), config(config_),
+      m(coo->rows()), k(coo->cols()),
       num_threads(num_threads),
       executor_id(executor_id),
       mapping_id(mapping_id),
@@ -244,17 +248,22 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
     delete coo;
   }
 
-  MatMulSpecialized(
+    MatMulMacro(
       int m, int k, int b_col_predict,
       const Scalar* values,
       const int*    row_offsets,
       const int*    column_indices,
-      TileConfig    config_,
       int           num_threads,
       std::string   executor_id,
       std::string   mapping_id
-  ): MatMulSpecialized(new COO<Scalar>(m, k, row_offsets, column_indices, values),
-            b_col_predict, config_, num_threads, executor_id, mapping_id) {
+  ): MatMulMacro(new COO<Scalar>(m, k, row_offsets, column_indices, values),
+            b_col_predict, num_threads, executor_id, mapping_id) {
+      csr_column_indices = column_indices;
+      csr_row_offsets = row_offsets;
+      csr_values = values;
+      csr_m = m;
+      csr_k = k;
+
   }
 
   TileConfig get_config() const {
@@ -262,7 +271,7 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
     return config;
   }
 
-  ~MatMulSpecialized() {
+  ~MatMulMacro() {
     if (executor) delete executor;
     free(linear_buffer);
   }
@@ -274,8 +283,35 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
                   enum Activation activation = NONE,
                   const Scalar min = std::numeric_limits<Scalar>::min(),
                   const Scalar max = std::numeric_limits<Scalar>::max()) const {
-    if (!executor) { ERROR_AND_EXIT("Executor not initialized"); }
+//    if (!executor) { ERROR_AND_EXIT("Executor not initialized"); }
     (*executor)(C, B, bias, activation, min, max);
+
+  }
+
+  void calculateSimpleMatMul(int Csize, int Bsize, Scalar* C, const Scalar* B,
+                             const Scalar* bias = nullptr,
+                             enum Activation activation = NONE,
+                             const Scalar min = std::numeric_limits<Scalar>::min(),
+                             const Scalar max = std::numeric_limits<Scalar>::max()) const {
+      for (int i = 0; i < csr_m; i++)
+      {
+          for (int j = 0; j < Bsize; j++){
+              C[i * Bsize + j] = 0;
+              std::cout << B[i * Bsize + j] << " ";
+
+          }
+          std::cout << "\n";
+      }
+
+      for (int i = 0; i < csr_m; i++){
+          for (int j = csr_row_offsets[i]; j < csr_row_offsets[i+1]; j++){
+              for (int k = 0; k < Bsize; k++){
+                  C[i * Bsize + k] += csr_values[j] * B[csr_column_indices[j] * Bsize + k];
+                  std::cout << C[i * Bsize + k] << "\n";
+              }
+          }
+      }
+
   }
 
   Executor<Scalar>* get_executor() const {

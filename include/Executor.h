@@ -414,19 +414,21 @@ namespace sop {
             int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
             const int iii = tii * M_c;
 
-            // K_c loop
+            // N_c loop
             int tjj = 0, jjj = 0;
             for (; tjj < Nb_full; tjj++, jjj += N_c) {
                 for (int tkk = 0; tkk < Kb; tkk++) {
                     bool final_store = (tkk == Kb - 1);
-                    _inner_nm_loop(tii, jjj, tiles[tii][tkk], false, final_store);
+                    bool partial_Nc_loop = false;
+                    _inner_nm_loop(tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
                 }
             }
 
             if (partial_N_c_loop || partial_N_r_loop) {
                 for (int tkk = 0; tkk < Kb; tkk++) {
                     bool final_store = (tkk == Kb - 1);
-                    _inner_nm_loop(tii, jjj, tiles[tii][tkk], true, final_store);
+                    bool partial_Nc_loop = true;
+                    _inner_nm_loop(tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
                 }
             }
         }
@@ -534,17 +536,21 @@ namespace sop {
          ******************************************/
 
         int num_parallel_tile() const {
-            if constexpr(
-                    KernelDesc::Sched == C1_nmKM
-                    || KernelDesc::Sched == C3_nmKNM
-                    || KernelDesc::Sched == C3_nmNKM) {
-                return td.Mb;
-            } else if constexpr(
-                    KernelDesc::Sched == C1_nmKN) {
-                return td.Nb;
-            } else {
-                ERROR_AND_EXIT("Not implemented");
-            }
+            // if constexpr(
+            //         KernelDesc::Sched == C1_nmKM
+            //         || KernelDesc::Sched == C3_nmKNM
+            //         || KernelDesc::Sched == C3_nmNKM) {
+            //     return td.Mb;
+            // } else if constexpr(
+            //         KernelDesc::Sched == C1_nmKN) {
+//            return td.Mb; // TODO: For Schedule
+//            return td.Nb; // TODO: For Schedule
+            return td.Kb; // TODO: For Schedule
+
+                // OUTERLOOP
+            // } else {
+            //     ERROR_AND_EXIT("Not implemented");
+            // }
         }
 
         void execute_thread(int p_tile, int thread_id) {
@@ -573,35 +579,43 @@ namespace sop {
                         ERROR_AND_EXIT("Not implemented");
                 }
             } else {
-                switch (KernelDesc::Sched) {
-                    case C1_nmKM: {
-                        int tii = p_tile;
-                        //std::cout << "N " << N << " Nc " << N_c << std::endl;
-                        for (int tkk = 0; tkk < Kb; tkk++) {
-                            bool final_store = (tkk == Kb - 1);
-                            bool partial_Nc_loop = partial_N_c_loop || partial_N_r_loop; // since Nc == N
-                            // Compute full strips of N (i.e. N_c)
-                            _inner_nm_loop(tii, 0, tiles[tii][tkk], partial_Nc_loop, final_store);
-                        }
-                        break;
+                // switch (KernelDesc::Sched) {
+                //     case C1_nmKM: {
+                //         int tii = p_tile;
+                //         //std::cout << "N " << N << " Nc " << N_c << std::endl;
+                //         for (int tkk = 0; tkk < Kb; tkk++) {
+                //             bool final_store = (tkk == Kb - 1);
+                //             bool partial_Nc_loop = partial_N_c_loop || partial_N_r_loop; // since Nc == N
+                //             // Compute full strips of N (i.e. N_c)
+                //             _inner_nm_loop(tii, 0, tiles[tii][tkk], partial_Nc_loop, final_store);
+                //         }
+                //         break;
+                //     }
+                //     case C1_nmKN: {
+                //         int tjj = p_tile;
+                //         bool partial_N_c_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == Nb - 1);
+                //         for (int tkk = 0; tkk < Kb; tkk++) {
+                //             bool final_store = (tkk == Kb - 1);
+                //             _inner_nm_loop(0, tjj * N_c, tiles[0][tkk], partial_N_c_loop, final_store);
+                //         }
+                //         break;
+                //     }
+                //     case C3_nmKNM:
+                //         _execute_row_panel_KN(p_tile);
+                //         break;
+                //     case C3_nmNKM:
+                //         _execute_row_panel_NK(p_tile);
+                //         break;
+                //     default:
+                //         ERROR_AND_EXIT("Not implemented");
+                // }
+                {
+                    int tkk = p_tile;
+                    bool final_store = (tkk == Kb - 1);
+                    for (int tjj = 0; tjj < Nb; tjj++) {
+                        bool partial_Nc_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == Nb - 1);
+                        _inner_nm_loop(0, tjj * N_c, tiles[0][tkk], partial_Nc_loop, final_store);
                     }
-                    case C1_nmKN: {
-                        int tjj = p_tile;
-                        bool partial_N_c_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == Nb - 1);
-                        for (int tkk = 0; tkk < Kb; tkk++) {
-                            bool final_store = (tkk == Kb - 1);
-                            _inner_nm_loop(0, tjj * N_c, tiles[0][tkk], partial_N_c_loop, final_store);
-                        }
-                        break;
-                    }
-                    case C3_nmKNM:
-                        _execute_row_panel_KN(p_tile);
-                        break;
-                    case C3_nmNKM:
-                        _execute_row_panel_NK(p_tile);
-                        break;
-                    default:
-                        ERROR_AND_EXIT("Not implemented");
                 }
             }
         }
@@ -632,15 +646,20 @@ namespace sop {
             // TODO: go back and follow _ member naming convention
             begin_threaded(_C, _B, _bias, activation, min, max);
 
-            #pragma omp parallel for schedule(static)
-            for (int p = 0; p < num_parallel_tile(); p++) {
-#if defined(_OPENMP)
-                int thread_id = omp_get_thread_num();
-#else
-                int thread_id = 0;
-#endif
-                execute_thread(p, thread_id);
-            }
+//            #pragma omp parallel for schedule(static)
+//            for (int p = 0; p < num_parallel_tile(); p++) {
+//#if defined(_OPENMP)
+//                int thread_id = omp_get_thread_num();
+//#else
+//                int thread_id = 0;
+//#endif
+//                execute_thread(p, thread_id);
+//            }
+
+//            for (int i = 0; i < M; i++)
+//                for ( int j = 0; j < N; j++)
+//                    for (int k = 0; k < K; k++)
+//                        C[i + j * ] = A
 
             report_packing_time = false;
         }

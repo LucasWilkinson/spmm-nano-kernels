@@ -60,6 +60,7 @@ public:
 };
 
 template <typename _KernelDesc, typename _MircoKernel>
+// template <typename ExecutorWithSchedule, typename _KernelDesc, typename _MircoKernel> // TODO: For Schedule
 class ExecutorFactorySpecialized: public ExecutorFactory<_KernelDesc> {
 
   using Super = ExecutorFactory<_KernelDesc>;
@@ -76,6 +77,7 @@ class ExecutorFactorySpecialized: public ExecutorFactory<_KernelDesc> {
     int num_threads,
     const TileConfig& config
   ) override {
+    // return new ExecutorWithSchedule<_KernelDesc, MicroKernelDesc<_MircoKernel>>( // TODO: For Schedule
     return new ExecutorSpecialized<_KernelDesc, MicroKernelDesc<_MircoKernel>>(
       M, K, N, batch_size, tiles, upanel_swizzle, num_threads, config);
   }
