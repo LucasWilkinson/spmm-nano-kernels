@@ -44,9 +44,8 @@ def microkernel_typename(scalar, arch, vec_width_bits, acc_dims, nanokernels):
     return f'MicroKernel_{scalar}_{microkernel_id(arch, vec_width_bits, acc_dims, nanokernels)}'
 
 
-def unroll_mapping(nnzs):
-    if nnzs == 1: return 1
-    if nnzs <= 2: return 1
+def unroll_mapping(arch_str, nnzs):
+    if nnzs == 1: return 3
     return 1
 
 
@@ -55,6 +54,11 @@ class UKernelCodegenBase:
         'AVX512': AVX512(),
         'AVX2': AVX2(),
         'NEON': NEON(),
+    }
+
+    size_of_scalar = {
+        "float": 4,
+        "double": 8
     }
 
     def __init__(self, Mr, nanokernels, output_root=None, namespace=None, fuse_bias=False, fuse_minmax=False):
@@ -160,6 +164,7 @@ class UKernelCodegenBase:
                     f'                {scalar} max = std::numeric_limits<{scalar}>::max()):\n'
                     f'                  activation(activation),\n'
                     f'                  min(min), max(max) {{}}\n')
+            f.write(self._emit_assembly(arch, Nr))
             f.write(self._emit_supported_patterns())
             f.write(self._emit_nkern_encoder())
             f.write(self._emit_nkern_decoder())
@@ -260,6 +265,17 @@ class UKernelCodegenBase:
         }}
         '''
 
+    def _emit_assembly(self, arch, Nr):
+        if arch == "NEON+no":
+            from codegen.asm.arm_gen_nano_kernels import gen_nano_kernel_asm
+            return "\n\n" + \
+                "inline __attribute__((__always_inline__)) " + \
+                gen_nano_kernel_asm(self.Mr, Nr, self.nanokernels) + "\n" + \
+                "inline __attribute__((__always_inline__)) " + \
+                gen_nano_kernel_asm(self.Mr, 1, self.nanokernels)
+        else:
+            return ""
+
     @dataclass
     class Intrinsics:
         vec_type: str
@@ -286,7 +302,7 @@ class UKernelCodegenBase:
             pat >>= 1
             loc += 1
 
-    def _gen_nano_kernel_preload_B(self, Nr, intrinsics: Intrinsics, pat, packed_B=False, alignB=False):
+    def _gen_nano_kernel_preload_B(self, scalar, Nr, intrinsics: Intrinsics, pat, alignB=False):
         reg_t = intrinsics.vec_type
         vec_width_ele = intrinsics.vec_width_ele
         case_body = Block()
@@ -367,10 +383,7 @@ class UKernelCodegenBase:
             for k in range(Nr):
                 case_body += f'b{k} = {intrinsics.load(f"B_curr + {k} * {vec_width_ele}")};'
 
-        if packed_B:
-            case_body += f'B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;'
-        else:
-            case_body += f'B_curr = (*col_indices_curr) * B_stride + B; col_indices_curr++;'
+        case_body += f'B_curr = (*col_indices_curr) * B_stride + B; col_indices_curr++;'
 
         for _, loc in self.nnz_iterator(pat):
             case_body += f'{reg_t} a{loc} = {intrinsics.broadcast_from_ptr(f"curr_value_ptr")};'
@@ -379,35 +392,51 @@ class UKernelCodegenBase:
 
         return case_body.sub_elements
 
-    def _gen_nano_kernel_preload_A(self, Nr, intrinsics: Intrinsics, pat, packed_B=False):
+    def _gen_nano_kernel_preload_A(self, scalar, Nr, intrinsics: Intrinsics, pat):
         reg_t = intrinsics.vec_type
         vec_width_ele = intrinsics.vec_width_ele
+        size_of_scalar = self.size_of_scalar[scalar]
 
-        case_body = Block()
-        case_body += [f'{reg_t} a{loc} = {intrinsics.broadcast_from_ptr("curr_value_ptr")}; curr_value_ptr++;'
-                      for _, loc in self.nnz_iterator(pat)]
+        if vec_width_ele > 1 and popcount(pat) > 2:
+            nnz = popcount(pat)
 
-        for k in range(Nr):
-            case_body += f'{reg_t} b{k} = {intrinsics.load(f"B_curr + {k} * {vec_width_ele}")};'
-            for _, loc in self.nnz_iterator(pat):
-                case_body += f'c{loc}{k} = {intrinsics.fma(f"a{loc}", f"b{k}", f"c{loc}{k}")};'
+            case_body = Block()
+            for i in range(0, nnz, vec_width_ele):
+                case_body += f'{reg_t} a{i} = {intrinsics.load(f"curr_value_ptr + {i}")};'
+            case_body += f'curr_value_ptr = ({scalar}*)((uintptr_t) curr_value_ptr + {nnz * size_of_scalar});'
 
-        if packed_B:
-            case_body += f'B_curr = (*col_indices_curr) * (N_r) + B; col_indices_curr++;'
+            for k in range(Nr):
+                case_body += f'{reg_t} b{k} = {intrinsics.load(f"B_curr + {k} * {vec_width_ele}")};'
+                for offset, loc in self.nnz_iterator(pat):
+                    lane = offset % vec_width_ele
+                    case_body += f'c{loc}{k} = {intrinsics.fma( f"b{k}", f"a{offset - lane}", f"c{loc}{k}", lane=lane)};'
+
+            case_body += f'B_curr = ({scalar}*)((*col_indices_curr++) * scaled_B_stride + (uintptr_t) B);'
         else:
-            case_body += f'B_curr = (*col_indices_curr) * B_stride + B; col_indices_curr++;'
+            case_body = Block()
+            case_body += [f'{reg_t} a{loc} = {intrinsics.broadcast_from_ptr("curr_value_ptr")}; curr_value_ptr++;'
+                          for _, loc in self.nnz_iterator(pat)]
+
+            for k in range(Nr):
+                b_loc = f"({scalar}*)((uintptr_t) B_curr + {k} * {vec_width_ele * size_of_scalar})"
+                case_body += f'{reg_t} b{k} = {intrinsics.load(b_loc)};'
+                for _, loc in self.nnz_iterator(pat):
+                    case_body += f'c{loc}{k} = {intrinsics.fma(f"a{loc}", f"b{k}", f"c{loc}{k}")};'
+
+            case_body += f'B_curr = ({scalar}*)((*col_indices_curr++) * scaled_B_stride + (uintptr_t) B);'
 
         return case_body.sub_elements
 
     def _emit_executor_body(self,
+                            arch_str,
                             Nr,
                             scalar,
                             intrinsics: Intrinsics,
-                            packed_C=False,
-                            packed_B=False,
                             alignB=False):
         reg_t = intrinsics.vec_type
         vec_width_ele = intrinsics.vec_width_ele
+        size_of_scalar = 4
+
 
         sop_panel_executor = Block()
         sop_panel_executor += ''
@@ -418,12 +447,11 @@ class UKernelCodegenBase:
         ##
         body += f'{reg_t} ' + ", ".join([f'c{i}{j}' for i in range(self.Mr) for j in range(Nr)]) + ';'
 
-        if packed_C:
-            c_row = lambda i: f' C + {i * Nr * vec_width_ele}; // Row: {i}'
-            c_load = lambda i, k: intrinsics.load_aligned(f'C{i} + {i * Nr * vec_width_ele + k * vec_width_ele}')
-        else:
-            c_row = lambda i: f' C + {i} * C_stride'
-            c_load = lambda i, k: intrinsics.load(f'C{i} + {k} * {vec_width_ele}')
+        c_row = lambda i: f' C + {i} * C_stride'
+        c_load = lambda i, k: intrinsics.load(f'C{i} + {k} * {vec_width_ele}')
+
+        body += f'uint64_t scaled_B_stride = B_stride * {size_of_scalar};'
+        body += f'uint64_t scaled_C_stride = C_stride * {size_of_scalar};'
 
         body += 'if (load_c) {'
         body += [f'  {scalar}* __restrict__ C{i} = {c_row(i)};' for i in range(self.Mr)]
@@ -436,31 +464,29 @@ class UKernelCodegenBase:
         body += '}'
 
         body += 'int c_idx = 0;'
-        body += 'auto curr_value_ptr = values;'
-        if packed_B:
-            body += f'const {scalar} *__restrict__ B_curr = col_indices[0] * (N_r) + B;'
-        else:
-            body += f'const {scalar} *__restrict__ B_curr = col_indices[0] * B_stride + B;'
+        body += f'{scalar} *__restrict__ curr_value_ptr = values;'
 
+        body += f'const {scalar} *__restrict__ B_curr ' \
+                f'= ({scalar}*) (col_indices[0] * scaled_B_stride + (uintptr_t)B);'
         body += 'uint32_t * col_indices_curr = col_indices + 1;'
 
         ##
         #   Gen Nanokernels
         ##
         for id, pat in enumerate(self.nanokernels):
-            nkern_loop = ForLoop(f'int pat_count = nkern_counts[{id}]', 'pat_count > 0', 'pat_count--')
-            nkern_loop += self._gen_nano_kernel_preload_B(Nr, intrinsics, pat, packed_B=packed_B, alignB=alignB)
+            nkern_loop = ForLoop(f'int pat_count = nkern_counts[{id}]', 'pat_count > 0', 'pat_count--',
+                                 unroll=unroll_mapping(arch_str, nnzs=popcount(pat)))
+
+            if arch_str == "NEON":
+                nkern_loop += self._gen_nano_kernel_preload_A(scalar, Nr, intrinsics, pat)
+            else:
+                nkern_loop += self._gen_nano_kernel_preload_B(scalar, Nr, intrinsics, pat, alignB=alignB)
             body += nkern_loop
 
         ##
         #   Store accumulator
         ##
-
-        if packed_C:
-            c_store = lambda i, k: intrinsics.store_aligned(
-                f'(C_out + {i * Nr * vec_width_ele + k * vec_width_ele})', f'c{i}{k}')
-        else:
-            c_store = lambda i, k: intrinsics.store(f'C_out + {i} * C_out_stride + {k * vec_width_ele}', f'c{i}{k}')
+        c_store = lambda i, k: intrinsics.store(f'C_out + {i} * C_out_stride + {k * vec_width_ele}', f'c{i}{k}')
 
         body += 'if (activation == MINMAX && apply_activation) {'
         body += f'  {reg_t} min_vec = {intrinsics.broadcast("min")};'
@@ -484,30 +510,46 @@ class UKernelCodegenBase:
         arch = self.supported_archs[arch]
         assert arch.supports_scalar(scalar)
 
-        arch_intrinsics = ArchIntrinGenerator(arch, vec_width_bits, scalar) #
-        vec_width_ele = int(vec_width_bits / SCALAR_SIZE_BITS[scalar])
-        vector_intrinsics = self.Intrinsics(
-            vec_type=arch_intrinsics.vec_type(),
-            vec_width_ele=vec_width_ele,
-            load=arch_intrinsics.load_intrin,
-            load_aligned=partial(arch_intrinsics.load_intrin, aligned=True),
-            store=arch_intrinsics.store_intrin,
-            store_aligned=partial(arch_intrinsics.store_intrin, aligned=True),
-            broadcast_from_ptr=arch_intrinsics.broadcast_from_ptr_intrin,
-            broadcast=arch_intrinsics.broadcast_intrin,
-            fma=arch_intrinsics.fma_intrin,
-            zero_reg=arch_intrinsics.setzero_intrin,
-            min=arch_intrinsics.min_intrin,
-            max=arch_intrinsics.max_intrin,
-            alignr=arch_intrinsics.alignr_intrin
-        )
+        # TODO: should really be aarch64
+        if arch_str == "NEON+no":
+            return f'''
+            asm_{self.Mr}x{Nr}(
+                C, C_stride,
+                C_out, C_out_stride,
+                B, B_stride,
+                nkern_counts, col_indices, values,
+                load_c, apply_activation,
+                bias,
+                activation == MINMAX,
+                &min, &max
+            );
+            '''
+        else:
+            arch_intrinsics = ArchIntrinGenerator(arch, vec_width_bits, scalar) #
+            vec_width_ele = int(vec_width_bits / SCALAR_SIZE_BITS[scalar])
+            vector_intrinsics = self.Intrinsics(
+                vec_type=arch_intrinsics.vec_type(),
+                vec_width_ele=vec_width_ele,
+                load=arch_intrinsics.load_intrin,
+                load_aligned=partial(arch_intrinsics.load_intrin, aligned=True),
+                store=arch_intrinsics.store_intrin,
+                store_aligned=partial(arch_intrinsics.store_intrin, aligned=True),
+                broadcast_from_ptr=arch_intrinsics.broadcast_from_ptr_intrin,
+                broadcast=arch_intrinsics.broadcast_intrin,
+                fma=arch_intrinsics.fma_intrin,
+                zero_reg=arch_intrinsics.setzero_intrin,
+                min=arch_intrinsics.min_intrin,
+                max=arch_intrinsics.max_intrin,
+                alignr=arch_intrinsics.alignr_intrin
+            )
 
-        return self._emit_executor_body(Nr, scalar, vector_intrinsics, packed_C, packed_B, \
-            alignB=True if arch_str == 'AVX512' or arch_str == 'AVX2' else False)
+            return self._emit_executor_body(arch_str, Nr, scalar, vector_intrinsics, \
+                alignB=True if arch_str == 'AVX512' or arch_str == 'AVX2' else False).emit(6)
 
     def _emit_executor_body_cleanup(self, Nr, arch, vec_width_bits, scalar,
                                     packed_C=False, packed_B=False,
                                     mask=None):
+        arch_str = arch
         arch = self.supported_archs[arch]
         assert arch.supports_scalar(scalar)
 
@@ -538,7 +580,7 @@ class UKernelCodegenBase:
             store_aligned=lambda x, y: f'*({x}) = {y}',
             broadcast_from_ptr=lambda x: f'*({x})',
             broadcast=lambda x: f'{x}',
-            fma=lambda a, b, c: f'{a} * {b} + {c}',
+            fma=lambda a, b, c, lane=0: f'{a} * {b} + {c}',
             zero_reg=lambda: '0',
             min=lambda x, y: f'(({x} > {y}) ? {y} : {x})',
             max=lambda x, y: f'(({x} > {y}) ? {x} : {y})',
@@ -549,15 +591,15 @@ class UKernelCodegenBase:
         vec_cleanup_loop = ForLoop(f'', f'elements_remaining >= {vec_width_ele}',
                                    f'elements_remaining -= {vec_width_ele}, '
                                    f'C += {vec_width_ele}, C_out += {vec_width_ele}, B += {vec_width_ele}')
-        vec_cleanup_loop += self._emit_executor_body(1, scalar, vector_intrinsics, packed_C, packed_B, alignB=False)
+        vec_cleanup_loop += self._emit_executor_body(arch_str, 1, scalar, vector_intrinsics, alignB=False)
 
         scalar_cleanup_loop = ForLoop(f'', f'elements_remaining', f'elements_remaining--, '
                                       f'C += 1, C_out += 1, B += 1')
-        scalar_cleanup_loop += self._emit_executor_body(1, scalar, scalar_intrinsics, packed_C, packed_B, alignB=False)
+        scalar_cleanup_loop += self._emit_executor_body(arch_str, 1, scalar, scalar_intrinsics, alignB=False)
 
         func_body += vec_cleanup_loop
         func_body += scalar_cleanup_loop
-        return func_body
+        return func_body.emit(6)
 
     @staticmethod
     def _emit_microkernels(main_body: callable, cleanup_body: callable, Nr, scalar, name="", masked=False):
@@ -575,7 +617,7 @@ class UKernelCodegenBase:
 
         return f'''
         
-    inline void vectorized(
+    inline __attribute__((__always_inline__)) void vectorized(
         {scalar} *__restrict__ C, const int C_stride,
         {scalar} *__restrict__ C_out, const int C_out_stride, 
         const {scalar} *__restrict__ B, const int B_stride,
@@ -585,10 +627,10 @@ class UKernelCodegenBase:
         const bool load_c,
         const bool apply_activation,
         const {scalar} *__restrict__ bias = nullptr)
-    {{\n{main_body(Nr=Nr, scalar=scalar).emit(6)}
+    {{\n{main_body(Nr=Nr, scalar=scalar)}
     }}\n\n
         
-    inline void vectorized(
+    inline __attribute__((__always_inline__)) void vectorized(
         {scalar} *__restrict__ C, const int C_stride, 
         const {scalar} *__restrict__ B, const int B_stride,
         int* __restrict__ nkern_counts,
@@ -603,7 +645,7 @@ class UKernelCodegenBase:
                    load_c, apply_activation, bias);
     }}\n\n
     
-    inline void cleanup(
+    inline __attribute__((__always_inline__)) void cleanup(
         int elements_remaining,
         {scalar} *__restrict__ C, const int C_stride,
         {scalar} *__restrict__ C_out, const int C_out_stride, 
@@ -614,10 +656,10 @@ class UKernelCodegenBase:
         const bool load_c,
         const bool apply_activation,
         const {scalar} *__restrict__ bias = nullptr)
-    {{\n{cleanup_body(Nr=Nr, scalar=scalar).emit(6)}
+    {{\n{cleanup_body(Nr=Nr, scalar=scalar)}
     }}\n\n
     
-    inline void cleanup(
+    inline __attribute__((__always_inline__)) void cleanup(
         int elements_remaining,
         {scalar} *__restrict__ C, const int C_stride, 
         const {scalar} *__restrict__ B, const int B_stride,

@@ -409,7 +409,8 @@ private:
         linear_size += tile.linear_size_in_bytes();
 
     require_storage = linear_size;
-    linear_buffer = aligned_alloc(4096, linear_size);
+    // Buffer by 4 so we can do vectorized loads in arm
+    linear_buffer = aligned_alloc(4096, linear_size + 4*sizeof(Scalar));
     void* linear_buffer_tmp = linear_buffer;
 
     for (auto& panel : packed_tiles)

@@ -156,7 +156,7 @@ namespace sop {
         }
 
         template<bool packed_C, bool packed_B>
-        inline void _inner_nm_loop(
+        inline __attribute__((__always_inline__)) void _inner_nm_loop(
                 Scalar* __restrict__ C_p,
                 const Scalar* __restrict__ B_p,
                 int tii, int jjj,
@@ -245,11 +245,6 @@ namespace sop {
                 }
 
                 if (partial_Nc_loop && partial_N_r_loop) {
-
-                    if constexpr(packed_B) {
-
-                    }
-
                     if constexpr(packed_C && !packed_B) {
                         B_p = B + jj;
                         C_o = (!final_store) ? C_p : C + jj + ii * N;
@@ -313,7 +308,7 @@ namespace sop {
             }
         }
 
-        inline void _inner_nm_loop(int tii, int jjj, const PackedTile& pt,
+        inline __attribute__((__always_inline__)) void _inner_nm_loop(int tii, int jjj, const PackedTile& pt,
                                    const bool partial_Nc_loop,
                                    const bool final_store) {
             _inner_nm_loop<false, false>(nullptr, nullptr, tii, jjj, pt, partial_Nc_loop, final_store);
