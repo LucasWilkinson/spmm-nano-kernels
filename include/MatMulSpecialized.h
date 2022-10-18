@@ -265,12 +265,26 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
               break;
       }
 
+//<<<<<<< HEAD
+//=======
+//      free(cake_cntx);
+//      free(cache_dims);
+//    }
+//
+//    ERROR_AND_EXIT_IF(config.M_c < M_r, "M_c " << config.M_c << " must be greater than or equal to M_r " << M_r
+//                                               << " schedule " << KernelDesc::Sched
+//                                               << " K " << k << " M " << m << " N " << b_col_predict);
+//    ERROR_AND_EXIT_IF(config.N_c < N_r, "N_c " << config.N_c << " must be greater than or equal to N_r " << N_r
+//                                               << " schedule " << KernelDesc::Sched
+//                                               << " K " << k << " M " << m << " N " << b_col_predict);
+//
+//>>>>>>> main
     ERROR_AND_EXIT_IF(config.M_c % M_r, "M_c " << config.M_c << " must be a multiple of M_r " << M_r
                                         << " schedule " << KernelDesc::Sched
-                                        << " K " << k << " M " << m);
+                                        << " K " << k << " M " << m << " N " << b_col_predict);
     ERROR_AND_EXIT_IF(config.N_c % N_r, "N_c " << config.N_c << " must be a multiple of N_r " << N_r
                                         << " schedule " << KernelDesc::Sched
-                                        << " K " << k << " M " << m);
+                                        << " K " << k << " M " << m << " N " << b_col_predict);
 
     inspect_and_pack();
     delete coo;
@@ -435,7 +449,8 @@ private:
         linear_size += tile.linear_size_in_bytes();
 
     require_storage = linear_size;
-    linear_buffer = aligned_alloc(4096, linear_size);
+    // Buffer by 4 so we can do vectorized loads in arm
+    linear_buffer = aligned_alloc(4096, linear_size + 4*sizeof(Scalar));
     void* linear_buffer_tmp = linear_buffer;
 
     for (auto& panel : packed_tiles)

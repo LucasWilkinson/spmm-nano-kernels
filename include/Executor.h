@@ -155,74 +155,8 @@ namespace sop {
             if (packer) delete packer;
         }
 
-        inline void _inner_mn_loop(
-                int tii, int jjj,
-                const PackedTile& pt,
-                const bool partial_final_loop) {
-
-            int _c_N_r = (partial_final_loop) ? final_N_c_loop_N_r_count : c_N_r;
-            int tj = 0, jj = jjj;
-
-//            if (first_run) {
-//                std::cout << pt.sop.num_panels << std::endl;
-//                first_run = false;
-//            }
-
-            // M_r loop
-            for (; tj < _c_N_r; tj++, jj += N_r) { // N_r loop
-                for (int pi = 0; pi < pt.sop.num_panels; pi++) {
-                    const auto &panel_desc = pt.sop.panel_descs[pi];
-
-                    uint32_t *__restrict__ col_indices = (uint32_t *) panel_desc.col_indices;
-                    float *__restrict__ values = panel_desc.values;
-                    int *__restrict__ pattern_counts = panel_desc.nkern_counts;
-                    int num_col_indices = panel_desc.num_col_indices;
-
-                    int global_upanel_id = tii * c_M_r + pi;
-                    if constexpr(UPanelOrder != NO_REORDERING) {
-                        global_upanel_id = upanel_swizzle[global_upanel_id];
-                    }
-
-                    int ii = (global_upanel_id * M_r); // Row start of ukernel
-                    ukernel.vectorized(
-                        C + jj + (global_upanel_id * M_r) * N, N,
-                        B + jj, N,
-                        pattern_counts, col_indices, values,
-                        pt.load_c,
-                        bias ? bias + ii : nullptr
-                    );
-                }
-            }
-
-            if (partial_final_loop && partial_N_r_loop) {
-                for (int pi = 0; pi < pt.sop.num_panels; pi++) {
-                    const auto &panel_desc = pt.sop.panel_descs[pi];
-
-                    uint32_t *__restrict__ col_indices = (uint32_t *) panel_desc.col_indices;
-                    float *__restrict__ values = panel_desc.values;
-                    int *__restrict__ pattern_counts = panel_desc.nkern_counts;
-                    int num_col_indices = panel_desc.num_col_indices;
-
-                    int global_upanel_id = tii * c_M_r + pi;
-                    if constexpr(UPanelOrder != NO_REORDERING) {
-                        global_upanel_id = upanel_swizzle[global_upanel_id];
-                    }
-
-                    int ii = (global_upanel_id * M_r); // Row start of ukernel
-                    ukernel.cleanup(
-                        final_N_r_rem_mask,
-                        C + jj + ii * N, N,
-                        B + jj, N,
-                        pattern_counts, col_indices, values,
-                        pt.load_c,
-                        bias ? bias + ii : nullptr
-                    );
-                }
-            }
-        }
-
         template<bool packed_C, bool packed_B>
-        inline void _inner_nm_loop(
+        inline __attribute__((__always_inline__)) void _inner_nm_loop(
                 Scalar* __restrict__ C_p,
                 const Scalar* __restrict__ B_p,
                 int tii, int jjj,
@@ -311,11 +245,6 @@ namespace sop {
                 }
 
                 if (partial_Nc_loop && partial_N_r_loop) {
-
-                    if constexpr(packed_B) {
-
-                    }
-
                     if constexpr(packed_C && !packed_B) {
                         B_p = B + jj;
                         C_o = (!final_store) ? C_p : C + jj + ii * N;
@@ -379,7 +308,7 @@ namespace sop {
             }
         }
 
-        inline void _inner_nm_loop(int tii, int jjj, const PackedTile& pt,
+        inline __attribute__((__always_inline__)) void _inner_nm_loop(int tii, int jjj, const PackedTile& pt,
                                    const bool partial_Nc_loop,
                                    const bool final_store) {
             _inner_nm_loop<false, false>(nullptr, nullptr, tii, jjj, pt, partial_Nc_loop, final_store);
@@ -752,6 +681,36 @@ namespace sop {
                      default:
                          ERROR_AND_EXIT("Schedule not valid");
                  }
+//                switch (KernelDesc::Sched) {
+//                    case C1_nmKM: {
+//                        int tii = p_tile;
+//                        //std::cout << "N " << N << " Nc " << N_c << std::endl;
+//                        for (int tkk = 0; tkk < Kb; tkk++) {
+//                            bool final_store = (tkk == Kb - 1);
+//                            bool partial_Nc_loop = partial_N_c_loop || partial_N_r_loop; // since Nc == N
+//                            // Compute full strips of N (i.e. N_c)
+//                            _inner_nm_loop(tii, 0, tiles[tii][tkk], partial_Nc_loop, final_store);
+//                        }
+//                        break;
+//                    }
+//                    case C1_nmKN: {
+//                        int tjj = p_tile;
+//                        bool _partial_N_c_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == Nb - 1);
+//                        for (int tkk = 0; tkk < Kb; tkk++) {
+//                            bool final_store = (tkk == Kb - 1);
+//                            _inner_nm_loop(0, tjj * N_c, tiles[0][tkk], _partial_N_c_loop, final_store);
+//                        }
+//                        break;
+//                    }
+//                    case C3_nmKNM:
+//                        _execute_row_panel_KN(p_tile);
+//                        break;
+//                    case C3_nmNKM:
+//                        _execute_row_panel_NK(p_tile);
+//                        break;
+//                    default:
+//                        ERROR_AND_EXIT("Not implemented");
+//                }
             }
         }
 
