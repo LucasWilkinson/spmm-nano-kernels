@@ -45,7 +45,7 @@ def microkernel_typename(scalar, arch, vec_width_bits, acc_dims, nanokernels):
 
 
 def unroll_mapping(arch_str, nnzs):
-    if nnzs == 1: return 3
+    if nnzs == 1: return 2
     return 1
 
 
