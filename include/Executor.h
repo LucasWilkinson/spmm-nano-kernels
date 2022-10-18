@@ -94,7 +94,7 @@ namespace sop {
 
         bool first_run = true;
 
-        const TileConfig& config;
+        TileConfig& config;
         const TileDims td;
 
         int M_c, K_c, N_c;
@@ -122,7 +122,7 @@ namespace sop {
             const vector<vector<PackedTile>>& tiles,
             const vector<int>& upanel_swizzle,
             int num_threads,
-            const TileConfig& config
+            TileConfig& config
         ): M(M), K(K), N(N),
            tiles(tiles),
            upanel_swizzle(upanel_swizzle),
@@ -545,16 +545,24 @@ namespace sop {
             //         KernelDesc::Sched == C1_nmKN) {
 //            return td.Mb; // TODO: For Schedule
 //            return td.Nb; // TODO: For Schedule
-            return td.Kb; // TODO: For Schedule
+//            return td.Kb; // TODO: For Schedule
 
                 // OUTERLOOP
             // } else {
             //     ERROR_AND_EXIT("Not implemented");
             // }
+            if(config.runtimeSchedule == nmKNM || config.runtimeSchedule == nmNKM || config.runtimeSchedule == nmKM ||
+                config.runtimeSchedule == nmNM || config.runtimeSchedule == nmM)
+                return td.Mb;
+            else if(config.runtimeSchedule == nmMNK || config.runtimeSchedule == nmNMK ||
+                config.runtimeSchedule == nmMK || config.runtimeSchedule == nmNK || config.runtimeSchedule == nmK)
+                return td.Kb;
+            else
+                return td.Nb;
         }
 
         void execute_thread(int p_tile, int thread_id) {
-            ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
+//            ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
 
             static constexpr bool packed_C = C_PACKING == PACK;
             static constexpr bool packed_B = B_PACKING == PACK;
@@ -579,44 +587,171 @@ namespace sop {
                         ERROR_AND_EXIT("Not implemented");
                 }
             } else {
-                // switch (KernelDesc::Sched) {
-                //     case C1_nmKM: {
-                //         int tii = p_tile;
-                //         //std::cout << "N " << N << " Nc " << N_c << std::endl;
-                //         for (int tkk = 0; tkk < Kb; tkk++) {
-                //             bool final_store = (tkk == Kb - 1);
-                //             bool partial_Nc_loop = partial_N_c_loop || partial_N_r_loop; // since Nc == N
-                //             // Compute full strips of N (i.e. N_c)
-                //             _inner_nm_loop(tii, 0, tiles[tii][tkk], partial_Nc_loop, final_store);
-                //         }
-                //         break;
-                //     }
-                //     case C1_nmKN: {
-                //         int tjj = p_tile;
-                //         bool partial_N_c_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == Nb - 1);
-                //         for (int tkk = 0; tkk < Kb; tkk++) {
-                //             bool final_store = (tkk == Kb - 1);
-                //             _inner_nm_loop(0, tjj * N_c, tiles[0][tkk], partial_N_c_loop, final_store);
-                //         }
-                //         break;
-                //     }
-                //     case C3_nmKNM:
-                //         _execute_row_panel_KN(p_tile);
-                //         break;
-                //     case C3_nmNKM:
-                //         _execute_row_panel_NK(p_tile);
-                //         break;
-                //     default:
-                //         ERROR_AND_EXIT("Not implemented");
-                // }
-                {
-                    int tkk = p_tile;
-                    bool final_store = (tkk == Kb - 1);
-                    for (int tjj = 0; tjj < Nb; tjj++) {
-                        bool partial_Nc_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == Nb - 1);
-                        _inner_nm_loop(0, tjj * N_c, tiles[0][tkk], partial_Nc_loop, final_store);
-                    }
-                }
+                int tii, tjj, tkk, jjj, Nb_full;
+                bool final_store, partial_Nc_loop;
+
+                 switch (config.runtimeSchedule) {
+                     case nmKNM:
+                         tii = p_tile;
+                         Nb_full = partial_N_c_loop || partial_N_r_loop ? td.Nb - 1 : td.Nb;
+                         tjj = 0; jjj = 0;
+                         for (; tjj < Nb_full; tjj++, jjj += N_c) {
+                             for (tkk = 0; tkk < td.Kb; tkk++) {
+                                 final_store = (tkk == td.Kb - 1);
+                                 partial_Nc_loop = false;
+                                 _inner_nm_loop(tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
+                             }
+                         }
+                         if (partial_N_c_loop || partial_N_r_loop) {
+                             for (tkk = 0; tkk < td.Kb; tkk++) {
+                                 final_store = (tkk == td.Kb - 1);
+                                 partial_Nc_loop = true;
+                                 _inner_nm_loop(tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
+                             }
+                         }
+                         break;
+                     case nmNKM:
+                          tii = p_tile;
+                          Nb_full = partial_N_c_loop || partial_N_r_loop ? td.Nb - 1 : td.Nb;
+                         for (tkk = 0; tkk < td.Kb; tkk++) {
+                             final_store = (tkk == td.Kb - 1);
+                             tjj = 0; jjj = 0;
+                             for (; tjj < Nb_full; tjj++, jjj += N_c) {
+                                 partial_Nc_loop = false;
+                                 _inner_nm_loop(tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
+                             }
+                             if (partial_N_c_loop || partial_N_r_loop) {
+                                 partial_Nc_loop = true;
+                                 _inner_nm_loop(tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
+                             }
+                         }
+                         break;
+                     case nmMNK:
+                         tkk = p_tile;
+                         final_store = (tkk == td.Kb - 1);
+                         Nb_full = partial_N_c_loop || partial_N_r_loop ? td.Nb - 1 : td.Nb;
+                         tjj = 0; jjj = 0;
+                         for (; tjj < Nb_full; tjj++, jjj += N_c) {
+                             for (tii = 0; tii < td.Mb; tii++) {
+                                 partial_Nc_loop = false;
+                                 _inner_nm_loop(tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
+                             }
+                         }
+                         if (partial_N_c_loop || partial_N_r_loop) {
+                             for (tii = 0; tii < td.Mb; tii++) {
+                                 partial_Nc_loop = true;
+                                 _inner_nm_loop(tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
+                             }
+                         }
+                         break;
+                     case nmNMK:
+                         tkk = p_tile;
+                         final_store = (tkk == td.Kb - 1);
+                         Nb_full = partial_N_c_loop || partial_N_r_loop ? td.Nb - 1 : td.Nb;
+                         for (tii = 0; tii < td.Mb; tii++) {
+                             tjj = 0; jjj = 0;
+                             for (; tjj < Nb_full; tjj++, jjj += N_c) {
+                                 partial_Nc_loop = false;
+                                 _inner_nm_loop(tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
+                             }
+                             if (partial_N_c_loop || partial_N_r_loop) {
+                                 partial_Nc_loop = true;
+                                 _inner_nm_loop(tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
+                             }
+                         }
+                         break;
+                     case nmKMN: {
+                         int tjj = p_tile;
+                         int jjj = tjj * N_c;
+                         partial_Nc_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == td.Nb - 1);
+                         for (tii = 0; tii < td.Mb; tii++) {
+                             for (tkk = 0; tkk < td.Kb; tkk++) {
+                                 final_store = (tkk == td.Kb - 1);
+                                 _inner_nm_loop(tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
+                             }
+                         }
+                         break;
+                     }
+                     case nmMKN:
+                         tjj = p_tile;
+                         jjj = tjj * N_c;
+                         partial_Nc_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == td.Nb - 1);
+                         for (tkk = 0; tkk < td.Kb; tkk++) {
+                             final_store = (tkk == td.Kb - 1);
+                             for (tii = 0; tii < td.Mb; tii++) {
+                                 _inner_nm_loop(tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
+                             }
+                         }
+                         break;
+                     case nmKM:
+                         tii = p_tile;
+                         for (tkk = 0; tkk < td.Kb; tkk++) {
+                             final_store = (tkk == td.Kb - 1);
+                             partial_Nc_loop = partial_N_c_loop || partial_N_r_loop; // since Nc == N
+                             _inner_nm_loop(tii, 0, tiles[tii][tkk], partial_Nc_loop, final_store);
+                         }
+                         break;
+                     case nmMK:
+                         tkk = p_tile;
+                         final_store = (tkk == td.Kb - 1);
+                         for (tii = 0; tii < td.Mb; tii++) {
+                             partial_Nc_loop = partial_N_c_loop || partial_N_r_loop; // since Nc == N
+                             _inner_nm_loop(tii, 0, tiles[tii][tkk], partial_Nc_loop, final_store);
+                         }
+                         break;
+                     case nmKN:
+                         tjj = p_tile;
+                         partial_Nc_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == td.Nb - 1);
+                         for (tkk = 0; tkk < td.Kb; tkk++) {
+                             final_store = (tkk == td.Kb - 1);
+                             _inner_nm_loop(0, tjj * N_c, tiles[0][tkk], partial_Nc_loop, final_store);
+                         }
+                         break;
+                     case nmNK:
+                         tkk = p_tile;
+                         final_store = (tkk == td.Kb - 1);
+                         for (tjj = 0; tjj < td.Nb; tjj++) {
+                             partial_Nc_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == td.Nb - 1);
+                             _inner_nm_loop(0, tjj * N_c, tiles[0][tkk], partial_Nc_loop, final_store);
+                         }
+                         break;
+                     case nmMN:
+                         tjj = p_tile;
+                         partial_Nc_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == td.Nb - 1);
+                         final_store = true;
+                         for (tii = 0; tii < td.Mb; tii++) {
+                             _inner_nm_loop(tii, tjj * N_c, tiles[tii][0], partial_Nc_loop, final_store);
+                         }
+                         break;
+                     case nmNM:
+                         tii = p_tile;
+                         final_store = true;
+                         for (tjj = 0; tjj < td.Nb; tjj++) {
+                             partial_Nc_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == td.Nb - 1);
+                             _inner_nm_loop(tii, tjj * N_c, tiles[tii][0], partial_Nc_loop, final_store);
+                         }
+                         break;
+                     case nmK:
+                         tkk = p_tile;
+                         final_store = (tkk == td.Kb - 1);
+                         partial_Nc_loop = partial_N_c_loop || partial_N_r_loop;
+                         _inner_nm_loop(0, 0, tiles[0][tkk], partial_Nc_loop, final_store);
+                         break;
+                     case nmN:
+                         tjj = p_tile;
+                         partial_Nc_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == td.Nb - 1);
+                         final_store = true;
+                         _inner_nm_loop(0, tjj * N_c, tiles[0][0], partial_Nc_loop, final_store);
+                         break;
+                     case nmM:
+                         tii = p_tile;
+                         final_store = true;
+                         partial_Nc_loop = partial_N_c_loop || partial_N_r_loop;
+                         _inner_nm_loop(tii, 0, tiles[tii][0], partial_Nc_loop, final_store);
+                         break;
+                     default:
+                         ERROR_AND_EXIT("Schedule not valid");
+                 }
             }
         }
 
@@ -636,6 +771,8 @@ namespace sop {
                                                 << " schedule " << KernelDesc::Sched);
 
             if constexpr(B_PACKING != NO_PACKING) packer->reset_B_packed_flags();
+
+
         }
 
         void operator()(Scalar* __restrict__ _C, const Scalar* __restrict__ _B,
@@ -646,20 +783,16 @@ namespace sop {
             // TODO: go back and follow _ member naming convention
             begin_threaded(_C, _B, _bias, activation, min, max);
 
-//            #pragma omp parallel for schedule(static)
-//            for (int p = 0; p < num_parallel_tile(); p++) {
-//#if defined(_OPENMP)
-//                int thread_id = omp_get_thread_num();
-//#else
-//                int thread_id = 0;
-//#endif
-//                execute_thread(p, thread_id);
-//            }
+            #pragma omp parallel for schedule(static)
+            for (int p = 0; p < num_parallel_tile(); p++) {
+#if defined(_OPENMP)
+                int thread_id = omp_get_thread_num();
+#else
+                int thread_id = 0;
+#endif
+                execute_thread(p, thread_id);
+            }
 
-//            for (int i = 0; i < M; i++)
-//                for ( int j = 0; j < N; j++)
-//                    for (int k = 0; k < K; k++)
-//                        C[i + j * ] = A
 
             report_packing_time = false;
         }

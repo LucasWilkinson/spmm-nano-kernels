@@ -174,64 +174,96 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
     M_r = executor_factory->M_r;
     N_r = executor_factory->N_r;
 
-    if (schedule == C1_nmKM) {
-      // We set N_c >= N since we do not have an Nc loop with this schedule,
-      //   instead the inner n loops over the entire N dimension.
-      //   Multiple of N_r and larger than or equal to N
-      config.N_c = next_multiple(b_col_predict, N_r);
-    } else if (schedule == C1_nmKN) {
-      // We set M_c >= M since we do not have an Mc loop with this schedule,
-      //   instead the inner n loops over the entire M dimension.
-      if (config.N_c % N_r && config.tiling_strategy == MANUAL_TILING) {
-        std::cout << "WARNING: N_c " << config.N_c << " should be a multiple of N_r " << N_r
-                  << " changing it to " << next_multiple(config.N_c, N_r) << std::endl;
-        config.N_c = next_multiple(config.N_c, N_r); // Just to avoid errors when manually setting N_c
-      }
-      config.M_c = m;
-    } else if (config.tiling_strategy == CAKE_TILING ||
-               config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
-      cake_cntx_t* cake_cntx = cake_query_cntx();
-
-      cake_cntx->nr = executor_factory->N_r;
-      cake_cntx->mr = executor_factory->M_r;
-      cake_cntx->ncores = num_threads;
-
-      cache_dims_t* cache_dims = get_cache_dims_4(
-          m, b_col_predict, k, num_threads, cake_cntx, KMN,
-          nullptr, true,
-          double(coo->nnz()) / (m * k),
-          config.beta,
-          true, true);
-
-//      cache_dims_t* cache_dims = get_cache_dims_3(
+//    if (schedule == C1_nmKM) {
+//      // We set N_c >= N since we do not have an Nc loop with this schedule,
+//      //   instead the inner n loops over the entire N dimension.
+//      //   Multiple of N_r and larger than or equal to N
+//      config.N_c = next_multiple(b_col_predict, N_r);
+//    } else if (schedule == C1_nmKN) {
+//      // We set M_c >= M since we do not have an Mc loop with this schedule,
+//      //   instead the inner n loops over the entire M dimension.
+//      if (config.N_c % N_r && config.tiling_strategy == MANUAL_TILING) {
+//        std::cout << "WARNING: N_c " << config.N_c << " should be a multiple of N_r " << N_r
+//                  << " changing it to " << next_multiple(config.N_c, N_r) << std::endl;
+//        config.N_c = next_multiple(config.N_c, N_r); // Just to avoid errors when manually setting N_c
+//      }
+//      config.M_c = m;
+//    } else if (config.tiling_strategy == CAKE_TILING ||
+//               config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
+//      cake_cntx_t* cake_cntx = cake_query_cntx();
+//
+//      cake_cntx->nr = executor_factory->N_r;
+//      cake_cntx->mr = executor_factory->M_r;
+//      cake_cntx->ncores = num_threads;
+//
+//      cache_dims_t* cache_dims = get_cache_dims_4(
 //          m, b_col_predict, k, num_threads, cake_cntx, KMN,
-//          nullptr, double(coo->nnz()) / (m * k), true, true);
+//          nullptr, true,
+//          double(coo->nnz()) / (m * k),
+//          config.beta,
+//          true, true);
+//
+////      cache_dims_t* cache_dims = get_cache_dims_3(
+////          m, b_col_predict, k, num_threads, cake_cntx, KMN,
+////          nullptr, double(coo->nnz()) / (m * k), true, true);
+//
+//      ERROR_AND_EXIT_IF(!cache_dims->m_c || !cache_dims->k_c || !cache_dims->n_c,
+//                        "Invalid cache dimensions");
+//
+//      config.M_c = cache_dims->m_c;
+//      config.K_c = cache_dims->k_c;
+//      config.N_c = cache_dims->n_c;
+//
+//      if (config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
+//        if (config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
+//
+//          int BC_size_bytes = (b_col_predict * config.K_c) * sizeof(Scalar);
+//          int tlb_entries_used =  BC_size_bytes / config.tlb_page_size;
+//
+//          if (tlb_entries_used > config.max_tlb_entries) {
+//            int target_size_bytes = (config.max_tlb_entries * config.tlb_page_size) ;
+//            int new_k_tile = target_size_bytes / (b_col_predict * sizeof(Scalar));
+//            config.K_c = new_k_tile;
+//          }
+//        }
+//      }
+//
+//      free(cake_cntx);
+//      free(cache_dims);
+//    }
 
-      ERROR_AND_EXIT_IF(!cache_dims->m_c || !cache_dims->k_c || !cache_dims->n_c,
-                        "Invalid cache dimensions");
-
-      config.M_c = cache_dims->m_c;
-      config.K_c = cache_dims->k_c;
-      config.N_c = cache_dims->n_c;
-
-      if (config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
-        if (config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
-
-          int BC_size_bytes = (b_col_predict * config.K_c) * sizeof(Scalar);
-          int tlb_entries_used =  BC_size_bytes / config.tlb_page_size;
-
-          if (tlb_entries_used > config.max_tlb_entries) {
-            int target_size_bytes = (config.max_tlb_entries * config.tlb_page_size) ;
-            int new_k_tile = target_size_bytes / (b_col_predict * sizeof(Scalar));
-            config.K_c = new_k_tile;
-          }
-        }
+      switch (config.runtimeSchedule) {
+          case nmKM:
+              config.N_c = next_multiple(b_col_predict, N_r);
+              break;
+          case nmMK:
+              config.N_c = next_multiple(b_col_predict, N_r);
+              break;
+          case nmKN:
+              config.M_c = m;
+              break;
+          case nmNK:
+              config.M_c = m;
+              break;
+          case nmMN:
+              config.K_c = k;
+              break;
+          case nmNM:
+              config.K_c = k;
+              break;
+          case nmK:
+              config.M_c = m;
+              config.N_c = next_multiple(b_col_predict, N_r);
+              break;
+          case nmN:
+              config.K_c = k;
+              config.M_c = m;
+              break;
+          case nmM:
+              config.K_c = k;
+              config.N_c = next_multiple(b_col_predict, N_r);
+              break;
       }
-
-      free(cake_cntx);
-      free(cache_dims);
-    }
-      config.N_c = next_multiple(b_col_predict, N_r);
 
     ERROR_AND_EXIT_IF(config.M_c % M_r, "M_c " << config.M_c << " must be a multiple of M_r " << M_r
                                         << " schedule " << KernelDesc::Sched

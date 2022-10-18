@@ -30,7 +30,7 @@ public:
       const vector<vector<PackedTile<Scalar>>>& tiles,
       const vector<int>& upanel_swizzle,
       int num_threads,
-      const TileConfig& config
+      TileConfig& config
   ) { return nullptr; };
 
   // Hack for now to enforce initialization order, only works within
@@ -75,7 +75,7 @@ class ExecutorFactorySpecialized: public ExecutorFactory<_KernelDesc> {
     const vector<vector<PackedTile<Scalar>>>& tiles,
     const vector<int>& upanel_swizzle,
     int num_threads,
-    const TileConfig& config
+    TileConfig& config
   ) override {
     // return new ExecutorWithSchedule<_KernelDesc, MicroKernelDesc<_MircoKernel>>( // TODO: For Schedule
     return new ExecutorSpecialized<_KernelDesc, MicroKernelDesc<_MircoKernel>>(

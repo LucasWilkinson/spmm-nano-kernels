@@ -17,6 +17,24 @@ enum Schedule {
   C1_nmKN
 };
 
+enum RuntimeSchedule: int {
+    nmKNM, // 0
+    nmNKM, // 1
+    nmMNK, // 2
+    nmNMK, // 3 incorrect results
+    nmKMN, // 4
+    nmMKN, // 5
+    nmKM, // 6
+    nmMK, // 7 incorrect results
+    nmKN, // 8
+    nmNK, // 9 incorrect results
+    nmMN, // 10
+    nmNM, // 11
+    nmK, // 12 incorrect results
+    nmN, // 13
+    nmM // 14
+};
+
 enum TileType {
   SPARSE_CSR,
   SPARSE_SOP,
