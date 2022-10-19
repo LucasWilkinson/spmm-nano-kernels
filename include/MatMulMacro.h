@@ -297,17 +297,17 @@ class MatMulMacro: public MatMul<typename KernelDesc::Scalar> {
       {
           for (int j = 0; j < Bsize; j++){
               C[i * Bsize + j] = 0;
-              std::cout << B[i * Bsize + j] << " ";
-
+//              std::cout << B[i * Bsize + j] << " ";
+//
           }
-          std::cout << "\n";
+          //std::cout << "\n";
       }
 
       for (int i = 0; i < csr_m; i++){
           for (int j = csr_row_offsets[i]; j < csr_row_offsets[i+1]; j++){
               for (int k = 0; k < Bsize; k++){
                   C[i * Bsize + k] += csr_values[j] * B[csr_column_indices[j] * Bsize + k];
-                  std::cout << C[i * Bsize + k] << "\n";
+                  //std::cout << C[i * Bsize + k] << "\n";
               }
           }
       }
