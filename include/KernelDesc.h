@@ -53,7 +53,6 @@ template <
   typename _Scalar,
   typename _CSRSTypes,
   typename _PackingDesc,
-  enum Schedule _Sched,
   enum UPanelReorderingStrategy _UPanelReorder>
 struct KernelDesc {
   using Scalar = _Scalar;
@@ -62,145 +61,72 @@ struct KernelDesc {
 
   static const PackingStrategy C_PACKING = _PackingDesc::C_PACKING;
   static const PackingStrategy B_PACKING = _PackingDesc::B_PACKING;
-  static const Schedule Sched = _Sched;
   static const UPanelReorderingStrategy UPanelOrder = _UPanelReorder;
 };
 
 
-using KD_PIFloatSplitN =
+using KD_PIFloat =
     KernelDesc<
         float,
         CSRStorageTypes<float*, int>,
         PackingDesc<NO_PACKING, NO_PACKING>,
-        C1_nmKN,
         NO_REORDERING
     >;
 
-using KD_PIFloatSplitM =
+using KD_PIFloatLoadBalanced =
     KernelDesc<
         float,
         CSRStorageTypes<float*, int>,
         PackingDesc<NO_PACKING, NO_PACKING>,
-        C1_nmKM,
-        NO_REORDERING
-    >;
-
-using KD_PIFloatLoadBalancedSplitM =
-    KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
-        PackingDesc<NO_PACKING, NO_PACKING>,
-        C1_nmKM,
         LOAD_BALANCING
     >;
 
-using KD_IntelFloatNKM=
+using KD_IntelFloat=
     KernelDesc<
         float,
         CSRStorageTypes<float*, int>,
         PackingDesc<NO_PACKING, NO_PACKING>,
-        C3_nmNKM,
         NO_REORDERING
     >;
 
-using KD_IntelFloatLoadBalancedNKM =
+using KD_IntelFloatLoadBalanced =
     KernelDesc<
         float,
         CSRStorageTypes<float*, int>,
         PackingDesc<NO_PACKING, NO_PACKING>,
-        C3_nmNKM,
         LOAD_BALANCING
     >;
 
-using KD_IntelFloatKNM=
-    KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
-        PackingDesc<NO_PACKING, NO_PACKING>,
-        C3_nmKNM,
-        NO_REORDERING
-    >;
-
-using KD_IntelFloatLoadBalancedKNM =
-    KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
-        PackingDesc<NO_PACKING, NO_PACKING>,
-        C3_nmKNM,
-        LOAD_BALANCING
-    >;
-
-using KD_IntelFloatCPackedKNM =
+using KD_IntelFloatCPacked =
     KernelDesc<
         float,
         CSRStorageTypes<float*, int>,
         PackingDesc<PACK, NO_PACKING>,
-        C3_nmKNM,
         NO_REORDERING
     >;
 
-using KD_IntelFloatCPackedNKM =
+
+using KD_IntelFloatLoadBalancedCPacked =
     KernelDesc<
         float,
         CSRStorageTypes<float*, int>,
         PackingDesc<PACK, NO_PACKING>,
-        C3_nmNKM,
+        LOAD_BALANCING
+    >;
+
+using KD_IntelFloatPacked =
+    KernelDesc<
+        float,
+        CSRStorageTypes<float*, int>,
+        PackingDesc<PACK, PACK>,
         NO_REORDERING
     >;
 
-using KD_IntelFloatLoadBalancedCPackedKNM =
+using KD_IntelFloatLoadBalancedPacked =
     KernelDesc<
         float,
         CSRStorageTypes<float*, int>,
-        PackingDesc<PACK, NO_PACKING>,
-        C3_nmKNM,
+        PackingDesc<PACK, PACK>,
         LOAD_BALANCING
     >;
-
-using KD_IntelFloatPackedKNM =
-    KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
-        PackingDesc<PACK, PACK>,
-        C3_nmKNM,
-        NO_REORDERING
-    >;
-
-using KD_IntelFloatPackedNKM =
-    KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
-        PackingDesc<PACK, PACK>,
-        C3_nmNKM,
-        NO_REORDERING
-    >;
-
-
-using KD_IntelFloatLoadBalancedCPackedNKM =
-    KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
-        PackingDesc<PACK, PACK>,
-        C3_nmNKM,
-        LOAD_BALANCING
-    >;
-
-using KD_IntelFloatLoadBalancedPackedKNM =
-    KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
-        PackingDesc<PACK, PACK>,
-        C3_nmKNM,
-        LOAD_BALANCING
-    >;
-
-using KD_IntelFloatLoadBalancedPackedNKM =
-    KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
-        PackingDesc<PACK, PACK>,
-        C3_nmNKM,
-        LOAD_BALANCING
-    >;
-
 };

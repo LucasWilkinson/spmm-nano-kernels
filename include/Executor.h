@@ -362,28 +362,6 @@ namespace sop {
             }
         }
 
-//        void _execute_row_panel_packed_C_NK(int tii, int thread_id) {
-//            using std::min;
-//            ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
-//
-//            int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
-//            const int iii = tii * M_c;
-//
-//            Scalar* __restrict__ C_p = packer->get_C_packed(thread_id);
-//
-//            // K_c loop
-//            for (int tkk = 0; tkk < Kb; tkk++) {
-//                int tjj = 0, jjj = 0;
-//                for (; tjj < Nb_full; tjj++, jjj += N_c) {
-//                    _inner_nm_loop(tii, jjj, tiles[tii][tkk], false);
-//                }
-//
-//                if (partial_N_c_loop || partial_N_r_loop) {
-//                    _inner_nm_loop(tii, jjj, tiles[tii][tkk], true);
-//                }
-//            }
-//        }
-
         void _execute_row_panel_packed_C_KN(int tii, int thread_id) {
             using std::min;
 
@@ -465,21 +443,6 @@ namespace sop {
          ******************************************/
 
         int num_parallel_tile() const {
-            // if constexpr(
-            //         KernelDesc::Sched == C1_nmKM
-            //         || KernelDesc::Sched == C3_nmKNM
-            //         || KernelDesc::Sched == C3_nmNKM) {
-            //     return td.Mb;
-            // } else if constexpr(
-            //         KernelDesc::Sched == C1_nmKN) {
-//            return td.Mb; // TODO: For Schedule
-//            return td.Nb; // TODO: For Schedule
-//            return td.Kb; // TODO: For Schedule
-
-                // OUTERLOOP
-            // } else {
-            //     ERROR_AND_EXIT("Not implemented");
-            // }
             if(config.runtimeSchedule == nmKNM || config.runtimeSchedule == nmNKM || config.runtimeSchedule == nmKM ||
                 config.runtimeSchedule == nmNM || config.runtimeSchedule == nmM)
                 return td.Mb;
@@ -497,21 +460,7 @@ namespace sop {
             static constexpr bool packed_B = B_PACKING == PACK;
 
             if constexpr(packed_C || packed_B) {
-                switch (KernelDesc::Sched) {
-                    case C1_nmKM: {
-                        ERROR_AND_EXIT("Not implemented");
-                        break;
-                    }
-                    case C1_nmKN: {
-                        ERROR_AND_EXIT("Not implemented");
-                        break;
-                    }
-                    case C3_nmKNM:
-                        _execute_row_panel_packed_KN<packed_C, packed_B>(p_tile, thread_id);
-                        break;
-                    case C3_nmNKM:
-                        ERROR_AND_EXIT("Not implemented");
-                        break;
+                switch (config.runtimeSchedule) {
                     default:
                         ERROR_AND_EXIT("Not implemented");
                 }
@@ -681,36 +630,6 @@ namespace sop {
                      default:
                          ERROR_AND_EXIT("Schedule not valid");
                  }
-//                switch (KernelDesc::Sched) {
-//                    case C1_nmKM: {
-//                        int tii = p_tile;
-//                        //std::cout << "N " << N << " Nc " << N_c << std::endl;
-//                        for (int tkk = 0; tkk < Kb; tkk++) {
-//                            bool final_store = (tkk == Kb - 1);
-//                            bool partial_Nc_loop = partial_N_c_loop || partial_N_r_loop; // since Nc == N
-//                            // Compute full strips of N (i.e. N_c)
-//                            _inner_nm_loop(tii, 0, tiles[tii][tkk], partial_Nc_loop, final_store);
-//                        }
-//                        break;
-//                    }
-//                    case C1_nmKN: {
-//                        int tjj = p_tile;
-//                        bool _partial_N_c_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == Nb - 1);
-//                        for (int tkk = 0; tkk < Kb; tkk++) {
-//                            bool final_store = (tkk == Kb - 1);
-//                            _inner_nm_loop(0, tjj * N_c, tiles[0][tkk], _partial_N_c_loop, final_store);
-//                        }
-//                        break;
-//                    }
-//                    case C3_nmKNM:
-//                        _execute_row_panel_KN(p_tile);
-//                        break;
-//                    case C3_nmNKM:
-//                        _execute_row_panel_NK(p_tile);
-//                        break;
-//                    default:
-//                        ERROR_AND_EXIT("Not implemented");
-//                }
             }
         }
 
@@ -725,9 +644,9 @@ namespace sop {
             ukernel = MicroKernel(activation, min, max);
 
             ERROR_AND_EXIT_IF(M_c % M_r, "M_c " << M_c << " must be a multiple of M_r " << M_r
-                                                << " schedule " << KernelDesc::Sched);
+                                                << " schedule " << config.runtimeSchedule);
             ERROR_AND_EXIT_IF(N_c % N_r, "N_c " << N_c << " must be a multiple of N_r " << N_r
-                                                << " schedule " << KernelDesc::Sched);
+                                                << " schedule " << config.runtimeSchedule);
 
             if constexpr(B_PACKING != NO_PACKING) packer->reset_B_packed_flags();
 

@@ -280,10 +280,10 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
 //
 //>>>>>>> main
     ERROR_AND_EXIT_IF(config.M_c % M_r, "M_c " << config.M_c << " must be a multiple of M_r " << M_r
-                                        << " schedule " << KernelDesc::Sched
+                                        << " schedule " << config.runtimeSchedule
                                         << " K " << k << " M " << m << " N " << b_col_predict);
     ERROR_AND_EXIT_IF(config.N_c % N_r, "N_c " << config.N_c << " must be a multiple of N_r " << N_r
-                                        << " schedule " << KernelDesc::Sched
+                                        << " schedule " << config.runtimeSchedule
                                         << " K " << k << " M " << m << " N " << b_col_predict);
 
     inspect_and_pack();

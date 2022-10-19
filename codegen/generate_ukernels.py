@@ -14,37 +14,24 @@ from codegen.generate_mapping import generate_mapping_to_executor
 output_root = os.path.abspath(f"{SCRIPT_DIR}/../generated/")
 kernel_descs = {
     "AVX512": [
-        'KD_IntelFloatNKM',
-        'KD_IntelFloatLoadBalancedNKM',
-        'KD_IntelFloatCPackedNKM',
-        'KD_IntelFloatLoadBalancedCPackedNKM',
-        'KD_IntelFloatPackedNKM',
-        'KD_IntelFloatLoadBalancedPackedNKM',
-        'KD_IntelFloatKNM',
-        'KD_IntelFloatLoadBalancedKNM',
-        'KD_IntelFloatCPackedKNM',
-        'KD_IntelFloatLoadBalancedCPackedKNM',
-        'KD_IntelFloatPackedKNM',
-        'KD_IntelFloatLoadBalancedPackedKNM'
+        'KD_IntelFloat',
+        'KD_IntelFloatLoadBalanced',
+        'KD_IntelFloatCPacked',
+        'KD_IntelFloatLoadBalancedCPacked',
+        'KD_IntelFloatPacked',
+        'KD_IntelFloatLoadBalancedPacked'
     ],
     "AVX2": [
-        'KD_IntelFloatNKM',
-        'KD_IntelFloatLoadBalancedNKM',
-        'KD_IntelFloatCPackedNKM',
-        'KD_IntelFloatLoadBalancedCPackedNKM',
-        'KD_IntelFloatPackedNKM',
-        'KD_IntelFloatLoadBalancedPackedNKM',
-        'KD_IntelFloatKNM',
-        'KD_IntelFloatLoadBalancedKNM',
-        'KD_IntelFloatCPackedKNM',
-        'KD_IntelFloatLoadBalancedCPackedKNM',
-        'KD_IntelFloatPackedKNM',
-        'KD_IntelFloatLoadBalancedPackedKNM'
+        'KD_IntelFloat',
+        'KD_IntelFloatLoadBalanced',
+        'KD_IntelFloatCPacked',
+        'KD_IntelFloatLoadBalancedCPacked',
+        'KD_IntelFloatPacked',
+        'KD_IntelFloatLoadBalancedPacked'
     ],
     "NEON": [
-        'KD_PIFloatSplitN',
-        'KD_PIFloatSplitM',
-        'KD_PIFloatLoadBalancedSplitM',
+        'KD_PIFloat',
+        'KD_PIFloatLoadBalanced',
         #    'KDFloatLoadBalanced'
     ]
 }
