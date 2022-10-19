@@ -302,7 +302,7 @@ class UKernelCodegenBase:
             pat >>= 1
             loc += 1
 
-    def _gen_nano_kernel_preload_B(self, scalar, Nr, intrinsics: Intrinsics, pat, alignB=False):
+    def _gen_nano_kernel_preload_B(self, arch_str, scalar, Nr, intrinsics: Intrinsics, pat, alignB=False):
         reg_t = intrinsics.vec_type
         vec_width_ele = intrinsics.vec_width_ele
         case_body = Block()
@@ -323,7 +323,7 @@ class UKernelCodegenBase:
         for k in range(Nr):
             case_body += f'{reg_t} b{k};'
 
-        if alignB and False:
+        if alignB:
             case_body += f'if ((uintptr_t)B_curr & ({vec_width_ele * 4} - 1) && !( (uintptr_t)B_curr & (16-1))) {{'
             case_body += f'    // B is not aligned to 16 bytes, but is aligned to 4 bytes'
             case_body += f'    switch((uintptr_t)B_curr & (64-1)) {{'
@@ -392,7 +392,7 @@ class UKernelCodegenBase:
 
         return case_body.sub_elements
 
-    def _gen_nano_kernel_preload_A(self, scalar, Nr, intrinsics: Intrinsics, pat):
+    def _gen_nano_kernel_preload_A(self, arch_str, scalar, Nr, intrinsics: Intrinsics, pat):
         reg_t = intrinsics.vec_type
         vec_width_ele = intrinsics.vec_width_ele
         size_of_scalar = self.size_of_scalar[scalar]
@@ -478,9 +478,9 @@ class UKernelCodegenBase:
                                  unroll=unroll_mapping(arch_str, nnzs=popcount(pat)))
 
             if arch_str == "NEON":
-                nkern_loop += self._gen_nano_kernel_preload_A(scalar, Nr, intrinsics, pat)
+                nkern_loop += self._gen_nano_kernel_preload_A(arch_str, scalar, Nr, intrinsics, pat)
             else:
-                nkern_loop += self._gen_nano_kernel_preload_B(scalar, Nr, intrinsics, pat, alignB=alignB)
+                nkern_loop += self._gen_nano_kernel_preload_B(arch_str, scalar, Nr, intrinsics, pat, alignB=alignB)
             body += nkern_loop
 
         ##
@@ -543,8 +543,8 @@ class UKernelCodegenBase:
                 alignr=arch_intrinsics.alignr_intrin
             )
 
-            return self._emit_executor_body(arch_str, Nr, scalar, vector_intrinsics, \
-                alignB=True if arch_str == 'AVX512' or arch_str == 'AVX2' else False).emit(6)
+            alignB = arch_str == 'AVX512' and False
+            return self._emit_executor_body(arch_str, Nr, scalar, vector_intrinsics, alignB=alignB).emit(6)
 
     def _emit_executor_body_cleanup(self, Nr, arch, vec_width_bits, scalar,
                                     packed_C=False, packed_B=False,

@@ -23,9 +23,108 @@
 #include "KernelDesc.h"
 #include "MicroKernelDesc.h"
 
+#define USE_CUSTOM_MEMCPY 1
+
 #define _ai inline __attribute__((__always_inline__))
 
 namespace sop {
+
+
+static _ai void *
+pack_memcpy(void *dst, const void *src, size_t n)
+{
+  uintptr_t dstu = (uintptr_t)dst;
+  uintptr_t srcu = (uintptr_t)src;
+  void *ret = dst;
+  size_t dstofss;
+  size_t bits;
+
+  /**
+   * Fast way when copy size doesn't exceed 512 bytes
+   */
+  if (n <= 32) {
+    rte_mov16((uint8_t *)dst, (const uint8_t *)src);
+    rte_mov16((uint8_t *)dst - 16 + n,
+              (const uint8_t *)src - 16 + n);
+    return ret;
+  }
+  if (n <= 64) {
+    rte_mov32((uint8_t *)dst, (const uint8_t *)src);
+    rte_mov32((uint8_t *)dst - 32 + n,
+              (const uint8_t *)src - 32 + n);
+    return ret;
+  }
+  if (n <= 512) {
+    if (n >= 256) {
+      n -= 256;
+      rte_mov256((uint8_t *)dst, (const uint8_t *)src);
+      src = (const uint8_t *)src + 256;
+      dst = (uint8_t *)dst + 256;
+    }
+    if (n >= 128) {
+      n -= 128;
+      rte_mov128((uint8_t *)dst, (const uint8_t *)src);
+      src = (const uint8_t *)src + 128;
+      dst = (uint8_t *)dst + 128;
+    }
+    COPY_BLOCK_128_BACK63:
+    if (n > 64) {
+      rte_mov64((uint8_t *)dst, (const uint8_t *)src);
+      rte_mov64((uint8_t *)dst - 64 + n,
+                (const uint8_t *)src - 64 + n);
+      return ret;
+    }
+    if (n > 0)
+      rte_mov64((uint8_t *)dst - 64 + n,
+                (const uint8_t *)src - 64 + n);
+    return ret;
+  }
+
+  /**
+   * Make store aligned when copy size exceeds 512 bytes
+   */
+  dstofss = ((uintptr_t)dst & 0x3F);
+  if (dstofss > 0) {
+    dstofss = 64 - dstofss;
+    n -= dstofss;
+    rte_mov64((uint8_t *)dst, (const uint8_t *)src);
+    src = (const uint8_t *)src + dstofss;
+    dst = (uint8_t *)dst + dstofss;
+  }
+
+  /**
+   * Copy 512-byte blocks.
+   * Use copy block function for better instruction order control,
+   * which is important when load is unaligned.
+   */
+  rte_mov512blocks((uint8_t *)dst, (const uint8_t *)src, n);
+  bits = n;
+  n = n & 511;
+  bits -= n;
+  src = (const uint8_t *)src + bits;
+  dst = (uint8_t *)dst + bits;
+
+  /**
+   * Copy 128-byte blocks.
+   * Use copy block function for better instruction order control,
+   * which is important when load is unaligned.
+   */
+  if (n >= 128) {
+    rte_mov128blocks((uint8_t *)dst, (const uint8_t *)src, n);
+    bits = n;
+    n = n & 127;
+    bits -= n;
+    src = (const uint8_t *)src + bits;
+    dst = (uint8_t *)dst + bits;
+  }
+
+  /**
+   * Copy whatever left
+   */
+  goto COPY_BLOCK_128_BACK63;
+}
+
+
 
 template<typename KernelDesc, typename MicroKernelDesc>
 struct Packer {
@@ -91,16 +190,6 @@ struct Packer {
         B_packed_flags[tjj] = true;
     }
 
-    _ai void memcpy_Nr(Scalar *__restrict__ B_packed, const Scalar *__restrict__ B) {
-        static_assert(N_r >= 16, "N_r must be at least 16 for the current mempcy implementation");
-
-
-        while (B % 8) {
-
-        }
-
-    }
-
     _ai void pack_B(Scalar *__restrict__ B_packed, const Scalar *__restrict__ B, int thread_id, int n) {
         int start_row = thread_id * rows_of_B_per_thread;
         int end_row = std::min(start_row + rows_of_B_per_thread, K);
@@ -112,9 +201,11 @@ struct Packer {
             Scalar *__restrict__ B_p_row = (Scalar *) __builtin_assume_aligned(B_packed + k * N_c, 16);
 
 #if __AVX2__ || __AVX512F__
-            //std::cout << n << std::endl;
+#if defined(USE_CUSTOM_MEMCPY) && USE_CUSTOM_MEMCPY
+            pack_memcpy(B_p_row, B_row, n * sizeof(Scalar));
+#else
             rte_memcpy_generic(B_p_row, B_row, n * sizeof(Scalar));
-            //std::memcpy(B_p_row, B_row, n * sizeof(Scalar));
+#endif
 #endif
         }
     }

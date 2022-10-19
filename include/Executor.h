@@ -9,6 +9,7 @@
 #include <chrono>
 #include <numeric>
 //#include <aligned_new>
+#include <atomic>
 
 #include "utils/Vec.h"
 #include "utils/error.h"
@@ -20,6 +21,39 @@
 #include "packing.h"
 
 namespace sop {
+
+    struct SpinBarrier {
+        std::atomic<int> bar = 0; // Counter of threads, faced barrier.
+        std::atomic<int> passed = 0; // Number of barriers, passed by all threads.
+
+        void barrier_wait(int P)
+        {
+          int passed_old = passed.load(std::memory_order_relaxed);
+
+          if(bar.fetch_add(1) == (P - 1))
+          {
+            // The last thread, faced barrier.
+            bar = 0;
+            // Synchronize and store in one operation.
+            passed.store(passed_old + 1, std::memory_order_release);
+          }
+          else
+          {
+            // Not the last thread. Wait others.
+            while(passed.load(std::memory_order_relaxed) == passed_old) {};
+            // Need to synchronize cache with other threads, passed barrier.
+            std::atomic_thread_fence(std::memory_order_acquire);
+          }
+        }
+
+        void reset() {
+          bar = 0;
+          passed = 0;
+        }
+    };
+
+
+
 
     using std::vector;
 
@@ -92,6 +126,7 @@ namespace sop {
         int batch_size;
         int num_threads;
 
+        SpinBarrier barrier;
         bool first_run = true;
 
         TileConfig& config;
@@ -314,130 +349,6 @@ namespace sop {
             _inner_nm_loop<false, false>(nullptr, nullptr, tii, jjj, pt, partial_Nc_loop, final_store);
         }
 
-        void _execute_row_panel_NK(int tii) {
-            using std::min;
-            ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
-
-            int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
-            const int iii = tii * M_c;
-
-            // K_c loop
-            for (int tkk = 0; tkk < Kb; tkk++) {
-                bool final_store = (tkk == Kb - 1);
-
-                int tjj = 0, jjj = 0;
-                for (; tjj < Nb_full; tjj++, jjj += N_c) {
-                    _inner_nm_loop(tii, jjj, tiles[tii][tkk], false, final_store);
-                }
-
-                if (partial_N_c_loop || partial_N_r_loop) {
-                    _inner_nm_loop(tii, jjj, tiles[tii][tkk], true, final_store);
-                }
-            }
-        }
-
-        void _execute_row_panel_KN(int tii) {
-            using std::min;
-
-            ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
-            int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
-            const int iii = tii * M_c;
-
-            // N_c loop
-            int tjj = 0, jjj = 0;
-            for (; tjj < Nb_full; tjj++, jjj += N_c) {
-                for (int tkk = 0; tkk < Kb; tkk++) {
-                    bool final_store = (tkk == Kb - 1);
-                    bool partial_Nc_loop = false;
-                    _inner_nm_loop(tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
-                }
-            }
-
-            if (partial_N_c_loop || partial_N_r_loop) {
-                for (int tkk = 0; tkk < Kb; tkk++) {
-                    bool final_store = (tkk == Kb - 1);
-                    bool partial_Nc_loop = true;
-                    _inner_nm_loop(tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
-                }
-            }
-        }
-
-        void _execute_row_panel_packed_C_KN(int tii, int thread_id) {
-            using std::min;
-
-            ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
-            int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
-            const int iii = tii * M_c;
-
-            Scalar* __restrict__ C_p = packer->get_C_packed_buffer(thread_id);
-
-            // K_c loop
-            int tjj = 0, jjj = 0;
-            for (; tjj < Nb_full; tjj++, jjj += N_c) {
-                for (int tkk = 0; tkk < Kb; tkk++) {
-                    const bool final_store = tkk == Kb - 1;
-                    _inner_nm_loop<true, false>(C_p, nullptr, tii, jjj, tiles[tii][tkk], false, final_store);
-                }
-
-                //packer->unpack_C_cache_tile(C + jjj + (tii) * M_c * N,  C_p, N_c);
-            }
-
-            if (partial_N_c_loop || partial_N_r_loop) {
-                for (int tkk = 0; tkk < Kb; tkk++) {
-                    const bool final_store = tkk == Kb - 1;
-                    _inner_nm_loop<true, false>(C_p, nullptr, tii, jjj, tiles[tii][tkk], true, final_store);
-                }
-
-                //packer->unpack_C_cache_tile(C + jjj + (tii) * M_c * N,  C_p, final_N_c_size);
-            }
-        }
-
-        template<bool packed_C, bool packed_B>
-        void _execute_row_panel_packed_KN(int tii, int thread_id) {
-          using std::min;
-
-          ALIAS_TILE_DIMS_EXCLUDING_MKN(TileDims, td);
-          int Nb_full = partial_N_c_loop || partial_N_r_loop ? Nb - 1 : Nb;
-          const int iii = tii * M_c;
-
-          Scalar* __restrict__ C_p = nullptr;
-          Scalar* __restrict__ B_p = nullptr;
-
-          if constexpr(packed_C) C_p = packer->get_C_packed_buffer(thread_id);
-          if constexpr(packed_B) B_p = packer->get_B_packed_buffer(0);
-
-          // K_c loop
-          int tjj = 0, jjj = 0;
-          for (; tjj < Nb_full; tjj++, jjj += N_c) {
-            if constexpr(packed_B) {
-              if (!packer->is_B_packed(tjj)) {
-                packer->pack_B(B_p, B + jjj, thread_id, N_c);
-                #pragma omp barrier
-                packer->mark_B_packed(tjj);
-              }
-            }
-
-            for (int tkk = 0; tkk < Kb; tkk++) {
-              const bool final_store = tkk == Kb - 1;
-              _inner_nm_loop<packed_C, packed_B>(C_p, B_p, tii, jjj, tiles[tii][tkk], false, final_store);
-            }
-
-            if constexpr(packed_B) B_p = packer->seek_to_next_B_tile(B_p);
-            //packer->unpack_C_cache_tile(C + jjj + (tii) * M_c * N,  C_p, N_c);
-          }
-
-          if (partial_N_c_loop || partial_N_r_loop) {
-            if constexpr(packed_B) packer->pack_B(B_p, B + jjj, thread_id, N - tjj * N_c);
-
-            for (int tkk = 0; tkk < Kb; tkk++) {
-              const bool final_store = tkk == Kb - 1;
-              _inner_nm_loop<packed_C, packed_B>(C_p, B_p, tii, jjj, tiles[tii][tkk], true, final_store);
-            }
-
-            //packer->unpack_C_cache_tile(C + jjj + (tii) * M_c * N,  C_p, final_N_c_size);
-          }
-        }
-
         /******************************************
          *    Outer Loop
          ******************************************/
@@ -461,6 +372,55 @@ namespace sop {
 
             if constexpr(packed_C || packed_B) {
                 switch (config.runtimeSchedule) {
+                    case nmKNM: {
+                        int tii = p_tile;
+                        int tjj = 0, jjj = 0;
+                        int Nb_full = partial_N_c_loop || partial_N_r_loop ? td.Nb - 1 : td.Nb;
+
+                        Scalar* __restrict__ C_p = nullptr;
+                        Scalar* __restrict__ B_p = nullptr;
+
+                        if constexpr(packed_C) C_p = packer->get_C_packed_buffer(thread_id);
+
+                        for (; tjj < Nb_full; tjj++, jjj += N_c) {
+                            if constexpr(packed_B) {
+                                B_p = packer->get_B_packed_buffer(tjj);
+
+                                if (!packer->is_B_packed(tjj)) {
+                                    packer->pack_B(B_p, B + jjj, thread_id, N_c);
+                                    barrier.barrier_wait(num_threads);
+                                    if (thread_id == 0) packer->mark_B_packed(tjj);
+                                }
+                            }
+
+                            for (int tkk = 0; tkk < td.Kb; tkk++) {
+                                bool final_store = (tkk == td.Kb - 1);
+                                bool partial_Nc_loop = false;
+                                _inner_nm_loop<packed_C, packed_B>(
+                                        C_p, B_p, tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
+                            }
+                        }
+
+                        if (partial_N_c_loop || partial_N_r_loop) {
+                            if constexpr(packed_B) {
+                                B_p = packer->get_B_packed_buffer(tjj);
+
+                                if (!packer->is_B_packed(tjj)) {
+                                    packer->pack_B(B_p, B + jjj, thread_id, N_c);
+                                    barrier.barrier_wait(num_threads);
+                                    if (thread_id == 0) packer->mark_B_packed(tjj);
+                                }
+                            }
+
+                            for (int tkk = 0; tkk < td.Kb; tkk++) {
+                                bool final_store = (tkk == td.Kb - 1);
+                                bool partial_Nc_loop = true;
+                                _inner_nm_loop<packed_C, packed_B>(
+                                        C_p, B_p, tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
+                            }
+                        }
+                        break;
+                    }
                     default:
                         ERROR_AND_EXIT("Not implemented");
                 }
@@ -469,10 +429,12 @@ namespace sop {
                 bool final_store, partial_Nc_loop;
 
                  switch (config.runtimeSchedule) {
-                     case nmKNM:
+                     case nmKNM: {
                          tii = p_tile;
                          Nb_full = partial_N_c_loop || partial_N_r_loop ? td.Nb - 1 : td.Nb;
-                         tjj = 0; jjj = 0;
+                         tjj = 0;
+                         jjj = 0;
+
                          for (; tjj < Nb_full; tjj++, jjj += N_c) {
                              for (tkk = 0; tkk < td.Kb; tkk++) {
                                  final_store = (tkk == td.Kb - 1);
@@ -488,6 +450,7 @@ namespace sop {
                              }
                          }
                          break;
+                     }
                      case nmNKM:
                           tii = p_tile;
                           Nb_full = partial_N_c_loop || partial_N_r_loop ? td.Nb - 1 : td.Nb;
@@ -649,8 +612,7 @@ namespace sop {
                                                 << " schedule " << config.runtimeSchedule);
 
             if constexpr(B_PACKING != NO_PACKING) packer->reset_B_packed_flags();
-
-
+            barrier.reset();
         }
 
         void operator()(Scalar* __restrict__ _C, const Scalar* __restrict__ _B,
