@@ -372,6 +372,42 @@ namespace sop {
 
             if constexpr(packed_C || packed_B) {
                 switch (config.runtimeSchedule) {
+                    case nmN: {
+                        Scalar* __restrict__ C_p = nullptr;
+                        Scalar* __restrict__ B_p = nullptr;
+
+                        int tjj = p_tile;
+                        bool partial_Nc_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == td.Nb - 1);
+
+                        if constexpr(packed_B) {
+                            B_p = packer->get_B_packed_buffer(tjj);
+                            packer->pack_B(B_p, B + tjj * N_c, N_c);
+                        }
+
+                        bool final_store = true;
+                        _inner_nm_loop<packed_C, packed_B>(
+                                C_p, B_p, 0, tjj * N_c, tiles[0][0], partial_Nc_loop, final_store);
+                        break;
+                    }
+                    case nmMN: {
+                        Scalar* __restrict__ C_p = nullptr;
+                        Scalar* __restrict__ B_p = nullptr;
+
+                        int tjj = p_tile;
+                        bool partial_Nc_loop = (partial_N_c_loop || partial_N_r_loop) && (tjj == td.Nb - 1);
+
+                        if constexpr(packed_B) {
+                            B_p = packer->get_B_packed_buffer(tjj);
+                            packer->pack_B(B_p, B + tjj * N_c, N_c);
+                        }
+
+                        bool final_store = true;
+                        for (int tii = 0; tii < td.Mb; tii++) {
+                            _inner_nm_loop<packed_C, packed_B>(
+                                C_p, B_p, tii, tjj * N_c, tiles[tii][0], partial_Nc_loop, final_store);
+                        }
+                        break;
+                    }
                     case nmKNM: {
                         int tii = p_tile;
                         int tjj = 0, jjj = 0;
@@ -397,7 +433,7 @@ namespace sop {
                                 bool final_store = (tkk == td.Kb - 1);
                                 bool partial_Nc_loop = false;
                                 _inner_nm_loop<packed_C, packed_B>(
-                                        C_p, B_p, tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
+                                    C_p, B_p, tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
                             }
                         }
 
@@ -416,7 +452,7 @@ namespace sop {
                                 bool final_store = (tkk == td.Kb - 1);
                                 bool partial_Nc_loop = true;
                                 _inner_nm_loop<packed_C, packed_B>(
-                                        C_p, B_p, tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
+                                    C_p, B_p, tii, jjj, tiles[tii][tkk], partial_Nc_loop, final_store);
                             }
                         }
                         break;

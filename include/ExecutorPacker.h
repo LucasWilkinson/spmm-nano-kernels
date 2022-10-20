@@ -29,244 +29,28 @@
 
 namespace sop {
 
-
-#define ALIGNMENT_MASK 0x3F
-
-/**
- * AVX512 implementation below
- */
-
-/**
- * Copy 16 bytes from one location to another,
- * locations should not overlap.
- */
-static _ai void
-rte_mov16(uint8_t *dst, const uint8_t *src)
+static _ai void *
+pack_memcpy(void *__restrict__ dst, const void *__restrict__ src, size_t n)
 {
-  __m128i xmm0;
 
-  xmm0 = _mm_loadu_si128((const __m128i *)src);
-  _mm_storeu_si128((__m128i *)dst, xmm0);
-}
+#ifdef __AVX512VL__
+    void* ret = dst;
+    ERROR_AND_EXIT_IF((uintptr_t) dst & 0x3F, "dst is not aligned to 64 bytes");
 
-/**
- * Copy 32 bytes from one location to another,
- * locations should not overlap.
- */
-static _ai void
-rte_mov32(uint8_t *dst, const uint8_t *src)
-{
-  __m256i ymm0;
-
-  ymm0 = _mm256_loadu_si256((const __m256i *)src);
-  _mm256_storeu_si256((__m256i *)dst, ymm0);
-}
-
-/**
- * Copy 64 bytes from one location to another,
- * locations should not overlap.
- */
-static _ai void
-rte_mov64(uint8_t *dst, const uint8_t *src)
-{
-  __m512i zmm0;
-
-  zmm0 = _mm512_loadu_si512((const void *)src);
-  _mm512_storeu_si512((void *)dst, zmm0);
-}
-
-/**
- * Copy 128 bytes from one location to another,
- * locations should not overlap.
- */
-static _ai void
-rte_mov128(uint8_t *dst, const uint8_t *src)
-{
-  rte_mov64(dst + 0 * 64, src + 0 * 64);
-  rte_mov64(dst + 1 * 64, src + 1 * 64);
-}
-
-/**
- * Copy 256 bytes from one location to another,
- * locations should not overlap.
- */
-static _ai void
-rte_mov256(uint8_t *dst, const uint8_t *src)
-{
-  rte_mov64(dst + 0 * 64, src + 0 * 64);
-  rte_mov64(dst + 1 * 64, src + 1 * 64);
-  rte_mov64(dst + 2 * 64, src + 2 * 64);
-  rte_mov64(dst + 3 * 64, src + 3 * 64);
-}
-
-/**
- * Copy 128-byte blocks from one location to another,
- * locations should not overlap.
- */
-static _ai void
-rte_mov128blocks(uint8_t *dst, const uint8_t *src, size_t n)
-{
-  __m512i zmm0, zmm1;
-
-  while (n >= 128) {
-    zmm0 = _mm512_loadu_si512((const void *)(src + 0 * 64));
-    n -= 128;
-    zmm1 = _mm512_loadu_si512((const void *)(src + 1 * 64));
-    src = src + 128;
-    _mm512_storeu_si512((void *)(dst + 0 * 64), zmm0);
-    _mm512_storeu_si512((void *)(dst + 1 * 64), zmm1);
-    dst = dst + 128;
-  }
-}
-
-/**
- * Copy 512-byte blocks from one location to another,
- * locations should not overlap.
- */
-static _ai void
-rte_mov512blocks(uint8_t *dst, const uint8_t *src, size_t n)
-{
-  __m512i zmm0, zmm1, zmm2, zmm3, zmm4, zmm5, zmm6, zmm7;
-
-  while (n >= 512) {
-    zmm0 = _mm512_loadu_si512((const void *)(src + 0 * 64));
-    n -= 512;
-    zmm1 = _mm512_loadu_si512((const void *)(src + 1 * 64));
-    zmm2 = _mm512_loadu_si512((const void *)(src + 2 * 64));
-    zmm3 = _mm512_loadu_si512((const void *)(src + 3 * 64));
-    zmm4 = _mm512_loadu_si512((const void *)(src + 4 * 64));
-    zmm5 = _mm512_loadu_si512((const void *)(src + 5 * 64));
-    zmm6 = _mm512_loadu_si512((const void *)(src + 6 * 64));
-    zmm7 = _mm512_loadu_si512((const void *)(src + 7 * 64));
-    src = src + 512;
-    _mm512_storeu_si512((void *)(dst + 0 * 64), zmm0);
-    _mm512_storeu_si512((void *)(dst + 1 * 64), zmm1);
-    _mm512_storeu_si512((void *)(dst + 2 * 64), zmm2);
-    _mm512_storeu_si512((void *)(dst + 3 * 64), zmm3);
-    _mm512_storeu_si512((void *)(dst + 4 * 64), zmm4);
-    _mm512_storeu_si512((void *)(dst + 5 * 64), zmm5);
-    _mm512_storeu_si512((void *)(dst + 6 * 64), zmm6);
-    _mm512_storeu_si512((void *)(dst + 7 * 64), zmm7);
-    dst = dst + 512;
-  }
-}
-
-static void *
-pack_memcpy(void *dst, const void *src, size_t n)
-{
-  uintptr_t dstu = (uintptr_t)dst;
-  uintptr_t srcu = (uintptr_t)src;
-  void *ret = dst;
-  size_t dstofss;
-  size_t bits;
-
-  /**
-	 * Copy less than 16 bytes
-   */
-  if (n < 16) {
-    if (n & 0x01) {
-      *(uint8_t *)dstu = *(const uint8_t *)srcu;
-      srcu = (uintptr_t)((const uint8_t *)srcu + 1);
-      dstu = (uintptr_t)((uint8_t *)dstu + 1);
+    #pragma GCC unroll 4
+    for (; n >= 64; n -= 64, dst = (uint8_t *)dst + 64, src = (const uint8_t *)src + 64) {
+        _mm512_store_si512((void *)(dst), _mm512_loadu_si512((const void *)(src)));
     }
-    if (n & 0x02) {
-      *(uint16_t *)dstu = *(const uint16_t *)srcu;
-      srcu = (uintptr_t)((const uint16_t *)srcu + 1);
-      dstu = (uintptr_t)((uint16_t *)dstu + 1);
+
+    if (n) {
+        __mmask16 mask = (uint16_t) ((1 << (n / 4)) - 1);
+        _mm512_store_si512((void *) (dst), _mm512_maskz_loadu_epi32(mask, (const void *) (src)));
     }
-    if (n & 0x04) {
-      *(uint32_t *)dstu = *(const uint32_t *)srcu;
-      srcu = (uintptr_t)((const uint32_t *)srcu + 1);
-      dstu = (uintptr_t)((uint32_t *)dstu + 1);
-    }
-    if (n & 0x08)
-      *(uint64_t *)dstu = *(const uint64_t *)srcu;
+
     return ret;
-  }
-
-  /**
-	 * Fast way when copy size doesn't exceed 512 bytes
-   */
-  if (n <= 32) {
-    rte_mov16((uint8_t *)dst, (const uint8_t *)src);
-    rte_mov16((uint8_t *)dst - 16 + n,
-              (const uint8_t *)src - 16 + n);
-    return ret;
-  }
-  if (n <= 64) {
-    rte_mov32((uint8_t *)dst, (const uint8_t *)src);
-    rte_mov32((uint8_t *)dst - 32 + n,
-              (const uint8_t *)src - 32 + n);
-    return ret;
-  }
-  if (n <= 512) {
-    if (n >= 256) {
-      n -= 256;
-      rte_mov256((uint8_t *)dst, (const uint8_t *)src);
-      src = (const uint8_t *)src + 256;
-      dst = (uint8_t *)dst + 256;
-    }
-    if (n >= 128) {
-      n -= 128;
-      rte_mov128((uint8_t *)dst, (const uint8_t *)src);
-      src = (const uint8_t *)src + 128;
-      dst = (uint8_t *)dst + 128;
-    }
-  COPY_BLOCK_128_BACK63:
-    if (n > 64) {
-      rte_mov64((uint8_t *)dst, (const uint8_t *)src);
-      rte_mov64((uint8_t *)dst - 64 + n,
-                (const uint8_t *)src - 64 + n);
-      return ret;
-    }
-    if (n > 0)
-      rte_mov64((uint8_t *)dst - 64 + n,
-                (const uint8_t *)src - 64 + n);
-    return ret;
-  }
-
-  /**
-	 * Make store aligned when copy size exceeds 512 bytes
-   */
-  dstofss = ((uintptr_t)dst & 0x3F);
-  if (dstofss > 0) {
-    dstofss = 64 - dstofss;
-    n -= dstofss;
-    rte_mov64((uint8_t *)dst, (const uint8_t *)src);
-    src = (const uint8_t *)src + dstofss;
-    dst = (uint8_t *)dst + dstofss;
-  }
-
-  /**
-	 * Copy 512-byte blocks.
-	 * Use copy block function for better instruction order control,
-	 * which is important when load is unaligned.
-   */
-  rte_mov512blocks((uint8_t *)dst, (const uint8_t *)src, n);
-  bits = n;
-  n = n & 511;
-  bits -= n;
-  src = (const uint8_t *)src + bits;
-  dst = (uint8_t *)dst + bits;
-
-  /**
-	 * Copy 128-byte blocks.
-	 * Use copy block function for better instruction order control,
-	 * which is important when load is unaligned.
-   */
-  if (n >= 128) {
-    rte_mov128blocks((uint8_t *)dst, (const uint8_t *)src, n);
-    bits = n;
-    n = n & 127;
-    bits -= n;
-    src = (const uint8_t *)src + bits;
-    dst = (uint8_t *)dst + bits;
-  }
-
-  /**
-	 * Copy whatever left
-   */
-  goto COPY_BLOCK_128_BACK63;
+#else
+    ERROR_AND_EXIT("pack_memcpy is not implemented for this architecture");
+#endif
 }
 
 template<typename KernelDesc, typename MicroKernelDesc>
@@ -308,16 +92,16 @@ struct Packer {
     }
 
     ~Packer() {
-        if (C_packed) operator delete[](C_packed, std::align_val_t(4096));
-        if (B_packed) operator delete[](B_packed, std::align_val_t(4096));
+        if (C_packed) operator delete[](C_packed, std::align_val_t(64));
+        if (B_packed) operator delete[](B_packed, std::align_val_t(64));
     }
 
     void allocate_C_buffers() {
-        C_packed = new(std::align_val_t(4096)) Scalar[M_c * N_c * nThreads];
+        C_packed = new(std::align_val_t(64)) Scalar[M_c * N_c * nThreads];
     }
 
     void allocate_B_buffers() {
-        B_packed = new(std::align_val_t(4096)) Scalar[K_p * N_p];
+        B_packed = new(std::align_val_t(64)) Scalar[K_p * N_p];
         B_packed_flags = new bool[c_N_c]();
     }
 
@@ -333,12 +117,32 @@ struct Packer {
         B_packed_flags[tjj] = true;
     }
 
+    _ai void pack_B(Scalar *__restrict__ B_packed, const Scalar *__restrict__ B, int n) {
+        std::chrono::time_point<std::chrono::high_resolution_clock>
+                start_time, end_time;
+        using dur = std::chrono::duration<double>;
+#pragma ivdep
+#pragma unroll 4
+        for (int k = K - 1; k >= 0; k--) {
+            const Scalar *__restrict__ B_row = B + k * N;
+            Scalar *__restrict__ B_p_row = (Scalar *) __builtin_assume_aligned(B_packed + k * N_c, 16);
+
+#if __AVX2__ || __AVX512F__
+#if defined(USE_CUSTOM_MEMCPY) && USE_CUSTOM_MEMCPY
+            pack_memcpy(B_p_row, B_row, n * sizeof(Scalar));
+#else
+            rte_memcpy_generic(B_p_row, B_row, n * sizeof(Scalar));
+#endif
+#endif
+        }
+    }
+
     _ai void pack_B(Scalar *__restrict__ B_packed, const Scalar *__restrict__ B, int thread_id, int n) {
         int start_row = thread_id * rows_of_B_per_thread;
         int end_row = std::min(start_row + rows_of_B_per_thread, K);
 
-        #pragma ivdep
-        #pragma unroll 4
+#pragma ivdep
+#pragma unroll 4
         for (int k = start_row; k < end_row; k++) {
             const Scalar *__restrict__ B_row = B + k * N;
             Scalar *__restrict__ B_p_row = (Scalar *) __builtin_assume_aligned(B_packed + k * N_c, 16);
@@ -353,6 +157,55 @@ struct Packer {
         }
     }
 
+
+    _ai void pack_B_2(Scalar *__restrict__ B_packed, const Scalar *__restrict__ B, int thread_id, int _n) {
+        int start_row = thread_id * rows_of_B_per_thread;
+        int end_row = std::min(start_row + rows_of_B_per_thread, K);
+
+        std::chrono::time_point<std::chrono::high_resolution_clock>
+                start_time, end_time;
+        using dur = std::chrono::duration<double>;
+
+//        if (thread_id == 0) start_time = std::chrono::high_resolution_clock::now();
+
+
+        for (int k = start_row; k < end_row; k += 4) {
+            int n = _n;
+
+            void *__restrict__ B_p_row0 = (void *) __builtin_assume_aligned(B_packed + (k + 0) * N_c, 16);
+            void *__restrict__ B_p_row1 = (void *) __builtin_assume_aligned(B_packed + (k + 1) * N_c, 16);
+            void *__restrict__ B_p_row2 = (void *) __builtin_assume_aligned(B_packed + (k + 2) * N_c, 16);
+            void *__restrict__ B_p_row3 = (void *) __builtin_assume_aligned(B_packed + (k + 3) * N_c, 16);
+
+            const void *__restrict__ B_row0 = (B + (k + 0) * N);
+            const void *__restrict__ B_row1 = (B + (k + 1) * N);
+            const void *__restrict__ B_row2 = (B + (k + 2) * N);
+            const void *__restrict__ B_row3 = (B + (k + 3) * N);
+
+            constexpr int inc = 64 / sizeof(Scalar);
+
+            #pragma GCC unroll 4
+            for (; n >= 64; n -= 64) {
+                _mm512_store_si512((void *) (B_p_row0), _mm512_loadu_si512((const void *) (B_row0)));
+                _mm512_store_si512((void *) (B_p_row1), _mm512_loadu_si512((const void *) (B_row1)));
+                _mm512_store_si512((void *) (B_p_row2), _mm512_loadu_si512((const void *) (B_row2)));
+                _mm512_store_si512((void *) (B_p_row3), _mm512_loadu_si512((const void *) (B_row3)));
+
+                B_p_row0 = (void*)((uint8_t*) B_p_row0 + 64);  B_row0 = (void*)((uint8_t*) B_row0 + 64);
+                B_p_row1 = (void*)((uint8_t*) B_p_row1 + 64);  B_row1 = (void*)((uint8_t*) B_row1 + 64);
+                B_p_row2 = (void*)((uint8_t*) B_p_row2 + 64);  B_row2 = (void*)((uint8_t*) B_row2 + 64);
+                B_p_row3 = (void*)((uint8_t*) B_p_row3 + 64);  B_row3 = (void*)((uint8_t*) B_row3 + 64);
+            }
+
+            if (n) {
+                __mmask16 mask = ~(uint16_t) ((1 << (n / 4)) - 1);
+                _mm512_store_si512((void *) (B_p_row0), _mm512_maskz_loadu_epi32(mask, (const void *) (B_row0)));
+                _mm512_store_si512((void *) (B_p_row1), _mm512_maskz_loadu_epi32(mask, (const void *) (B_row1)));
+                _mm512_store_si512((void *) (B_p_row2), _mm512_maskz_loadu_epi32(mask, (const void *) (B_row2)));
+                _mm512_store_si512((void *) (B_p_row3), _mm512_maskz_loadu_epi32(mask, (const void *) (B_row3)));
+            }
+        }
+    }
     _ai Scalar *__restrict__ get_B_packed_buffer(int tjj) {
       return B_packed + (tjj * K_p * N_c);
     }

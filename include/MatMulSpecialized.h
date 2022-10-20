@@ -247,6 +247,12 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
           break;
     }
 
+    if (config.M_c > m) {
+      std::cout << "Warning: M_c > m, setting M_c = m" << std::endl;
+      config.M_c = m;
+    }
+
+
     ERROR_AND_EXIT_IF(config.M_c < M_r, "M_c " << config.M_c << " must be greater than or equal to M_r " << M_r
                                                << " schedule " << config.runtimeSchedule
                                                << " K " << k << " M " << m << " N " << b_col_predict);

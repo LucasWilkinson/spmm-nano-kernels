@@ -90,7 +90,7 @@ class UKernelCodegenBase:
             "reg_width_bits": reg_width_bits,
         })
 
-        with open(self._factories_dir(arch) + f'packer_{scalar}_{arch}_nr_{Nr}.cpp', 'w+') as f:
+        with open(self._factories_dir(arch) + f'packer_{scalar}_{arch}_{vec_width_bits}_nr_{Nr}.cpp', 'w+') as f:
             f.write(f'{arch_details.preprocessor_guard()}\n')
             f.write(f'#include "{header}"\n')
             f.write(f'#include "MicroKernelPackerFactory.h"\n')
@@ -119,7 +119,7 @@ class UKernelCodegenBase:
                 "reg_width_bits": reg_width_bits,
             })
 
-            with open(self._factories_dir(arch) + f'executor_{kernel_desc}_{scalar}_{arch}_nr_{Nr}.cpp', 'w+') as f:
+            with open(self._factories_dir(arch) + f'executor_{kernel_desc}_{scalar}_{arch}_{vec_width_bits}_nr_{Nr}.cpp', 'w+') as f:
                 f.write(f'{arch_details.preprocessor_guard()}\n')
                 f.write(f'#include "ExecutorFactory.h"\n')
                 f.write(f'#include "KernelDesc.h"\n')
@@ -571,6 +571,25 @@ class UKernelCodegenBase:
             alignr=arch_intrinsics.alignr_intrin
         )
 
+        if arch_str in ['AVX512', 'AVX2']:
+            arch_intrinsics = ArchIntrinGenerator(arch, 128, scalar)
+            vec_width_ele_128 = int(128 / SCALAR_SIZE_BITS[scalar])
+            vector_intrinsics_128 = self.Intrinsics(
+                vec_type=arch_intrinsics.vec_type(),
+                vec_width_ele=vec_width_ele_128,
+                load=arch_intrinsics.load_intrin,
+                load_aligned=partial(arch_intrinsics.load_intrin, aligned=True),
+                store=arch_intrinsics.store_intrin,
+                store_aligned=partial(arch_intrinsics.store_intrin, aligned=True),
+                broadcast_from_ptr=arch_intrinsics.broadcast_from_ptr_intrin,
+                broadcast=arch_intrinsics.broadcast_intrin,
+                fma=arch_intrinsics.fma_intrin,
+                zero_reg=arch_intrinsics.setzero_intrin,
+                min=arch_intrinsics.min_intrin,
+                max=arch_intrinsics.max_intrin,
+                alignr=arch_intrinsics.alignr_intrin
+            )
+
         scalar_intrinsics = self.Intrinsics(
             vec_type=scalar,
             vec_width_ele=1,
@@ -593,11 +612,20 @@ class UKernelCodegenBase:
                                    f'C += {vec_width_ele}, C_out += {vec_width_ele}, B += {vec_width_ele}')
         vec_cleanup_loop += self._emit_executor_body(arch_str, 1, scalar, vector_intrinsics, alignB=False)
 
+        if arch_str in ['AVX512', 'AVX2']:
+            vec_cleanup_loop_128 = ForLoop(f'', f'elements_remaining >= {vec_width_ele_128}',
+                                       f'elements_remaining -= {vec_width_ele_128}, '
+                                       f'C += {vec_width_ele_128}, C_out += {vec_width_ele_128}, B += {vec_width_ele_128}')
+            vec_cleanup_loop_128 += self._emit_executor_body(arch_str, 1, scalar, vector_intrinsics_128, alignB=False)
+
         scalar_cleanup_loop = ForLoop(f'', f'elements_remaining', f'elements_remaining--, '
                                       f'C += 1, C_out += 1, B += 1')
         scalar_cleanup_loop += self._emit_executor_body(arch_str, 1, scalar, scalar_intrinsics, alignB=False)
 
         func_body += vec_cleanup_loop
+        if arch_str in ['AVX512', 'AVX2']:
+            func_body += vec_cleanup_loop_128
+
         func_body += scalar_cleanup_loop
         return func_body.emit(6)
 
