@@ -29,6 +29,7 @@
 
 namespace sop {
 
+#ifdef __AVX512F__
 
 #define ALIGNMENT_MASK 0x3F
 
@@ -266,8 +267,11 @@ pack_memcpy(void *dst, const void *src, size_t n)
   /**
 	 * Copy whatever left
    */
-  goto COPY_BLOCK_128_BACK63;
+
+   goto COPY_BLOCK_128_BACK63;
 }
+
+#endif
 
 template<typename KernelDesc, typename MicroKernelDesc>
 struct Packer {
