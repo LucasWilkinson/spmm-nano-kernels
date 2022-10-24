@@ -786,8 +786,12 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
 //  blk_ret->n_c = blk_ret->n_c > N ? N : blk_ret->n_c;
 
   if (mc_must_divide_M) {
-    while (M % blk_ret->m_c) {
-      blk_ret->m_c--;
+    blk_ret->m_c -= (blk_ret->m_c % cake_cntx->mr);
+    while (blk_ret->m_c > 0 && M % blk_ret->m_c) blk_ret->m_c -= cake_cntx->mr; // Must also be a multiple of Mr
+
+    if (blk_ret->m_c <= 0) {
+      blk_ret->m_c += cake_cntx->mr;
+      while (M % blk_ret->m_c) blk_ret->m_c += cake_cntx->mr;
     }
   }
 
