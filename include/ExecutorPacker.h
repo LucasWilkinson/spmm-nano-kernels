@@ -168,7 +168,7 @@ struct Packer {
 
 //        if (thread_id == 0) start_time = std::chrono::high_resolution_clock::now();
 
-
+#if __AVX2__ || __AVX512F__
         for (int k = start_row; k < end_row; k += 4) {
             int n = _n;
 
@@ -205,6 +205,9 @@ struct Packer {
                 _mm512_store_si512((void *) (B_p_row3), _mm512_maskz_loadu_epi32(mask, (const void *) (B_row3)));
             }
         }
+#else
+        ERROR_AND_EXIT("pack_B_2 is not implemented for this architecture");
+#endif
     }
     _ai Scalar *__restrict__ get_B_packed_buffer(int tjj) {
       return B_packed + (tjj * K_p * N_c);
