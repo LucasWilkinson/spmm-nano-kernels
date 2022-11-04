@@ -233,7 +233,7 @@ namespace sop {
                             C_p, N_r,
                             C_o, (!final_store) ? N_r : N,
                             B_p, N,
-                            nkern_counts, col_inds, values,
+                            nkern_counts, col_inds, values + ii * K, K,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
                         );
@@ -246,7 +246,7 @@ namespace sop {
                         ukernel.vectorized(
                             C_p, N,
                             B_p, N_c,
-                            nkern_counts, col_inds, values,
+                            nkern_counts, col_inds, values + ii * K, K,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
                         );
@@ -258,7 +258,7 @@ namespace sop {
                             C_p, N_r,
                             C_o, (!final_store) ? N_r : N,
                             B_p, N_c,
-                            nkern_counts, col_inds, values,
+                            nkern_counts, col_inds, values + ii * K, K,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
                         );
@@ -272,7 +272,7 @@ namespace sop {
                         ukernel.vectorized(
                             C_p, N,
                             B_p, N,
-                            nkern_counts, col_inds, values,
+                            nkern_counts, col_inds, values + ii * K, K,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
                         );
@@ -289,7 +289,7 @@ namespace sop {
                             C_p, N_r,
                             C_o, (!final_store) ? N_r : N,
                             B_p, N,
-                            nkern_counts, col_inds, values,
+                            nkern_counts, col_inds, values + ii * K, K,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
                         );
@@ -305,7 +305,7 @@ namespace sop {
                             final_N_r_loop_rem,
                             C_p, N,
                             B_p, N_c,
-                            nkern_counts, col_inds, values,
+                            nkern_counts, col_inds, values + ii * K, K,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
                         );
@@ -318,7 +318,7 @@ namespace sop {
                             C_p, N_r,
                             C_o, (!final_store) ? N_r : N,
                             B_p, N_c,
-                            nkern_counts, col_inds, values,
+                            nkern_counts, col_inds, values + ii * K, K,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
                         );
@@ -334,7 +334,7 @@ namespace sop {
                             final_N_r_loop_rem,
                             C_p, N,
                             B_p, N,
-                            nkern_counts, col_inds, values,
+                            nkern_counts, col_inds, values + ii * K, K,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
                         );

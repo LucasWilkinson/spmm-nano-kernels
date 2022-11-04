@@ -151,6 +151,7 @@ public:
     int rows() const { return m_rows; }
     int cols() const { return m_cols; }
     int nnz()  const { return m_non_zeros.size(); }
+    const auto& non_zeros() const { return m_non_zeros; }
 
     typename std::vector<NonZero>::iterator begin() { return m_non_zeros.begin(); };
     typename std::vector<NonZero>::iterator end()   { return m_non_zeros.end();   };

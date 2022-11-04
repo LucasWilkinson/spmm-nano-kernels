@@ -120,6 +120,7 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
 
   COO<Scalar>* coo = nullptr;
   void* linear_buffer = nullptr;
+  Scalar* a_dense = nullptr;
 
   void inspect_and_pack() {
     free(linear_buffer);
@@ -135,6 +136,14 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
     reorder_upanels();
     pack_tiles();
     pack_linear();
+
+    for (auto& panel : packed_tiles) {
+        for (auto &tile: panel) {
+            for (int i = 0; i < tile.sop.num_panels; i++) {
+                tile.sop.panel_descs[i].values = a_dense;
+            }
+        }
+    }
   }
 
  public:
@@ -162,6 +171,19 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
     ERROR_AND_EXIT_IF(!packer_factory, "Packer factory not found");
     ERROR_AND_EXIT_IF(packer_factory->M_r != executor_factory->M_r,
                       "M_r mismatch between packer and executor");
+
+    ////////////////////////////////
+      a_dense = new Scalar[m * k]();
+      zero(a_dense, m * k);
+
+//        sgemm_pack_get_size(CblasRowMajor, CblasNoTrans, CblasNoTrans, t.m(), t.k(), t.k(), &t.A->nz, &t.A->nz);
+
+      for (const auto& nnz : coo->non_zeros()) {
+        a_dense[nnz.row * k + nnz.col] = nnz.value;
+      }
+
+    ////////////////////////////////
+
 
     std::string filepath(__FILE__);
     auto end_of_path = filepath.find_last_of('/');
@@ -292,6 +314,7 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
   ~MatMulSpecialized() {
     if (executor) delete executor;
     free(linear_buffer);
+    delete a_dense;
   }
 
   // This operator overloading enables calling

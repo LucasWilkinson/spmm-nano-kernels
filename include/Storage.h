@@ -153,8 +153,8 @@ struct PackedTile {
         size += sizeof(sop.panel_descs[0]) * sop.num_panels;
 
         for (int i = 0; i < sop.num_panels; i++) {
-          size +=
-              sizeof(sop.panel_descs[i].values) * sop.panel_descs[i].num_nnz;
+//          size +=
+//              sizeof(sop.panel_descs[i].values) * sop.panel_descs[i].num_nnz;
           size += sizeof(sop.panel_descs[i].col_indices) *
               sop.panel_descs[i].num_col_indices;
           size += sizeof(sop.panel_descs[i].nkern_counts) *
@@ -204,10 +204,10 @@ struct PackedTile {
         buffer =
             std::copy(csr.inds, &csr.inds[nnz], (decltype(csr.inds))buffer);
 
-        buffer = cacheline_align_ptr(buffer);
-        updated_tile.csr.values = (decltype(csr.values))buffer;
-        buffer = std::copy(
-            csr.values, &csr.values[nnz], (decltype(csr.values))buffer);
+//        buffer = cacheline_align_ptr(buffer);
+//        updated_tile.csr.values = (decltype(csr.values))buffer;
+//        buffer = std::copy(
+//            csr.values, &csr.values[nnz], (decltype(csr.values))buffer);
 
         break;
       }
@@ -234,11 +234,11 @@ struct PackedTile {
                    .col_indices[sop.panel_descs[i].num_col_indices],
               (int*)buffer);
 
-          updated_tile.sop.panel_descs[i].values = (Scalar*)buffer;
-          buffer = std::copy(
-              sop.panel_descs[i].values,
-              &sop.panel_descs[i].values[sop.panel_descs[i].num_nnz],
-              (Scalar*)buffer);
+//          updated_tile.sop.panel_descs[i].values = (Scalar*)buffer;
+//          buffer = std::copy(
+//              sop.panel_descs[i].values,
+//              &sop.panel_descs[i].values[sop.panel_descs[i].num_nnz],
+//              (Scalar*)buffer);
         }
         break;
       }

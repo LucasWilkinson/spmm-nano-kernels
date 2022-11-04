@@ -388,12 +388,13 @@ class UKernelCodegenBase:
             for k in range(Nr):
                 case_body += f'b{k} = {intrinsics.load(f"B_curr + {k} * {vec_width_ele}")};'
 
-        case_body += f'B_curr = (*col_indices_curr) * B_stride + B; col_indices_curr++;'
+        case_body += f'B_curr = (*col_indices_curr) * B_stride + B;'
 
         for _, loc in self.nnz_iterator(pat):
-            case_body += f'{reg_t} a{loc} = {intrinsics.broadcast_from_ptr(f"curr_value_ptr")};'
-            case_body += f'curr_value_ptr++;'
+            case_body += f'{reg_t} a{loc} = {intrinsics.broadcast_from_ptr(f"A_curr + {loc} * A_stride")};'
             case_body += [f'c{loc}{k} = {intrinsics.fma(f"a{loc}", f"b{k}", f"c{loc}{k}")};' for k in range(Nr)]
+
+        case_body += f'A_curr = ({scalar}*)((*col_indices_curr++) + values);'
 
         return case_body.sub_elements
 
@@ -407,7 +408,7 @@ class UKernelCodegenBase:
 
             case_body = Block()
             for i in range(0, nnz, vec_width_ele):
-                case_body += f'{reg_t} a{i} = {intrinsics.load(f"curr_value_ptr + {i}")};'
+                case_body += f'{reg_t} a{i} = {intrinsics.load(f"A_curr + {i} * A_stride")};'
             case_body += f'curr_value_ptr = ({scalar}*)((uintptr_t) curr_value_ptr + {nnz * size_of_scalar});'
 
             for k in range(Nr):
@@ -416,10 +417,11 @@ class UKernelCodegenBase:
                     lane = offset % vec_width_ele
                     case_body += f'c{loc}{k} = {intrinsics.fma( f"b{k}", f"a{offset - lane}", f"c{loc}{k}", lane=lane)};'
 
-            case_body += f'B_curr = ({scalar}*)((*col_indices_curr++) * scaled_B_stride + (uintptr_t) B);'
+            case_body += f'B_curr = ({scalar}*)((*col_indices_curr) * scaled_B_stride + (uintptr_t) B);'
+            case_body += f'A_curr = ({scalar}*)((*col_indices_curr++) + values);'
         else:
             case_body = Block()
-            case_body += [f'{reg_t} a{loc} = {intrinsics.broadcast_from_ptr("curr_value_ptr")}; curr_value_ptr++;'
+            case_body += [f'{reg_t} a{loc} = {intrinsics.broadcast_from_ptr(f"A_curr + {loc} * A_stride")};'
                           for _, loc in self.nnz_iterator(pat)]
 
             for k in range(Nr):
@@ -428,7 +430,8 @@ class UKernelCodegenBase:
                 for _, loc in self.nnz_iterator(pat):
                     case_body += f'c{loc}{k} = {intrinsics.fma(f"a{loc}", f"b{k}", f"c{loc}{k}")};'
 
-            case_body += f'B_curr = ({scalar}*)((*col_indices_curr++) * scaled_B_stride + (uintptr_t) B);'
+            case_body += f'B_curr = ({scalar}*)((*col_indices_curr) * scaled_B_stride + (uintptr_t) B);'
+            case_body += f'A_curr = ({scalar}*)((*col_indices_curr++) + values);'
 
         return case_body.sub_elements
 
@@ -473,6 +476,8 @@ class UKernelCodegenBase:
 
         body += f'const {scalar} *__restrict__ B_curr ' \
                 f'= ({scalar}*) (col_indices[0] * scaled_B_stride + (uintptr_t)B);'
+        body += f'const {scalar} *__restrict__ A_curr ' \
+                f'= ({scalar}*) (col_indices[0] + values);'
         body += 'uint32_t * col_indices_curr = col_indices + 1;'
 
         ##
@@ -657,6 +662,7 @@ class UKernelCodegenBase:
         int* __restrict__ nkern_counts,
         uint32_t* __restrict__ col_indices,
         {scalar}* __restrict__ values,
+        const int A_stride,
         const bool load_c,
         const bool apply_activation,
         const {scalar} *__restrict__ bias = nullptr)
@@ -669,12 +675,13 @@ class UKernelCodegenBase:
         int* __restrict__ nkern_counts,
         uint32_t* __restrict__ col_indices,
         {scalar}* __restrict__ values,
+        const int A_stride,
         const bool load_c,
         const bool apply_activation,
         const {scalar} *__restrict__ bias = nullptr)
     {{\n
         vectorized(C, C_stride, C, C_stride, B, B_stride,
-                   nkern_counts, col_indices, values, 
+                   nkern_counts, col_indices, values, A_stride,
                    load_c, apply_activation, bias);
     }}\n\n
     
@@ -686,6 +693,7 @@ class UKernelCodegenBase:
         int* __restrict__ nkern_counts,
         uint32_t* __restrict__ col_indices,
         {scalar}* __restrict__ values,
+        const int A_stride,
         const bool load_c,
         const bool apply_activation,
         const {scalar} *__restrict__ bias = nullptr)
@@ -699,12 +707,13 @@ class UKernelCodegenBase:
         int* __restrict__ nkern_counts,
         uint32_t* __restrict__ col_indices,
         {scalar}* __restrict__ values,
+        const int A_stride,
         const bool load_c,
         const bool apply_activation,
         const {scalar} *__restrict__ bias = nullptr)
     {{\n
         cleanup(elements_remaining,C, C_stride, C, C_stride, B, B_stride,
-                nkern_counts, col_indices, values,
+                nkern_counts, col_indices, values, A_stride,
                 load_c, apply_activation, bias);
     }}\n\n
     '''
