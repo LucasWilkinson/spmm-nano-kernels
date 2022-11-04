@@ -71,6 +71,11 @@ class UKernelCodegenBase:
         self.output_root = output_root
         self.namespace = namespace if namespace is not None else "sop"
 
+        print(self.output_root)
+
+    def typename(self, scalar, arch, vec_width_bits, Nr):
+        return microkernel_typename(scalar, arch, vec_width_bits, [self.Mr, Nr], self.nanokernels)
+
     def gen_factories(self, Nr, arch, vec_width_bits, scalar, build_factories_for=None):
         typename = microkernel_typename(scalar, arch, vec_width_bits, [self.Mr, Nr], self.nanokernels)
         arch_details = self.supported_archs[arch]
