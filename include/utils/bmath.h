@@ -12,10 +12,20 @@ T ceil_div(T x, T y) {
 
 template<typename T>
 inline __attribute__((__always_inline__))
-T next_multiple(T x, T multiple) {
-    return ceil_div(x, multiple) * multiple;
+T floor_div(T x, T y) {
+    return (x / y);
 }
 
+template<typename T>
+inline __attribute__((__always_inline__))
+T next_multiple(T x, T multiple) {
+    return std::max(ceil_div(x, multiple) * multiple, multiple);
+}
+
+template<typename T>
+T prev_multiple(T x, T multiple) {
+    return std::max(floor_div(x, multiple) * multiple, multiple);
+}
 template<typename T>
 inline __attribute__((__always_inline__))
 T largest_multiple_leq(T x, T multiple) {

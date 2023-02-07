@@ -205,7 +205,7 @@ class MatMulMacro: public MatMul<typename KernelDesc::Scalar> {
           nullptr, true,
           double(coo->nnz()) / (m * k),
           config.beta,
-          true, true);
+          false, false);
 
 //      cache_dims_t* cache_dims = get_cache_dims_3(
 //          m, b_col_predict, k, num_threads, cake_cntx, KMN,
@@ -404,33 +404,42 @@ private:
     for (int ti = 0; ti < matrix_tiled_shape.rows; ti++) {
       const auto panel_tile_locs = tile_locs.row_panel(ti);
       for (int tj = 0; tj < panel_tile_locs.size(); tj++) {
-        auto t_loc = panel_tile_locs[tj].loc;
-        packed_tiles[ti][tj].type = SPARSE_SOP;
-        packed_tiles[ti][tj].loc = t_loc;
-        packed_tiles[ti][tj].shape = t_loc.shape();
-        packed_tiles[ti][tj].load_c = tj != 0;
-        packed_tiles[ti][tj].free_on_destruction = true;
-        packed_tiles[ti][tj].sop.num_panels = panels_per_tile;
-        packed_tiles[ti][tj].sop.panel_descs =
-            new MicroKernelPackedData[panels_per_tile];
+          int M_c_tile = std::min(m - config.M_c * ti, config.M_c);
+          int panels_in_tile = M_c_tile / M_r;
 
-        auto panel_descs = packed_tiles[ti][tj].sop.panel_descs;
-        for (int panel_id = 0; panel_id < panels_per_tile; panel_id++) {
-          int global_panel_id = ti * panels_per_tile + panel_id;
-
-          if (KernelDesc::UPanelOrder != NO_REORDERING) {
-            global_panel_id = upanel_swizzle[global_panel_id];
+          if (M_c_tile % M_r) {
+              std::cerr << "Bad M_c size, M_c: " << M_c_tile << ", M_r: " << M_r << std::endl;
+              exit(-1);
           }
 
-          SubmatrixLoc panel_loc = t_loc;
-          panel_loc.rows.start = global_panel_id * M_r;
-          panel_loc.rows.end = (global_panel_id + 1) * M_r;
+          auto t_loc = panel_tile_locs[tj].loc;
+          packed_tiles[ti][tj].type = SPARSE_SOP;
+          packed_tiles[ti][tj].loc = t_loc;
+          packed_tiles[ti][tj].shape = t_loc.shape();
+          packed_tiles[ti][tj].load_c = tj != 0;
+          packed_tiles[ti][tj].free_on_destruction = true;
+          packed_tiles[ti][tj].sop.num_panels = panels_in_tile;
+          packed_tiles[ti][tj].sop.panel_descs =
+                  new MicroKernelPackedData[panels_per_tile];
 
-          packer->pack(panel_descs[panel_id], panel_loc, *coo);
-        }
+          auto panel_descs = packed_tiles[ti][tj].sop.panel_descs;
+          for (int panel_id = 0; panel_id < panels_in_tile; panel_id++) {
+              int global_panel_id = ti * panels_per_tile + panel_id;
+
+              if (KernelDesc::UPanelOrder != NO_REORDERING) {
+                  global_panel_id = upanel_swizzle[global_panel_id];
+              }
+
+              SubmatrixLoc panel_loc = t_loc;
+              panel_loc.rows.start = global_panel_id * M_r;
+              panel_loc.rows.end = (global_panel_id + 1) * M_r;
+
+              packer->pack(panel_descs[panel_id], panel_loc, *coo);
+          }
       }
     }
   }
+
 
   void pack_linear() {
     int linear_size = 0;

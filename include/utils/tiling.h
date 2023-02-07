@@ -5,6 +5,7 @@
 #pragma once
 
 #include <math.h>
+#include "utils/bmath.h"
 
 template<int _M_r, int _N_r>
 struct RegTiles {
@@ -38,9 +39,9 @@ struct TileDims {
         M(M), K(K), N(N),
         M_c(M_c), N_c(N_c), K_c(K_c) {
 
-    Mb = std::ceil(M / double(M_c));
-    Kb = std::ceil(K / double(K_c));
-    Nb = std::ceil(N / double(N_c));
+    Mb = ceil_div(M, M_c);
+    Kb = ceil_div(K, K_c);
+    Nb = ceil_div(N, N_c);
 
     M_padded = Mb * M_c;
     K_padded = Kb * K_c;

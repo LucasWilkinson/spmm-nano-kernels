@@ -809,6 +809,20 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
   blk_ret->n_c  = std::max(next_multiple(blk_ret->n_c, cake_cntx->nr), cake_cntx->nr);
   blk_ret->m_c  = std::max(blk_ret->m_c / cake_cntx->mr, 1) * cake_cntx->mr;
 
+  // Balance parallelism
+    int tasks = ceil_div(M, blk_ret->m_c);
+
+    if (tasks % p) {
+        if (tasks % p > 0.75f * p) {
+            tasks += (p - tasks % p);
+        } else {
+            tasks -= (tasks % p);
+        }
+
+        blk_ret->m_c = ceil_div(M, tasks);
+        blk_ret->m_c = next_multiple(blk_ret->m_c, cake_cntx->mr);
+    }
+
   //blk_ret->n_c = std::min(blk_ret->n_c, 128);
   //std::cout << "N_c: " << blk_ret->n_c << std::endl;
 

@@ -224,6 +224,11 @@ namespace sop {
                     global_upanel_id = upanel_swizzle[global_upanel_id];
                 int ii = (global_upanel_id * M_r); // Row start of ukernel
 
+                if (ii + M_r > M) {
+                    std::cerr << "bad ii " << ii << " " << tii * c_M_r + pi << std::endl;
+                    exit(-1);
+                }
+
                 for (; tj < _c_N_r; tj++, jj += N_r) { // N_r loop
                     if constexpr(packed_C && !packed_B) {
                         B_p = B + jj;
