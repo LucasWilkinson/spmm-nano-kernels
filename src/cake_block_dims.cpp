@@ -819,6 +819,7 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
             tasks -= (tasks % p);
         }
 
+        tasks = std::max(tasks, p);
         blk_ret->m_c = ceil_div(M, tasks);
         blk_ret->m_c = next_multiple(blk_ret->m_c, cake_cntx->mr);
     }

@@ -36,7 +36,7 @@ kernel_descs = {
     ]
 }
 
-mappings_to_generate = ["61fee", "da01e", "400fa", "747f9"]
+mappings_to_generate = ["61fee", "da01e", "400fa", "747f9", "363bc"]
 
 shutil.rmtree(output_root, ignore_errors=True)
 os.makedirs(output_root, exist_ok=True)
