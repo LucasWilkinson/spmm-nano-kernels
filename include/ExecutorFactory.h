@@ -14,7 +14,7 @@
 
 namespace sop {
 
-template <typename _KernelDesc>
+template <typename _KernelDesc, bool DataTransform>
 class ExecutorFactory {
   using Scalar = typename _KernelDesc::Scalar;
 
@@ -59,11 +59,11 @@ public:
   }
 };
 
-template <typename _KernelDesc, typename _MircoKernel>
+template <typename _KernelDesc, typename _MircoKernel, bool DataTransform>
 // template <typename ExecutorWithSchedule, typename _KernelDesc, typename _MircoKernel> // TODO: For Schedule
-class ExecutorFactorySpecialized: public ExecutorFactory<_KernelDesc> {
+class ExecutorFactorySpecialized: public ExecutorFactory<_KernelDesc, DataTransform> {
 
-  using Super = ExecutorFactory<_KernelDesc>;
+  using Super = ExecutorFactory<_KernelDesc, DataTransform>;
   using Scalar = typename _MircoKernel::Scalar;
   std::string id;
 
@@ -78,7 +78,7 @@ class ExecutorFactorySpecialized: public ExecutorFactory<_KernelDesc> {
     TileConfig& config
   ) override {
     // return new ExecutorWithSchedule<_KernelDesc, MicroKernelDesc<_MircoKernel>>( // TODO: For Schedule
-    return new ExecutorSpecialized<_KernelDesc, MicroKernelDesc<_MircoKernel>>(
+    return new ExecutorSpecialized<_KernelDesc, MicroKernelDesc<_MircoKernel>, DataTransform>(
       M, K, N, batch_size, tiles, upanel_swizzle, num_threads, config);
   }
 };

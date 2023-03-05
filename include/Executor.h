@@ -96,7 +96,7 @@ namespace sop {
         }
     }
 
-    template <typename KernelDesc, typename MicroKernelDesc>
+    template <typename KernelDesc, typename MicroKernelDesc, bool DataTransform>
     class ExecutorSpecialized: public Executor<typename KernelDesc::Scalar> {
         using Scalar = typename KernelDesc::Scalar;
 
@@ -216,7 +216,7 @@ namespace sop {
                     B_p = B_p_base;
 
                 uint32_t* __restrict__  col_inds = (uint32_t*) panel_desc.col_indices;
-                float* __restrict__     values = panel_desc.values;
+                Scalar* __restrict__     values = panel_desc.values;
                 int* __restrict__       nkern_counts = panel_desc.nkern_counts;
 
                 int global_upanel_id = tii * c_M_r + pi;
@@ -238,6 +238,7 @@ namespace sop {
                             C_p, N_r,
                             C_o, (!final_store) ? N_r : N,
                             B_p, N,
+                            K,
                             nkern_counts, col_inds, values,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
@@ -251,6 +252,7 @@ namespace sop {
                         ukernel.vectorized(
                             C_p, N,
                             B_p, N_c,
+                            K,
                             nkern_counts, col_inds, values,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
@@ -263,6 +265,7 @@ namespace sop {
                             C_p, N_r,
                             C_o, (!final_store) ? N_r : N,
                             B_p, N_c,
+                            K,
                             nkern_counts, col_inds, values,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
@@ -277,6 +280,7 @@ namespace sop {
                         ukernel.vectorized(
                             C_p, N,
                             B_p, N,
+                            K,
                             nkern_counts, col_inds, values,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
@@ -294,6 +298,7 @@ namespace sop {
                             C_p, N_r,
                             C_o, (!final_store) ? N_r : N,
                             B_p, N,
+                            K,
                             nkern_counts, col_inds, values,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
@@ -310,6 +315,7 @@ namespace sop {
                             final_N_r_loop_rem,
                             C_p, N,
                             B_p, N_c,
+                            K,
                             nkern_counts, col_inds, values,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
@@ -323,6 +329,7 @@ namespace sop {
                             C_p, N_r,
                             C_o, (!final_store) ? N_r : N,
                             B_p, N_c,
+                            K,
                             nkern_counts, col_inds, values,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr
@@ -339,6 +346,7 @@ namespace sop {
                             final_N_r_loop_rem,
                             C_p, N,
                             B_p, N,
+                            K,
                             nkern_counts, col_inds, values,
                             pt.load_c, final_store,
                             bias ? bias + ii : nullptr

@@ -17,8 +17,8 @@ def popcount(x):
     return bin(x).count("1")
 
 
-def executor_factory_name(kernel_desc, microkernel_id):
-    return f'executor_factory_{kernel_desc}_{microkernel_id}'
+def executor_factory_name(kernel_desc, scalar, microkernel_id, datatransform):
+    return f'executor_factory_{kernel_desc}_{scalar}_{microkernel_id}_{datatransform}'
 
 
 def packer_factory_name(scalar, microkernel_id):
@@ -105,7 +105,7 @@ class UKernelCodegenBase:
             f.write(f'\n')
             f.write(f'// factory_desc | {factory_desc_json}\n')
             f.write(f'MicroKernelPackerFactory<{scalar}>* {packer_factory_name(scalar, microkernel_id_)}() {{\n')
-            f.write(f'    return new MicroKernelPackerFactorySpecialized<{typename}>('
+            f.write(f'    return new MicroKernelPackerFactorySpecialized<{typename}<true>>('
                     f'{self.Mr});\n')
             f.write(f'}}\n')
             f.write('\n')
@@ -113,33 +113,36 @@ class UKernelCodegenBase:
             f.write(f'#endif\n')
 
         for kernel_desc in build_factories_for:
-            factory_name = executor_factory_name(kernel_desc, microkernel_id_)
-            factory_desc_json = json.dumps({
-                "id": microkernel_id_,
-                "func": factory_name,
-                "kernel_desc": kernel_desc,
-                "M_r": self.Mr,
-                "N_r": Nr,
-                "arch": arch,
-                "reg_width_bits": reg_width_bits,
-            })
+            for data_transform in ["true", "false"]:
+                factory_name = executor_factory_name(kernel_desc, scalar, microkernel_id_, data_transform)
+                factory_desc_json = json.dumps({
+                    "id": microkernel_id_,
+                    "scalar": scalar,
+                    "func": factory_name,
+                    "kernel_desc": kernel_desc,
+                    "M_r": self.Mr,
+                    "N_r": Nr,
+                    "arch": arch,
+                    "reg_width_bits": reg_width_bits,
+                    "datatransform": data_transform
+                })
 
-            with open(self._factories_dir(arch) + f'executor_{kernel_desc}_{scalar}_{arch}_{vec_width_bits}_nr_{Nr}.cpp', 'w+') as f:
-                f.write(f'{arch_details.preprocessor_guard()}\n')
-                f.write(f'#include "ExecutorFactory.h"\n')
-                f.write(f'#include "KernelDesc.h"\n')
-                f.write(f'#include "{self.nanokernel_hash}/{self._header_filename(typename)}"\n')
-                f.write(f'\n')
-                f.write(f'namespace {self.namespace} {{\n')
-                f.write(f'\n')
-                f.write(f'// factory_desc | {factory_desc_json}\n')
-                f.write(f'ExecutorFactory<{kernel_desc}>* {factory_name}() {{\n')
-                f.write(f'    return new ExecutorFactorySpecialized<{kernel_desc}, {typename}>('
-                        f'{self.Mr}, {Nr*reg_width_ele});\n')
-                f.write(f'}}\n')
-                f.write('\n')
-                f.write(f'}} // namespace {self.namespace}\n')
-                f.write(f'#endif\n')
+                with open(self._factories_dir(arch) + f'executor_{kernel_desc}_{scalar}_{arch}_{vec_width_bits}_nr_{Nr}_datatransform_{data_transform}.cpp', 'w+') as f:
+                    f.write(f'{arch_details.preprocessor_guard()}\n')
+                    f.write(f'#include "ExecutorFactory.h"\n')
+                    f.write(f'#include "KernelDesc.h"\n')
+                    f.write(f'#include "{self.nanokernel_hash}/{self._header_filename(typename)}"\n')
+                    f.write(f'\n')
+                    f.write(f'namespace {self.namespace} {{\n')
+                    f.write(f'\n')
+                    f.write(f'// factory_desc | {factory_desc_json}\n')
+                    f.write(f'ExecutorFactory<{kernel_desc}<{scalar}>, {data_transform}>* {factory_name}() {{\n')
+                    f.write(f'    return new ExecutorFactorySpecialized<{kernel_desc}<{scalar}>, {typename}<{data_transform}>, {data_transform}>('
+                            f'{self.Mr}, {Nr*reg_width_ele});\n')
+                    f.write(f'}}\n')
+                    f.write('\n')
+                    f.write(f'}} // namespace {self.namespace}\n')
+                    f.write(f'#endif\n')
 
     def gen_header(self, Nr, arch, vec_width_bits, scalar='float'):
         typename = microkernel_typename(scalar, arch, vec_width_bits, [self.Mr, Nr], self.nanokernels)
@@ -159,6 +162,7 @@ class UKernelCodegenBase:
             f.write(f'\n')
             f.write(f'namespace {self.namespace} {{')
             f.write(f'\n')
+            f.write(f'template<bool DataTransform>')
             f.write(f'struct {typename} {{\n')
 
             f.write(f'    enum Activation activation = NONE;\n')
@@ -388,16 +392,25 @@ class UKernelCodegenBase:
             for k in range(Nr):
                 case_body += f'b{k} = {intrinsics.load(f"B_curr + {k} * {vec_width_ele}")};'
 
-        case_body += f'B_curr = (*col_indices_curr) * B_stride + B; col_indices_curr++;'
+        case_body += f'int k_next = *col_indices_curr;'
+        case_body += f'B_curr = k_next * B_stride + B; col_indices_curr++;'
 
         for _, loc in self.nnz_iterator(pat):
-            case_body += f'{reg_t} a{loc} = {intrinsics.broadcast_from_ptr(f"curr_value_ptr")};'
-            case_body += f'curr_value_ptr++;'
+            case_body += f'{reg_t} a{loc};'
+            case_body += f'if constexpr (!DataTransform) {{'
+            case_body += f'   a{loc} = {intrinsics.broadcast_from_ptr(f"values + {loc}*A_stride + k")};'
+            case_body += f'}} else {{'
+            case_body += f'   a{loc} = {intrinsics.broadcast_from_ptr(f"curr_value_ptr++")};'
+            case_body += f'}}'
             case_body += [f'c{loc}{k} = {intrinsics.fma(f"a{loc}", f"b{k}", f"c{loc}{k}")};' for k in range(Nr)]
+
+        case_body += f'k = k_next;'
 
         return case_body.sub_elements
 
     def _gen_nano_kernel_preload_A(self, arch_str, scalar, Nr, intrinsics: Intrinsics, pat):
+        assert True, "needs to be updated to support no-datatransfrom"
+
         reg_t = intrinsics.vec_type
         vec_width_ele = intrinsics.vec_width_ele
         size_of_scalar = self.size_of_scalar[scalar]
@@ -440,7 +453,7 @@ class UKernelCodegenBase:
                             alignB=False):
         reg_t = intrinsics.vec_type
         vec_width_ele = intrinsics.vec_width_ele
-        size_of_scalar = 4
+        size_of_scalar = self.size_of_scalar[scalar]
 
 
         sop_panel_executor = Block()
@@ -456,6 +469,8 @@ class UKernelCodegenBase:
         c_load = lambda i, k: intrinsics.load(f'C{i} + {k} * {vec_width_ele}')
 
         body += f'uint64_t scaled_B_stride = B_stride * {size_of_scalar};'
+        body += f'uint64_t scaled_A_stride = A_stride * {size_of_scalar};'
+        body += f'int k = *col_indices;'
         body += f'uint64_t scaled_C_stride = C_stride * {size_of_scalar};'
 
         body += 'if (load_c) {'
@@ -654,6 +669,7 @@ class UKernelCodegenBase:
         {scalar} *__restrict__ C, const int C_stride,
         {scalar} *__restrict__ C_out, const int C_out_stride, 
         const {scalar} *__restrict__ B, const int B_stride,
+        const int A_stride,
         int* __restrict__ nkern_counts,
         uint32_t* __restrict__ col_indices,
         {scalar}* __restrict__ values,
@@ -666,6 +682,7 @@ class UKernelCodegenBase:
     inline __attribute__((__always_inline__)) void vectorized(
         {scalar} *__restrict__ C, const int C_stride, 
         const {scalar} *__restrict__ B, const int B_stride,
+        const int A_stride,
         int* __restrict__ nkern_counts,
         uint32_t* __restrict__ col_indices,
         {scalar}* __restrict__ values,
@@ -673,7 +690,7 @@ class UKernelCodegenBase:
         const bool apply_activation,
         const {scalar} *__restrict__ bias = nullptr)
     {{\n
-        vectorized(C, C_stride, C, C_stride, B, B_stride,
+        vectorized(C, C_stride, C, C_stride, B, B_stride, A_stride,
                    nkern_counts, col_indices, values, 
                    load_c, apply_activation, bias);
     }}\n\n
@@ -683,6 +700,7 @@ class UKernelCodegenBase:
         {scalar} *__restrict__ C, const int C_stride,
         {scalar} *__restrict__ C_out, const int C_out_stride, 
         const {scalar} *__restrict__ B, const int B_stride,
+        const int A_stride,
         int* __restrict__ nkern_counts,
         uint32_t* __restrict__ col_indices,
         {scalar}* __restrict__ values,
@@ -696,6 +714,7 @@ class UKernelCodegenBase:
         int elements_remaining,
         {scalar} *__restrict__ C, const int C_stride, 
         const {scalar} *__restrict__ B, const int B_stride,
+        const int A_stride,
         int* __restrict__ nkern_counts,
         uint32_t* __restrict__ col_indices,
         {scalar}* __restrict__ values,
@@ -703,7 +722,7 @@ class UKernelCodegenBase:
         const bool apply_activation,
         const {scalar} *__restrict__ bias = nullptr)
     {{\n
-        cleanup(elements_remaining,C, C_stride, C, C_stride, B, B_stride,
+        cleanup(elements_remaining,C, C_stride, C, C_stride, B, B_stride, A_stride,
                 nkern_counts, col_indices, values,
                 load_c, apply_activation, bias);
     }}\n\n

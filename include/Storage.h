@@ -10,6 +10,7 @@
 
 #include "utils/tiling.h"
 #include "utils/shape.h"
+#include "utils/error.h"
 
 #include "Enums.h"
 
@@ -19,17 +20,20 @@ using Pattern = uint16_t;
 using NanoKernel = uint16_t;
 using NanoKernelMapping = std::vector<std::vector<NanoKernel>>;
 
+template<typename Scalar>
 struct MicroKernelPackedData {
   int*   nkern_counts   = nullptr;
   int*   col_indices    = nullptr;
-  float* values         = nullptr;
+  Scalar* values         = nullptr;
 
   int num_nnz = 0;
   int num_nkern = 0;
   int num_col_indices = 0;
 
-  void free() {
-    delete[] values;
+  void free(bool packed_values) {
+    if (packed_values) {
+      delete[] values;
+    }
     delete[] col_indices;
     delete[] nkern_counts;
 
@@ -39,13 +43,14 @@ struct MicroKernelPackedData {
   }
 };
 
+template<typename Scalar>
 struct PanelUsingCodelets {
   struct Codelet {
     uint16_t pat_code;
     uint16_t count;
   };
 
-  float*   values         = nullptr;
+  Scalar*   values         = nullptr;
   int*     col_indices    = nullptr;
   Codelet* codelets       = nullptr;
 
@@ -75,6 +80,7 @@ struct PackedTile {
   int row_panel_offset;
   bool load_c = true;
   bool free_on_destruction = true;
+  bool packed_values = true;
 
   union {
     struct {
@@ -89,7 +95,7 @@ struct PackedTile {
 
     struct {
       int num_panels;
-      struct MicroKernelPackedData* panel_descs;
+      struct MicroKernelPackedData<Scalar>* panel_descs;
     } sop;
   };
 
@@ -103,6 +109,7 @@ struct PackedTile {
     shape = other.shape;
     load_c = other.load_c;
     free_on_destruction = other.free_on_destruction;
+    packed_values = other.packed_values;
     std::memcpy(&dense, &other.dense, size_of_union());
 
     other.type = SPARSE_CSR;
@@ -121,6 +128,7 @@ struct PackedTile {
     shape = other.shape;
     load_c = other.load_c;
     free_on_destruction = other.free_on_destruction;
+    packed_values = other.packed_values;
     std::memcpy((uint8_t*)&dense, (uint8_t*)&other.dense, size_of_union());
 
     other.type = SPARSE_CSR;
@@ -136,7 +144,8 @@ struct PackedTile {
     free();
   }
 
-  int linear_size_in_bytes() const {
+  int linear_size_in_bytes(bool packed_values) const {
+    ERROR_AND_EXIT_IF(packed_values != this->packed_values, "packed values mismatch");
     switch (type) {
       case SPARSE_CSR: {
         int nnz = 0;
@@ -153,8 +162,10 @@ struct PackedTile {
         size += sizeof(sop.panel_descs[0]) * sop.num_panels;
 
         for (int i = 0; i < sop.num_panels; i++) {
-          size +=
-              sizeof(sop.panel_descs[i].values) * sop.panel_descs[i].num_nnz;
+          if (packed_values) {
+            size +=
+                sizeof(sop.panel_descs[i].values) * sop.panel_descs[i].num_nnz;
+          }
           size += sizeof(sop.panel_descs[i].col_indices) *
               sop.panel_descs[i].num_col_indices;
           size += sizeof(sop.panel_descs[i].nkern_counts) *
@@ -177,7 +188,7 @@ struct PackedTile {
     return (void*)(((uintptr_t(ptr) + 63) / 64) * 64);
   }
 
-  PackedTile pack_linear(void** buffer_ptr) {
+  PackedTile pack_linear(void** buffer_ptr, bool packed_values) {
     PackedTile updated_tile;
 
     updated_tile.type = this->type;
@@ -185,6 +196,7 @@ struct PackedTile {
     updated_tile.shape = this->shape;
     updated_tile.load_c = this->load_c;
     updated_tile.free_on_destruction = false;
+    updated_tile.packed_values = packed_values;
 
     void* buffer = *buffer_ptr;
     buffer = cacheline_align_ptr(buffer);
@@ -234,11 +246,15 @@ struct PackedTile {
                    .col_indices[sop.panel_descs[i].num_col_indices],
               (int*)buffer);
 
-          updated_tile.sop.panel_descs[i].values = (Scalar*)buffer;
-          buffer = std::copy(
-              sop.panel_descs[i].values,
-              &sop.panel_descs[i].values[sop.panel_descs[i].num_nnz],
-              (Scalar*)buffer);
+          if (packed_values) {
+            updated_tile.sop.panel_descs[i].values = (Scalar*)buffer;
+            buffer = std::copy(
+                sop.panel_descs[i].values,
+                &sop.panel_descs[i].values[sop.panel_descs[i].num_nnz],
+                (Scalar*)buffer);
+          } else {
+            updated_tile.sop.panel_descs[i].values = sop.panel_descs[i].values;
+          }
         }
         break;
       }
@@ -278,7 +294,7 @@ struct PackedTile {
 
         case SPARSE_SOP:
           for (int i = 0; i < sop.num_panels; i++)
-            sop.panel_descs[i].free();
+            sop.panel_descs[i].free(packed_values);
           delete[] sop.panel_descs;
           break;
 

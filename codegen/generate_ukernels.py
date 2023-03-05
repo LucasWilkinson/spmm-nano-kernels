@@ -14,29 +14,21 @@ from codegen.generate_mapping import generate_mapping_to_executor
 output_root = os.path.abspath(f"{SCRIPT_DIR}/../generated/")
 kernel_descs = {
     "AVX512": [
-        'KD_IntelFloat',
-        'KD_IntelFloatLoadBalanced',
-        'KD_IntelFloatCPacked',
-        'KD_IntelFloatLoadBalancedCPacked',
-        'KD_IntelFloatPacked',
-        'KD_IntelFloatLoadBalancedPacked'
+        'KD_Intel',
+        'KD_IntelLoadBalanced',
     ],
     "AVX2": [
-        'KD_IntelFloat',
-        'KD_IntelFloatLoadBalanced',
-        'KD_IntelFloatCPacked',
-        'KD_IntelFloatLoadBalancedCPacked',
-        'KD_IntelFloatPacked',
-        'KD_IntelFloatLoadBalancedPacked'
+        'KD_Intel',
+        'KD_IntelLoadBalanced',
     ],
     "NEON": [
-        'KD_PIFloat',
-        'KD_PIFloatLoadBalanced',
+        'KD_PI',
+        'KD_PILoadBalanced',
         #    'KDFloatLoadBalanced'
     ]
 }
 
-mappings_to_generate = ["61fee", "da01e", "400fa", "747f9", "363bc"]
+mappings_to_generate = ["61fee", "da01e", "400fa", "747f9"]
 
 shutil.rmtree(output_root, ignore_errors=True)
 os.makedirs(output_root, exist_ok=True)
@@ -63,7 +55,7 @@ for mapping_file in [f'{SCRIPT_DIR}/../mappings/mapping_{mapping_id}.txt' for ma
     nkern_hash = codegen.nanokernel_hash
 
     scalars_to_generate = {
-        "AVX512": ['float'],
+        "AVX512": ['float', 'double'],
         "AVX2": ['float'],
         "NEON": ['float']
     }

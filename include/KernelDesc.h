@@ -64,68 +64,78 @@ struct KernelDesc {
   static const UPanelReorderingStrategy UPanelOrder = _UPanelReorder;
 };
 
-
-using KD_PIFloat =
+template<typename Scalar>
+using KD_PI =
     KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
+        Scalar,
+        CSRStorageTypes<Scalar*, int>,
         PackingDesc<NO_PACKING, NO_PACKING>,
         NO_REORDERING
     >;
 
-using KD_PIFloatLoadBalanced =
+
+template<typename Scalar>
+using KD_PILoadBalanced =
     KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
+        Scalar,
+        CSRStorageTypes<Scalar*, int>,
         PackingDesc<NO_PACKING, NO_PACKING>,
         LOAD_BALANCING
     >;
 
-using KD_IntelFloat=
+
+template<typename Scalar>
+using KD_Intel=
     KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
+        Scalar,
+        CSRStorageTypes<Scalar*, int>,
         PackingDesc<NO_PACKING, NO_PACKING>,
         NO_REORDERING
     >;
 
-using KD_IntelFloatLoadBalanced =
+
+template<typename Scalar>
+using KD_IntelLoadBalanced =
     KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
+        Scalar,
+        CSRStorageTypes<Scalar*, int>,
         PackingDesc<NO_PACKING, NO_PACKING>,
         LOAD_BALANCING
     >;
 
-using KD_IntelFloatCPacked =
+
+template<typename Scalar>
+using KD_IntelCPacked =
     KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
+        Scalar,
+        CSRStorageTypes<Scalar*, int>,
         PackingDesc<PACK, NO_PACKING>,
         NO_REORDERING
     >;
 
-
-using KD_IntelFloatLoadBalancedCPacked =
+template<typename Scalar>
+using KD_IntelLoadBalancedCPacked =
     KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
+        Scalar,
+        CSRStorageTypes<Scalar*, int>,
         PackingDesc<PACK, NO_PACKING>,
         LOAD_BALANCING
     >;
 
-using KD_IntelFloatPacked =
+template<typename Scalar>
+using KD_IntelPacked =
     KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
+        Scalar,
+        CSRStorageTypes<Scalar*, int>,
         PackingDesc<PACK, PACK>,
         NO_REORDERING
     >;
 
-using KD_IntelFloatLoadBalancedPacked =
+template<typename Scalar>
+using KD_IntelLoadBalancedPacked =
     KernelDesc<
-        float,
-        CSRStorageTypes<float*, int>,
+        Scalar,
+        CSRStorageTypes<Scalar*, int>,
         PackingDesc<PACK, PACK>,
         LOAD_BALANCING
     >;

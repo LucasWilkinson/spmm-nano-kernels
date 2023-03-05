@@ -260,7 +260,7 @@ int get_cache_size(int level) {
   }
 
 
-  std::cout << ret << std::endl;
+  //std::cout << ret << std::endl;
   return size;
 }
 
@@ -691,6 +691,7 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
                                bool sparse_a,
                                float density,
                                float beta,
+                               int sizeof_scalar,
                                bool mc_must_divide_M,
                                bool nc_must_divide_N) {
 
@@ -724,7 +725,7 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
   {
     double a = lambda * beta;
     double b = (alpha + beta) * cake_cntx->nr;
-    double c = -double(cake_cntx->L2) / 2*(sizeof(float));
+    double c = -double(cake_cntx->L2) / (2*sizeof_scalar);
 
     double x = (int)(-b + sqrt(b * b - 4.f * a * c) / (2.f * a));
     mc_L2 = (int) x / beta;
@@ -748,7 +749,7 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
   {
     double a = (lambda + alpha) * (p * beta) + alpha*beta*p*p;
     double b = 0;
-    double c = -double(cake_cntx->L3) / (2* sizeof(float));
+    double c = -double(cake_cntx->L3) / (2* sizeof_scalar);
 
     double x = (int)(-b + sqrt(b * b - 4.f * a * c) / (2.f * a));
     mc_L3 = (int) x / beta;

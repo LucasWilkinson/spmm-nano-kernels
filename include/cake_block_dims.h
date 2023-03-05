@@ -113,6 +113,7 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
                                bool sparse_a,
                                float density,
                                float beta,
+                               int sizeof_scalar,
                                bool mc_must_divide_M = true,
                                bool nc_must_divide_N = true);
 

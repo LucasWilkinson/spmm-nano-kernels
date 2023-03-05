@@ -50,7 +50,7 @@ public:
 
 };
 
-template <typename KernelDesc>
+template <typename KernelDesc, bool DataTransform>
 class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
   using Scalar = typename KernelDesc::Scalar;
   static const Schedule schedule = KernelDesc::Sched;
@@ -80,7 +80,7 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
   std::string executor_id;
   std::string mapping_id;
 
-  ExecutorFactory<KernelDesc>* executor_factory;
+  ExecutorFactory<KernelDesc, DataTransform>* executor_factory;
   Executor<Scalar>* executor = nullptr;
   MicroKernelPackerFactory<Scalar>* packer_factory;
   std::shared_ptr<MicroKernelPacker<Scalar>> packer;
@@ -94,6 +94,8 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
   DenseMatrix<double> tile_densities;
   DenseMatrix<bool> tile_is_dense;
   DenseMatrix<TileType> tile_type;
+
+  Scalar* dense_copy;
 
   struct Stats {
     int total_tile_count = 0;
@@ -140,6 +142,8 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
  public:
   int require_storage = 0;
 
+  //static auto dump_registered_factories = ExecutorFactory<KernelDesc, DataTransform>::dump_registered_factories();
+
   MatMulSpecialized(
       COO<Scalar>* coo,
       int           b_col_predict,
@@ -152,13 +156,12 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
       num_threads(num_threads),
       executor_id(executor_id),
       mapping_id(mapping_id),
-      executor_factory(ExecutorFactory<KernelDesc>::get_factory(executor_id)),
+      executor_factory(ExecutorFactory<KernelDesc, DataTransform>::get_factory(executor_id)),
       packer_factory(MicroKernelPackerFactory<Scalar>::get_factory(executor_id))
   {
     ERROR_AND_EXIT_IF(!executor_factory,
       "Executor factory not found: " << executor_id <<
-      " for kernel desc: " << type_name<KernelDesc>() <<
-      ", Registered factories: " << ExecutorFactory<KernelDesc>::dump_registered_factories());
+      " for kernel desc: " << type_name<KernelDesc>());
     ERROR_AND_EXIT_IF(!packer_factory, "Packer factory not found");
     ERROR_AND_EXIT_IF(packer_factory->M_r != executor_factory->M_r,
                       "M_r mismatch between packer and executor");
@@ -174,6 +177,11 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
     M_r = executor_factory->M_r;
     N_r = executor_factory->N_r;
 
+    if (!DataTransform) {
+      dense_copy = (Scalar*) aligned_alloc(4096, coo->rows() * coo->cols() *sizeof(Scalar));
+      coo->populate_dense(dense_copy);
+    }
+
     if (config.tiling_strategy == CAKE_TILING ||
                config.tiling_strategy == CAKE_TILING_WITH_TLB_COMPENSATION) {
       cake_cntx_t* cake_cntx = cake_query_cntx();
@@ -187,6 +195,7 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
           nullptr, true,
           double(coo->nnz()) / (m * k),
           config.beta,
+          sizeof(Scalar),
           true, true);
 
       ERROR_AND_EXIT_IF(!cache_dims->m_c || !cache_dims->k_c || !cache_dims->n_c,
@@ -291,6 +300,7 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
 
   ~MatMulSpecialized() {
     if (executor) delete executor;
+    if (!DataTransform) free(dense_copy);
     free(linear_buffer);
   }
 
@@ -419,9 +429,10 @@ private:
           packed_tiles[ti][tj].shape = t_loc.shape();
           packed_tiles[ti][tj].load_c = tj != 0;
           packed_tiles[ti][tj].free_on_destruction = true;
+          packed_tiles[ti][tj].packed_values = DataTransform;
           packed_tiles[ti][tj].sop.num_panels = panels_in_tile;
           packed_tiles[ti][tj].sop.panel_descs =
-                  new MicroKernelPackedData[panels_per_tile];
+                  new MicroKernelPackedData<Scalar>[panels_per_tile];
 
           auto panel_descs = packed_tiles[ti][tj].sop.panel_descs;
           for (int panel_id = 0; panel_id < panels_in_tile; panel_id++) {
@@ -435,7 +446,11 @@ private:
               panel_loc.rows.start = global_panel_id * M_r;
               panel_loc.rows.end = (global_panel_id + 1) * M_r;
 
-              packer->pack(panel_descs[panel_id], panel_loc, *coo);
+              packer->pack(panel_descs[panel_id], panel_loc, *coo, DataTransform);
+
+              if (!DataTransform) {
+                panel_descs[panel_id].values = &dense_copy[panel_loc.rows.start * coo->cols()];
+              }
           }
       }
     }
@@ -445,7 +460,7 @@ private:
     int linear_size = 0;
     for (auto& panel : packed_tiles)
       for (auto& tile : panel)
-        linear_size += tile.linear_size_in_bytes();
+        linear_size += tile.linear_size_in_bytes(DataTransform);
 
     require_storage = linear_size;
     // Buffer by 4 so we can do vectorized loads in arm
@@ -454,7 +469,7 @@ private:
 
     for (auto& panel : packed_tiles)
       for (auto& tile : panel)
-        tile = std::move(tile.pack_linear(&linear_buffer_tmp));
+        tile = std::move(tile.pack_linear(&linear_buffer_tmp, DataTransform));
   }
 
   void debug_print(const PackedTile<KernelDesc>& tile, int thread = -1) {

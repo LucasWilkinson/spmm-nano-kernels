@@ -153,7 +153,10 @@ class AVX(Arch, ABC):
     def _intrin(*args, vec_width_bits, scalar, func, masked=False, deref=False, **kwargs):
         args = list(args)
         m_reg_char, mm_func_char = AVX.scalar_char[scalar]
-        mm = f'_mm{vec_width_bits}{m_reg_char}'
+        mm = f'_mm{vec_width_bits}'
+
+        if scalar == "double" and vec_width_bits == 128:
+            mm = '_mm'
 
         if deref:
             args[0] = '*(' + args[0] + ')'
@@ -179,7 +182,8 @@ class AVX(Arch, ABC):
         return '#include <immintrin.h>'
 
     def vec_type(self, scalar, vec_width_bits):
-        return f'__m{vec_width_bits}'
+        m_reg_char, _ = AVX.scalar_char[scalar]
+        return f'__m{vec_width_bits}{m_reg_char}'
 
     def load_intrin(self, scalar, vec_width_bits, aligned=False):
         return partial(AVX._intrin, func='load' if aligned else 'loadu', vec_width_bits=vec_width_bits, scalar=scalar)
@@ -227,7 +231,7 @@ class AVX512(AVX):
         return scalar in ["float", "double"]
 
     def preprocessor_guard(self):
-        return "#ifdef __AVX512VL__"
+        return "#ifdef __AVX512F__"
 
     def mask_type(self, scalar, vec_width_bits):
         return f'__mmask{int(vec_width_bits / SCALAR_SIZE_BITS[scalar])}'

@@ -58,7 +58,7 @@ class Tile {
                       "Tile size is not a multiple of M_r");
   }
 
-  void pack(MicroKernelPackedData* panel_descs) {
+  void pack(MicroKernelPackedData<Scalar>* panel_descs) {
     for (int panel_id = 0; panel_id < m_num_panels; panel_id++) {
       SubmatrixLoc panel_loc = m_tile_loc;
       panel_loc.rows.start += panel_id * m_packer->M_r;
@@ -68,7 +68,7 @@ class Tile {
     }
   }
 
-  void pack_coalesced(MicroKernelPackedData* panel_descs, uint8_t* buffer = nullptr) {
+  void pack_coalesced(MicroKernelPackedData<Scalar>* panel_descs, uint8_t* buffer = nullptr) {
     pack(panel_descs);
 
     for (int panel_id = 0; panel_id < m_num_panels; panel_id++) {

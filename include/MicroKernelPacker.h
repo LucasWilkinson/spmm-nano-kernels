@@ -28,8 +28,8 @@ struct MicroKernelPacker {
   MicroKernelPacker(int M_r): M_r(M_r) {}
 
   const int M_r = 0;
-  virtual void pack(MicroKernelPackedData& panel_desc, SubmatrixLoc loc, const COO<Scalar>& coo) = 0;
-  virtual uint8_t* repack_coalesced(MicroKernelPackedData& panel_desc, uint8_t* buffer, bool free=true) = 0;
+  virtual void pack(MicroKernelPackedData<Scalar>& panel_desc, SubmatrixLoc loc, const COO<Scalar>& coo, bool pack_values) = 0;
+  virtual uint8_t* repack_coalesced(MicroKernelPackedData<Scalar>& panel_desc, uint8_t* buffer, bool pack_value, bool free=true) = 0;
 };
 
 template<typename MicroKernelDesc>
@@ -91,7 +91,7 @@ struct MicroKernelPackerSpeaclized:
 
  public:
   std::tuple<int, int, int> compute_required_storage(
-      const MicroKernelPackedData& panel_desc) {
+      const MicroKernelPackedData<Scalar>& panel_desc) {
     int nnz_count = 0;
 
     for (int pat_id = 0; pat_id < panel_desc.num_nkern; pat_id++) {
@@ -102,18 +102,19 @@ struct MicroKernelPackerSpeaclized:
     return {nnz_count, panel_desc.num_col_indices, MicroKernel::num_patterns()};
   }
 
-  size_t compute_required_storage_in_bytes(const MicroKernelPackedData& panel_desc) {
+  size_t compute_required_storage_in_bytes(const MicroKernelPackedData<Scalar>& panel_desc) {
     auto [nnz_count, col_indices_count, num_patterns_total] =
         compute_required_storage(panel_desc);
 
-    return num_patterns_total * sizeof(*MicroKernelPackedData::nkern_counts) +
-        col_indices_count * sizeof(*MicroKernelPackedData::col_indices) +
-        nnz_count * sizeof(*MicroKernelPackedData::values) + 4 * 64;
+    return num_patterns_total * sizeof(*MicroKernelPackedData<Scalar>::nkern_counts) +
+        col_indices_count * sizeof(*MicroKernelPackedData<Scalar>::col_indices) +
+        nnz_count * sizeof(*MicroKernelPackedData<Scalar>::values) + 4 * 64;
   }
 
-  void pack(MicroKernelPackedData& panel_desc,
+  void pack(MicroKernelPackedData<Scalar>& panel_desc,
             SubmatrixLoc loc,
-            const COO<Scalar>& coo) {
+            const COO<Scalar>& coo, 
+            bool pack_values) {
 
     ERROR_AND_EXIT_IF(loc.rows.size() != MicroKernelDesc::M_r,
                       "row panel size mismatch");
@@ -210,7 +211,12 @@ struct MicroKernelPackerSpeaclized:
 
     panel_desc.nkern_counts = new int[MicroKernel::num_nkern_patterns()];
     panel_desc.col_indices = new int[num_col_indices];
-    panel_desc.values = new Scalar[num_values];
+
+    if (pack_values) {
+      panel_desc.values = new Scalar[num_values];
+    } else {
+      panel_desc.values = nullptr;
+    }
 
     std::fill(
       panel_desc.nkern_counts,
@@ -236,21 +242,25 @@ struct MicroKernelPackerSpeaclized:
       panel_desc.col_indices[curr_col_indices_offset++] = permuted_col_indices[p];
       auto pattern = MicroKernel::decode_nkern_pattern(encoded_pattern);
 
-      int row = 0;
-      while (pattern) {
-        if (pattern & 1) {
-          assert(curr_value_offset < num_values);
-          assert(row < values.size());
+      if (pack_values) {
+        int row = 0;
+        while (pattern) {
+          if (pattern & 1) {
+            assert(curr_value_offset < num_values);
+            assert(row < values.size());
 
-          panel_desc.values[curr_value_offset++] = values[row];
+            panel_desc.values[curr_value_offset++] = values[row];
+          }
+          pattern >>= 1;
+          row++;
         }
-        pattern >>= 1;
-        row++;
       }
     }
 
-    ERROR_AND_EXIT_IF(curr_value_offset != num_values,
-                      "curr_value_offset != num_values");
+    if (pack_values) {
+      ERROR_AND_EXIT_IF(curr_value_offset != num_values,
+                        "curr_value_offset != num_values");
+    }
 
     // Reapply offset
     for (int i = 0; i < curr_col_indices_offset; i++) {
@@ -263,11 +273,12 @@ struct MicroKernelPackerSpeaclized:
   }
 
   uint8_t* repack_coalesced(
-      MicroKernelPackedData& panel_desc,
+      MicroKernelPackedData<Scalar>& panel_desc,
       uint8_t* buffer,
+      bool pack_values,
       bool free = true
   ) {
-    MicroKernelPackedData panel_desc_orig = panel_desc;
+    MicroKernelPackedData<Scalar> panel_desc_orig = panel_desc;
 
     buffer = cacheline_align_ptr(buffer);
     panel_desc.nkern_counts = (int*)buffer;
@@ -283,14 +294,18 @@ struct MicroKernelPackerSpeaclized:
         panel_desc_orig.col_indices + panel_desc_orig.num_col_indices,
         buffer);
 
-    buffer = cacheline_align_ptr(buffer);
-    panel_desc.values = (float*)buffer;
-    buffer = std::copy(
-        panel_desc_orig.values,
-        panel_desc_orig.values + panel_desc_orig.num_nnz,
-        buffer);
+    if (pack_values) {
+      buffer = cacheline_align_ptr(buffer);
+      panel_desc.values = (Scalar*)buffer;
+      buffer = std::copy(
+          panel_desc_orig.values,
+          panel_desc_orig.values + panel_desc_orig.num_nnz,
+          buffer);
+    } else {
+      panel_desc.values = panel_desc_orig.values;
+    }
 
-    if (free) panel_desc_orig.free();
+    if (free) panel_desc_orig.free(pack_values);
     return buffer;
   }
 };

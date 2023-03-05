@@ -19,9 +19,9 @@ def generate_ukernel_executor_registration(output_root):
                 if "factory_desc" in line:
                     factory_descs.append(json.loads(line.split('|')[-1]))
 
-    kernel_descs = set()
+    kernel_descs_pairs = set()
     for factory_desc in factory_descs:
-        kernel_descs.add(factory_desc["kernel_desc"])
+        kernel_descs_pairs.add((factory_desc["kernel_desc"], factory_desc["scalar"], factory_desc["datatransform"]))
 
     with open(f'{output_root}/ukernel_executor_registration.cpp', 'w') as f:
         f.write('#include "KernelDesc.h"\n')
@@ -31,19 +31,21 @@ def generate_ukernel_executor_registration(output_root):
         for factory_desc in factory_descs:
             f.write(f'{supported_archs[factory_desc["arch"]].preprocessor_guard()}\n')
             f.write(f'#if defined(ENABLE_{factory_desc["arch"]})\n')
-            f.write(f'extern ExecutorFactory<{factory_desc["kernel_desc"]}>* ')
+            f.write(f'extern ExecutorFactory<{factory_desc["kernel_desc"]}<{factory_desc["scalar"]}>, {factory_desc["datatransform"]}>* ')
             f.write(f'{factory_desc["func"]}();\n')
             f.write(f'#endif\n')
             f.write(f'#endif\n')
 
         f.write('\n')
 
-        for kernel_descs in kernel_descs:
-            f.write(f'struct ExecutorFactory{kernel_descs} : public ExecutorFactory<{kernel_descs}> {{\n')
-            f.write(f'ExecutorFactory{kernel_descs}(){{\n')
+        for kernel_descs, scalar, datatransform in kernel_descs_pairs:
+            f.write(f'struct ExecutorFactory{kernel_descs}_scalar_{scalar}_datatransform_{datatransform}: public ExecutorFactory<{kernel_descs}<{scalar}>, {datatransform}> {{\n')
+            f.write(f'ExecutorFactory{kernel_descs}_scalar_{scalar}_datatransform_{datatransform}(){{\n')
 
             for factory_desc in factory_descs:
                 if factory_desc["kernel_desc"] != kernel_descs: continue
+                if factory_desc["scalar"] != scalar: continue
+                if factory_desc["datatransform"] != datatransform: continue
                 #f.write(f'  ExecutorFactory<{factory_desc["kernel_desc"]}>::')
                 f.write(f'{supported_archs[factory_desc["arch"]].preprocessor_guard()}\n')
                 f.write(f'#if defined(ENABLE_{factory_desc["arch"]})\n')
@@ -53,7 +55,7 @@ def generate_ukernel_executor_registration(output_root):
 
             f.write(f'}}\n')
             f.write(f'}};\n\n')
-            f.write(f'ExecutorFactory{kernel_descs} trip_registration_for_{kernel_descs};\n\n')
+            f.write(f'ExecutorFactory{kernel_descs}_scalar_{scalar}_datatransform_{datatransform} trip_registration_for_{kernel_descs}_{scalar}_{datatransform};\n\n')
         f.write('}\n')
 
 
