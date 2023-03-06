@@ -725,7 +725,8 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
   {
     double a = lambda * beta;
     double b = (alpha + beta) * cake_cntx->nr;
-    double c = -double(cake_cntx->L2) / (2*sizeof_scalar);
+    double c = -double(cake_cntx->L2) / 2*(sizeof(float));
+    if (sizeof_scalar == 8) c /= 2;
 
     double x = (int)(-b + sqrt(b * b - 4.f * a * c) / (2.f * a));
     mc_L2 = (int) x / beta;

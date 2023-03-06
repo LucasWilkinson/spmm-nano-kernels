@@ -84,7 +84,7 @@ class UKernelCodegenBase:
         reg_width_ele = int(vec_width_bits / SCALAR_SIZE_BITS[scalar])
         microkernel_id_ = microkernel_id(arch, vec_width_bits, [self.Mr, Nr], self.nanokernels)
 
-        header = "/".join(self._header_path(arch, typename).split('/')[-2:])
+        header = "/".join(self._header_path(arch, typename, "true").split('/')[-2:])
         factory_desc_json = json.dumps({
             "id": microkernel_id_,
             "func": packer_factory_name(scalar, microkernel_id_),
@@ -105,7 +105,7 @@ class UKernelCodegenBase:
             f.write(f'\n')
             f.write(f'// factory_desc | {factory_desc_json}\n')
             f.write(f'MicroKernelPackerFactory<{scalar}>* {packer_factory_name(scalar, microkernel_id_)}() {{\n')
-            f.write(f'    return new MicroKernelPackerFactorySpecialized<{typename}<true>>('
+            f.write(f'    return new MicroKernelPackerFactorySpecialized<{typename}_true>('
                     f'{self.Mr});\n')
             f.write(f'}}\n')
             f.write('\n')
@@ -131,13 +131,13 @@ class UKernelCodegenBase:
                     f.write(f'{arch_details.preprocessor_guard()}\n')
                     f.write(f'#include "ExecutorFactory.h"\n')
                     f.write(f'#include "KernelDesc.h"\n')
-                    f.write(f'#include "{self.nanokernel_hash}/{self._header_filename(typename)}"\n')
+                    f.write(f'#include "{self.nanokernel_hash}/{self._header_filename(typename, data_transform)}"\n')
                     f.write(f'\n')
                     f.write(f'namespace {self.namespace} {{\n')
                     f.write(f'\n')
                     f.write(f'// factory_desc | {factory_desc_json}\n')
                     f.write(f'ExecutorFactory<{kernel_desc}<{scalar}>, {data_transform}>* {factory_name}() {{\n')
-                    f.write(f'    return new ExecutorFactorySpecialized<{kernel_desc}<{scalar}>, {typename}<{data_transform}>, {data_transform}>('
+                    f.write(f'    return new ExecutorFactorySpecialized<{kernel_desc}<{scalar}>, {typename}_{data_transform}, {data_transform}>('
                             f'{self.Mr}, {Nr*reg_width_ele});\n')
                     f.write(f'}}\n')
                     f.write('\n')
@@ -145,12 +145,16 @@ class UKernelCodegenBase:
                     f.write(f'#endif\n')
 
     def gen_header(self, Nr, arch, vec_width_bits, scalar='float'):
+        for data_transform in ["true", "false"]:
+            self._gen_header(Nr, arch, vec_width_bits, data_transform, scalar)
+
+    def _gen_header(self, Nr, arch, vec_width_bits, data_transform, scalar='float'):
         typename = microkernel_typename(scalar, arch, vec_width_bits, [self.Mr, Nr], self.nanokernels)
         ukern_id = microkernel_id(arch, vec_width_bits, [self.Mr, Nr], self.nanokernels)
         vec_width_ele = int(vec_width_bits / SCALAR_SIZE_BITS[scalar])
         arch_details = self.supported_archs[arch]
 
-        with open(self._header_path(arch, typename), 'w+') as f:
+        with open(self._header_path(arch, typename, data_transform), 'w+') as f:
             f.write(f'#pragma once\n\n')
             f.write(f'#include "utils/error.h"\n')
             f.write(f'#include "MicroKernelBase.h"\n')
@@ -162,13 +166,12 @@ class UKernelCodegenBase:
             f.write(f'\n')
             f.write(f'namespace {self.namespace} {{')
             f.write(f'\n')
-            f.write(f'template<bool DataTransform>')
-            f.write(f'struct {typename} {{\n')
+            f.write(f'struct {typename}_{data_transform} {{\n')
 
             f.write(f'    enum Activation activation = NONE;\n')
             f.write(f'    {scalar} min = std::numeric_limits<{scalar}>::min();\n')
             f.write(f'    {scalar} max = std::numeric_limits<{scalar}>::max();\n\n')
-            f.write(f'    {typename}(enum Activation activation = NONE, \n'
+            f.write(f'    {typename}_{data_transform}(enum Activation activation = NONE, \n'
                     f'                {scalar} min = std::numeric_limits<{scalar}>::min(),\n'
                     f'                {scalar} max = std::numeric_limits<{scalar}>::max()):\n'
                     f'                  activation(activation),\n'
@@ -194,11 +197,11 @@ class UKernelCodegenBase:
             f.write(f'    static int num_nkern_patterns() {{ return {len(self.nanokernels)}; }}\n')
             f.write(f'')
 
-            common_args = dict(arch=arch, vec_width_bits=vec_width_bits)
+            common_args = dict(arch=arch, vec_width_bits=vec_width_bits, datatransform=data_transform)
 
             main_body = partial(self._emit_executor_body_vectorized, **common_args)
             cleanup_body = partial(self._emit_executor_body_cleanup, **common_args)
-            f.write(self._emit_microkernels(main_body, cleanup_body, Nr, scalar, name=""))
+            f.write(self._emit_microkernels(main_body, cleanup_body, Nr, scalar, data_transform, name=""))
 
             # main_body = partial(self._emit_executor_body_vectorized, **common_args, packed_C=True)
             # cleanup_body = partial(self._emit_executor_body_cleanup, **common_args, packed_C=True)
@@ -220,11 +223,11 @@ class UKernelCodegenBase:
         return path
 
     @staticmethod
-    def _header_filename(typename):
-        return typename + '.h'
+    def _header_filename(typename, datatransform):
+        return typename + '_datatransform_' + datatransform + '.h'
 
-    def _header_path(self, arch, typename):
-        return self._include_dir(arch) + self._header_filename(typename)
+    def _header_path(self, arch, typename, datatransform):
+        return self._include_dir(arch) + self._header_filename(typename, datatransform)
 
     def _emit_supported_patterns(self):
         supported_patterns_list = ",\n                ".join([f'0b{x:08b}' for x in self.nanokernels])
@@ -311,7 +314,7 @@ class UKernelCodegenBase:
             pat >>= 1
             loc += 1
 
-    def _gen_nano_kernel_preload_B(self, arch_str, scalar, Nr, intrinsics: Intrinsics, pat, alignB=False):
+    def _gen_nano_kernel_preload_B(self, arch_str, scalar, Nr, intrinsics: Intrinsics, pat, datatransform, alignB=False):
         reg_t = intrinsics.vec_type
         vec_width_ele = intrinsics.vec_width_ele
         case_body = Block()
@@ -392,23 +395,26 @@ class UKernelCodegenBase:
             for k in range(Nr):
                 case_body += f'b{k} = {intrinsics.load(f"B_curr + {k} * {vec_width_ele}")};'
 
-        case_body += f'int k_next = *col_indices_curr;'
-        case_body += f'B_curr = k_next * B_stride + B; col_indices_curr++;'
+        if datatransform == "true":
+            case_body += f'B_curr = (*col_indices_curr) * B_stride + B; col_indices_curr++;'
+        else:
+            case_body += f'int k_next = *col_indices_curr;'
+            case_body += f'B_curr = k_next * B_stride + B; col_indices_curr++;'
 
         for _, loc in self.nnz_iterator(pat):
-            case_body += f'{reg_t} a{loc};'
-            case_body += f'if constexpr (!DataTransform) {{'
-            case_body += f'   a{loc} = {intrinsics.broadcast_from_ptr(f"values + {loc}*A_stride + k")};'
-            case_body += f'}} else {{'
-            case_body += f'   a{loc} = {intrinsics.broadcast_from_ptr(f"curr_value_ptr++")};'
-            case_body += f'}}'
+            if datatransform == "true":
+                case_body += f'{reg_t} a{loc} = {intrinsics.broadcast_from_ptr(f"curr_value_ptr")};'
+                case_body += f'curr_value_ptr++;'
+            else:
+                case_body += f'{reg_t} a{loc} = {intrinsics.broadcast_from_ptr(f"values + {loc}*A_stride + k")};'
             case_body += [f'c{loc}{k} = {intrinsics.fma(f"a{loc}", f"b{k}", f"c{loc}{k}")};' for k in range(Nr)]
 
-        case_body += f'k = k_next;'
+        if datatransform == "false":
+            case_body += f'k = k_next;'
 
         return case_body.sub_elements
 
-    def _gen_nano_kernel_preload_A(self, arch_str, scalar, Nr, intrinsics: Intrinsics, pat):
+    def _gen_nano_kernel_preload_A(self, arch_str, scalar, Nr, intrinsics: Intrinsics, pat, datatransform):
         assert True, "needs to be updated to support no-datatransfrom"
 
         reg_t = intrinsics.vec_type
@@ -450,6 +456,7 @@ class UKernelCodegenBase:
                             Nr,
                             scalar,
                             intrinsics: Intrinsics,
+                            datatransform,
                             alignB=False):
         reg_t = intrinsics.vec_type
         vec_width_ele = intrinsics.vec_width_ele
@@ -469,8 +476,8 @@ class UKernelCodegenBase:
         c_load = lambda i, k: intrinsics.load(f'C{i} + {k} * {vec_width_ele}')
 
         body += f'uint64_t scaled_B_stride = B_stride * {size_of_scalar};'
-        body += f'uint64_t scaled_A_stride = A_stride * {size_of_scalar};'
-        body += f'int k = *col_indices;'
+        if datatransform == "false":
+            body += f'int k = *col_indices;'
         body += f'uint64_t scaled_C_stride = C_stride * {size_of_scalar};'
 
         body += 'if (load_c) {'
@@ -498,9 +505,9 @@ class UKernelCodegenBase:
                                  unroll=unroll_mapping(arch_str, nnzs=popcount(pat)))
 
             if arch_str == "NEON":
-                nkern_loop += self._gen_nano_kernel_preload_A(arch_str, scalar, Nr, intrinsics, pat)
+                nkern_loop += self._gen_nano_kernel_preload_A(arch_str, scalar, Nr, intrinsics, pat, datatransform)
             else:
-                nkern_loop += self._gen_nano_kernel_preload_B(arch_str, scalar, Nr, intrinsics, pat, alignB=alignB)
+                nkern_loop += self._gen_nano_kernel_preload_B(arch_str, scalar, Nr, intrinsics, pat, datatransform, alignB=alignB)
             body += nkern_loop
 
         ##
@@ -523,7 +530,7 @@ class UKernelCodegenBase:
 
         return sop_panel_executor
 
-    def _emit_executor_body_vectorized(self, Nr, arch, vec_width_bits, scalar,
+    def _emit_executor_body_vectorized(self, Nr, arch, vec_width_bits, scalar, datatransform,
                                        packed_C=False, packed_B=False,
                                        mask=None):
         arch_str = arch
@@ -564,9 +571,9 @@ class UKernelCodegenBase:
             )
 
             alignB = arch_str == 'AVX512' and False
-            return self._emit_executor_body(arch_str, Nr, scalar, vector_intrinsics, alignB=alignB).emit(6)
+            return self._emit_executor_body(arch_str, Nr, scalar, vector_intrinsics, datatransform, alignB=alignB).emit(6)
 
-    def _emit_executor_body_cleanup(self, Nr, arch, vec_width_bits, scalar,
+    def _emit_executor_body_cleanup(self, Nr, arch, vec_width_bits, scalar, datatransform, 
                                     packed_C=False, packed_B=False,
                                     mask=None):
         arch_str = arch
@@ -630,17 +637,17 @@ class UKernelCodegenBase:
         vec_cleanup_loop = ForLoop(f'', f'elements_remaining >= {vec_width_ele}',
                                    f'elements_remaining -= {vec_width_ele}, '
                                    f'C += {vec_width_ele}, C_out += {vec_width_ele}, B += {vec_width_ele}')
-        vec_cleanup_loop += self._emit_executor_body(arch_str, 1, scalar, vector_intrinsics, alignB=False)
+        vec_cleanup_loop += self._emit_executor_body(arch_str, 1, scalar, vector_intrinsics, datatransform, alignB=False)
 
         if arch_str in ['AVX512', 'AVX2']:
             vec_cleanup_loop_128 = ForLoop(f'', f'elements_remaining >= {vec_width_ele_128}',
                                        f'elements_remaining -= {vec_width_ele_128}, '
                                        f'C += {vec_width_ele_128}, C_out += {vec_width_ele_128}, B += {vec_width_ele_128}')
-            vec_cleanup_loop_128 += self._emit_executor_body(arch_str, 1, scalar, vector_intrinsics_128, alignB=False)
+            vec_cleanup_loop_128 += self._emit_executor_body(arch_str, 1, scalar, vector_intrinsics_128, datatransform, alignB=False)
 
         scalar_cleanup_loop = ForLoop(f'', f'elements_remaining', f'elements_remaining--, '
                                       f'C += 1, C_out += 1, B += 1')
-        scalar_cleanup_loop += self._emit_executor_body(arch_str, 1, scalar, scalar_intrinsics, alignB=False)
+        scalar_cleanup_loop += self._emit_executor_body(arch_str, 1, scalar, scalar_intrinsics, datatransform,  alignB=False)
 
         func_body += vec_cleanup_loop
         if arch_str in ['AVX512', 'AVX2']:
@@ -650,7 +657,7 @@ class UKernelCodegenBase:
         return func_body.emit(6)
 
     @staticmethod
-    def _emit_microkernels(main_body: callable, cleanup_body: callable, Nr, scalar, name="", masked=False):
+    def _emit_microkernels(main_body: callable, cleanup_body: callable, Nr, scalar, data_transform, name="", masked=False):
         mask_str = ""
         mask_arg_string =""
         mask = None
