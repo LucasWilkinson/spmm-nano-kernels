@@ -39,6 +39,7 @@ enum TileType {
   SPARSE_CSR,
   SPARSE_SOP,
   DENSE,
+  EMPTY_TILE,
 
   // Execution type only, TODO seperate out
   SPARSE_MKL,

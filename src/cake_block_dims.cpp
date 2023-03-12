@@ -709,6 +709,7 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
   blk_ret->sch = KMN;
 
   double alpha = cake_cntx->alpha_n;
+  density = std::max((float)0.001, density);
   double lambda = sparse_a ? 3 * density : 1;
 
   // solve for optimal mc,kc based on L2 size
@@ -755,11 +756,12 @@ cache_dims_t* get_cache_dims_4(int M, int N, int K, int p,
     double x = (int)(-b + sqrt(b * b - 4.f * a * c) / (2.f * a));
     mc_L3 = (int) x / beta;
     mc_L3 -= (mc_L3 % cake_cntx->mr);
+
     kc_L3 = (int)(x);
   }
 
-//  std::cout << std::endl << "p=" << p << " nr=" << cake_cntx->nr << " alpha=" << alpha << " beta=" << beta << " lambda=" << lambda << " L2=" << cake_cntx->L2 << std::endl;
-//  std::cout << "mc_L3: " << mc_L3 << " kc_L2: " << kc_L2 << std::endl;
+  // std::cout << std::endl << "p=" << p << " nr=" << cake_cntx->nr << " alpha=" << alpha << " beta=" << beta << " lambda=" << lambda << " L2=" << cake_cntx->L2 << std::endl;
+  // std::cout << "mc_L3: " << mc_L3 << " kc_L2: " << kc_L2 << std::endl;
 
   mc_ret = mc_L3;
   if(M < p*cake_cntx->mr) {

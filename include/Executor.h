@@ -203,6 +203,10 @@ namespace sop {
             Scalar* __restrict__ C_p_base = C_p;
             Scalar* __restrict__ C_o = nullptr;
 
+            if (pt.type == EMPTY_TILE) {
+                return;
+            }
+
             // M_r loop
             for (int pi = 0; pi < pt.sop.num_panels; pi++) {
                 int tj = 0, jj = jjj;

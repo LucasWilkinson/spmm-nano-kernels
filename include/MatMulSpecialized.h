@@ -134,8 +134,11 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
     tile_locs = TileLocs(tile_shape, matrix_shape, TileLocs::COL_FIRST);
     matrix_tiled_shape = {tile_locs.num_i_tiles(), tile_locs.num_j_tiles()};
 
+    std::cout << "re-ordering upanels" << std::endl;
     reorder_upanels();
+    std::cout << "packing tiles " << tile_locs.num_i_tiles() * tile_locs.num_j_tiles() << std::endl;
     pack_tiles();
+    std::cout << "packing linear" << std::endl;
     pack_linear();
   }
 
@@ -150,7 +153,8 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
       TileConfig    config_,
       int           num_threads,
       std::string   executor_id,
-      std::string   mapping_id
+      std::string   mapping_id,
+      bool          allow_row_padding = false // allow padding M to multiple of m_r, assumes matric C is also padded
   ):  coo(coo),
       m(coo->rows()), k(coo->cols()), config(config_),
       num_threads(num_threads),
@@ -176,6 +180,11 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
 
     M_r = executor_factory->M_r;
     N_r = executor_factory->N_r;
+
+    if (allow_row_padding) {
+      coo->pad_to_multiple_of(M_r);
+      m = coo->rows();
+    }
 
     if (!DataTransform) {
       dense_copy = (Scalar*) aligned_alloc(4096, coo->rows() * coo->cols() *sizeof(Scalar));
@@ -288,9 +297,10 @@ class MatMulSpecialized: public MatMul<typename KernelDesc::Scalar> {
       TileConfig    config_,
       int           num_threads,
       std::string   executor_id,
-      std::string   mapping_id
+      std::string   mapping_id,
+      bool          allow_row_padding = false 
   ): MatMulSpecialized(new COO<Scalar>(m, k, row_offsets, column_indices, values),
-            b_col_predict, config_, num_threads, executor_id, mapping_id) {
+            b_col_predict, config_, num_threads, executor_id, mapping_id, allow_row_padding) {
   }
 
   TileConfig get_config() const {
@@ -346,15 +356,19 @@ private:
 
   void reorder_upanels() {
     if (KernelDesc::UPanelOrder == LOAD_BALANCING) {
+      std::cout << config.M_c << std::endl;
       int upanels_per_M_c = config.M_c / M_r;
       int num_upanels = ceil_div(matrix_shape.rows, M_r);
       upanel_swizzle.resize(num_upanels);
 
       vector<double> panel_costs(num_upanels);
+      coo->precompute_row_offsets();
       for (int uti = 0; uti < num_upanels; uti++) {
-        for (int utj = 0; utj < matrix_tiled_shape.cols; utj++) {
-          panel_costs[uti] += cost(uti, utj);
-        }
+        IntRange rows = { uti * M_r, std::min((uti + 1) * M_r, m) };
+        IntRange cols = { 0, k };
+        SubmatrixLoc upanel_loc = { rows, cols };
+
+        panel_costs[uti] = coo->submatrix_nnz_count(upanel_loc);
       }
 
       auto upanels_sorted_by_cost = argsort(panel_costs);
@@ -411,7 +425,7 @@ private:
     ERROR_AND_EXIT_IF(config.M_c % M_r != 0, "M_tile must be a multiple of M_r");
     const int panels_per_tile = config.M_c / M_r;
 
-    #pragma omp parallel for num_threads(16) schedule(dynamic)
+    #pragma omp parallel for num_threads(20) schedule(dynamic)
     for (int ti = 0; ti < matrix_tiled_shape.rows; ti++) {
       const auto panel_tile_locs = tile_locs.row_panel(ti);
       for (int tj = 0; tj < panel_tile_locs.size(); tj++) {
@@ -435,6 +449,16 @@ private:
                   new MicroKernelPackedData<Scalar>[panels_per_tile];
 
           auto panel_descs = packed_tiles[ti][tj].sop.panel_descs;
+
+          SubmatrixLoc t_row_loc = t_loc;
+          t_row_loc.cols.start = 0;
+          t_row_loc.cols.end = coo->cols();
+          int nnz_count = coo->submatrix_nnz_count(t_row_loc);
+          if (nnz_count == 0) {
+              packed_tiles[ti][tj].type = EMPTY_TILE;
+              continue;
+          }
+
           for (int panel_id = 0; panel_id < panels_in_tile; panel_id++) {
               int global_panel_id = ti * panels_per_tile + panel_id;
 

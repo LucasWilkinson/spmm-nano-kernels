@@ -31,8 +31,10 @@ public:
 
 private:
     bool m_sorted_csr_style = false;
+    bool m_precompute_row_offsets = false;
 
     std::vector<NonZero> m_non_zeros;
+    std::vector<int> m_row_offsets;
     int m_rows = 0;
     int m_cols = 0;
 
@@ -76,6 +78,7 @@ public:
 
         SubMatrixIterator(const std::vector<NonZero>& non_zeros, IntRange row_range, IntRange col_range) :
                 non_zeros(non_zeros), row_range(row_range), col_range(col_range) {
+            
             while (offset < non_zeros.size() && offset_inside_submatrix()) { offset++; }
             if (offset >= non_zeros.size()) { offset = -1; } // end
         }
@@ -127,10 +130,40 @@ public:
         m_sorted_csr_style = true;
     }
 
+
+    void precompute_row_offsets() {
+        if (m_precompute_row_offsets) return;
+        sort_csr_style();
+
+        m_row_offsets.resize(m_rows + 1);
+        m_row_offsets[0] = 0;
+        int last_row = 0;
+        int curr_offset = -1;
+        for (auto const& nnz : m_non_zeros) {
+            curr_offset++;
+            if (nnz.row != last_row) {
+                for (int i = last_row + 1; i <= nnz.row; i++) {
+                    m_row_offsets[i+1] = curr_offset;
+                }
+                last_row = nnz.row;
+            }   
+        }
+
+        for (int i = last_row + 1; i < m_rows; i++) {
+            m_row_offsets[i+1] = curr_offset;
+        }
+        m_precompute_row_offsets = true;
+    }
+
     void reserve(size_t num_nnz) { m_non_zeros.reserve(num_nnz); }
+
+    void pad_to_multiple_of(int m_r) {
+        m_rows += (m_r - m_rows % m_r);
+    }
 
     void append_nnz(const NonZero& nnz) {
         m_sorted_csr_style = false;
+        m_precompute_row_offsets = false;
         m_non_zeros.push_back(nnz);
     }
 
@@ -141,6 +174,7 @@ public:
         }
 
         m_sorted_csr_style = false;
+        m_precompute_row_offsets = false;
         m_non_zeros.insert(
             m_non_zeros.end(),
             std::make_move_iterator(other.m_non_zeros.begin()),
@@ -189,6 +223,7 @@ public:
         }
 
         _submatrix.m_sorted_csr_style = true;
+        _submatrix.m_precompute_row_offsets = false;
         return _submatrix;
     }
 
@@ -198,6 +233,10 @@ public:
 
     int submatrix_nnz_count(IntRange row_range, IntRange col_range) const {
         int nnz_count = 0;
+
+        if (m_precompute_row_offsets && col_range.start == 0 && col_range.end >= m_cols) {
+            return m_row_offsets[row_range.end] - m_row_offsets[row_range.start];
+        }
 
         for (auto iter = submatrix_begin(row_range, col_range); iter != submatrix_end(); ++iter) {
             nnz_count++;
