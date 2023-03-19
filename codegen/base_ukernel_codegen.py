@@ -113,7 +113,7 @@ class UKernelCodegenBase:
             f.write(f'#endif\n')
 
         for kernel_desc in build_factories_for:
-            for data_transform in ["true", "false"]:
+            for data_transform in ["true", "false"] if arch != "NEON" else ["true"]:
                 factory_name = executor_factory_name(kernel_desc, scalar, microkernel_id_, data_transform)
                 factory_desc_json = json.dumps({
                     "id": microkernel_id_,
