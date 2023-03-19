@@ -450,10 +450,21 @@ private:
 
           auto panel_descs = packed_tiles[ti][tj].sop.panel_descs;
 
-          SubmatrixLoc t_row_loc = t_loc;
-          t_row_loc.cols.start = 0;
-          t_row_loc.cols.end = coo->cols();
-          int nnz_count = coo->submatrix_nnz_count(t_row_loc);
+          int nnz_count = 0;
+          for (int panel_id = 0; panel_id < panels_in_tile; panel_id++) {
+            int global_panel_id = ti * panels_per_tile + panel_id;
+
+            if (KernelDesc::UPanelOrder != NO_REORDERING) {
+                global_panel_id = upanel_swizzle[global_panel_id];
+            }
+
+            SubmatrixLoc panel_loc = t_loc;
+            panel_loc.rows.start = global_panel_id * M_r;
+            panel_loc.rows.end = (global_panel_id + 1) * M_r;
+
+            nnz_count += coo->submatrix_nnz_count(panel_loc);
+          }
+
           if (nnz_count == 0) {
               packed_tiles[ti][tj].type = EMPTY_TILE;
               continue;

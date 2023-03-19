@@ -59,8 +59,9 @@ public:
         const std::vector<NonZero>& non_zeros;
 
         int offset = 0;
+        const int* row_offsets = nullptr;
 
-        inline bool offset_inside_submatrix() {
+        inline bool offset_outside_submatrix() {
             return ((non_zeros[offset].row < row_range.start || non_zeros[offset].row >= row_range.end)
                 ||  (non_zeros[offset].col < col_range.start || non_zeros[offset].col >= col_range.end));
         }
@@ -76,11 +77,10 @@ public:
         SubMatrixIterator(const std::vector<NonZero>& non_zeros, int offset) :
                 non_zeros(non_zeros), offset(offset) {};
 
-        SubMatrixIterator(const std::vector<NonZero>& non_zeros, IntRange row_range, IntRange col_range) :
-                non_zeros(non_zeros), row_range(row_range), col_range(col_range) {
-            
-            while (offset < non_zeros.size() && offset_inside_submatrix()) { offset++; }
-            if (offset >= non_zeros.size()) { offset = -1; } // end
+        SubMatrixIterator(const std::vector<NonZero>& non_zeros, IntRange row_range, IntRange col_range, const int* row_offsets = nullptr) :
+                non_zeros(non_zeros), row_range(row_range), col_range(col_range), offset(row_offsets ? row_offsets[row_range.start] : 0), row_offsets(row_offsets) {
+            while(offset < non_zeros.size() && offset_outside_submatrix()) offset++;
+            if (offset >= non_zeros.size()) offset = -1; // end 
         }
 
         reference operator*() const { return non_zeros[offset]; }
@@ -88,9 +88,20 @@ public:
 
         // Prefix increment
         SubMatrixIterator& operator++() {
-            do { offset++; } while(offset < non_zeros.size() && offset_inside_submatrix());
-            if (offset >= non_zeros.size()) { offset = -1; } // end
-
+            do { 
+                offset++;
+                if (offset >= non_zeros.size()) break;
+                if (non_zeros[offset].row >= row_range.end) { offset = non_zeros.size(); break; } 
+                // if (row_offsets && non_zeros[offset].col >= col_range.end) {
+                //     int next_row = non_zeros[offset].row + 1;
+                //     while (next_row < non_zeros.back().row && row_offsets[next_row] == offset) next_row++;
+                //     std::cout << "next_row: " << next_row << std::endl;
+                //     offset = row_offsets[next_row];
+                // } else {
+                //     offset++;
+                // }
+            } while (offset_outside_submatrix());
+            if (offset >= non_zeros.size()) offset = -1; // end
             return *this;
         }
 
@@ -143,14 +154,14 @@ public:
             curr_offset++;
             if (nnz.row != last_row) {
                 for (int i = last_row + 1; i <= nnz.row; i++) {
-                    m_row_offsets[i+1] = curr_offset;
+                    m_row_offsets[i] = curr_offset;
                 }
                 last_row = nnz.row;
             }   
         }
 
-        for (int i = last_row + 1; i < m_rows; i++) {
-            m_row_offsets[i+1] = curr_offset;
+        for (int i = last_row + 1; i <= m_rows; i++) {
+            m_row_offsets[i] = curr_offset;
         }
         m_precompute_row_offsets = true;
     }
@@ -189,10 +200,10 @@ public:
     typename std::vector<NonZero>::iterator begin() { return m_non_zeros.begin(); };
     typename std::vector<NonZero>::iterator end()   { return m_non_zeros.end();   };
 
-    SubMatrixIterator submatrix_begin(SubmatrixLoc loc) const
-        { return SubMatrixIterator(m_non_zeros, loc.rows, loc.cols); }
-    SubMatrixIterator submatrix_begin(IntRange row_range, IntRange col_range) const
-        { return SubMatrixIterator(m_non_zeros, row_range, col_range); }
+    SubMatrixIterator submatrix_begin(SubmatrixLoc loc, const int* row_offsets = nullptr) const
+        { return SubMatrixIterator(m_non_zeros, loc.rows, loc.cols, row_offsets); }
+    SubMatrixIterator submatrix_begin(IntRange row_range, IntRange col_range, const int* row_offsets = nullptr) const
+        { return SubMatrixIterator(m_non_zeros, row_range, col_range, row_offsets); }
     SubMatrixIterator submatrix_end() const
         { return SubMatrixIterator(m_non_zeros, -1); }
 
@@ -238,15 +249,48 @@ public:
             return m_row_offsets[row_range.end] - m_row_offsets[row_range.start];
         }
 
-        for (auto iter = submatrix_begin(row_range, col_range); iter != submatrix_end(); ++iter) {
+
+        const int* row_offsets = m_precompute_row_offsets ? m_row_offsets.data() : nullptr;
+        for (auto iter = submatrix_begin(row_range, col_range, row_offsets); iter != submatrix_end(); ++iter) {
             nnz_count++;
         }
 
         return nnz_count;
     }
 
-    int submatrix_nnz_count(SubmatrixLoc submatrix_loc) const {
+    std::pair<int, int> submatrix_working_set_size(IntRange row_range, IntRange col_range, int bcols) const {
+        int nnz_count = 0; 
+
+        std::vector <uint8_t> col_active(col_range.size(), 0);
+        std::vector <uint8_t> row_active(row_range.size(), 0);
+
+        const int* row_offsets = m_precompute_row_offsets ? m_row_offsets.data() : nullptr;
+        for (auto iter = submatrix_begin(row_range, col_range, row_offsets); iter != submatrix_end(); ++iter) {
+            nnz_count++;
+            col_active[iter->col - col_range.start] = 1;
+            row_active[iter->row - row_range.start] = 1;
+        }
+
+        int col_active_count = 0;
+        for (int i = 0; i < col_active.size(); i++) {
+            col_active_count += col_active[i];
+        }
+        int row_active_count = 0;
+        for (int i = 0; i < row_active.size(); i++) {
+            row_active_count += row_active[i];
+        }
+
+        return {nnz_count, nnz_count + col_active_count * bcols + row_active_count * bcols};
+    }
+
+
+
+    int submatrix_nnz_count(SubmatrixLoc submatrix_loc, int bcols) const {
         return submatrix_nnz_count(submatrix_loc.rows, submatrix_loc.cols);
+    }
+
+    std::pair<int, int> submatrix_working_set_size(SubmatrixLoc submatrix_loc, int bcols) const {
+        return submatrix_working_set_size(submatrix_loc.rows, submatrix_loc.cols, bcols);
     }
 
     double submatrix_density(IntRange row_range, IntRange col_range, bool pad_boundary = true) const {

@@ -7,6 +7,7 @@
 #include <math.h>
 #include <vector>
 #include "utils/shape.h"
+#include "utils/bmath.h"
 
 struct TileLoc      { int ti = 0; int tj = 0; int tid = 0; SubmatrixLoc loc; };
 
@@ -28,8 +29,8 @@ struct TileLocs {
   TileLocs(const TileLocs&) = default;
   TileLocs(Shape tile_shape, Shape matrix_shape, enum IterationOrder iteration_order):
         m_iteration_order(iteration_order) {
-    m_num_i_tiles = std::ceil(matrix_shape.rows / double(tile_shape.rows));
-    m_num_j_tiles = std::ceil(matrix_shape.cols / double(tile_shape.cols));
+    m_num_i_tiles = ceil_div(matrix_shape.rows, (tile_shape.rows));
+    m_num_j_tiles = ceil_div(matrix_shape.cols, (tile_shape.cols));
     m_locs.resize(m_num_i_tiles * m_num_j_tiles);
 
     for (int tid = 0; tid < (m_num_i_tiles * m_num_j_tiles); tid++) {
@@ -68,8 +69,10 @@ struct TileLocs {
   }
 
 
-  std::vector<TileLoc> row_panel(int ti) {
+  std::vector<TileLoc> row_panel(int ti) const {
     std::vector<TileLoc> tile_locs;
+    tile_locs.reserve(num_j_tiles());
+
     for (int tj = 0; tj < num_j_tiles(); tj++) {
       if (m_iteration_order == COL_FIRST) {
         tile_locs.push_back(m_locs[(ti * num_j_tiles()) + tj]);
