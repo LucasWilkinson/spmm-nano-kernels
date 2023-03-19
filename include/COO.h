@@ -285,7 +285,7 @@ public:
 
 
 
-    int submatrix_nnz_count(SubmatrixLoc submatrix_loc, int bcols) const {
+    int submatrix_nnz_count(SubmatrixLoc submatrix_loc) const {
         return submatrix_nnz_count(submatrix_loc.rows, submatrix_loc.cols);
     }
 
